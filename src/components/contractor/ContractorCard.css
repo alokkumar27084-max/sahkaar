@@ -1,0 +1,182 @@
+.contractor-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+  position: relative;
+}
+
+/* Featured card has amber glow border */
+.card-featured {
+  border-color: rgba(233, 166, 58, 0.35);
+  box-shadow: 0 0 20px rgba(233, 166, 58, 0.08);
+}
+
+/* Badges */
+.card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-xs);
+  min-height: 22px;
+}
+
+/* Compare checkbox */
+.card-compare {
+  position: absolute;
+  top: var(--gap-md);
+  right: var(--gap-md);
+}
+.compare-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--gray-300);
+  cursor: pointer;
+}
+.compare-label input[type="checkbox"] {
+  accent-color: var(--cyan);
+  width: 14px; height: 14px;
+}
+
+/* Main row */
+.card-main {
+  display: flex;
+  gap: var(--gap-md);
+  align-items: flex-start;
+}
+
+/* Avatar */
+.card-avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 56px; height: 56px;
+}
+.card-avatar img {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.1);
+}
+.card-avatar span {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--navy-3), var(--cyan));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* Availability dot on avatar */
+.availability-dot {
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--navy-2);
+}
+.availability-dot.available { background: var(--green); }
+.availability-dot.busy      { background: var(--gray-500); }
+
+/* Info block */
+.card-info { flex: 1; min-width: 0; }
+
+.card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-category {
+  font-size: 0.82rem;
+  color: var(--cyan);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.card-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.rating-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--amber);
+}
+.rating-count {
+  font-size: 0.78rem;
+  color: var(--gray-500);
+}
+
+.card-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--gray-300);
+}
+.distance { color: var(--gray-500); }
+
+/* Labour group info */
+.card-group-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 180, 216, 0.06);
+  border: 1px solid rgba(0, 180, 216, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+.group-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--cyan-light);
+}
+.group-rate {
+  font-weight: 700;
+  color: var(--amber);
+  font-size: 0.88rem;
+}
+
+/* Pricing row */
+.card-pricing {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.price-range {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--white);
+}
+.price-label {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--gray-300);
+}
+
+/* Action buttons */
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+}
+
+.whatsapp-btn {
+  background: #25D366 !important;
+  color: white !important;
+  box-shadow: 0 0 12px rgba(37, 211, 102, 0.25) !important;
+}
+.whatsapp-btn:hover {
+  background: #20ba57 !important;
+  box-shadow: 0 0 20px rgba(37, 211, 102, 0.35) !important;
+}

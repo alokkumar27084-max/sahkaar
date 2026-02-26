@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Thekedaar API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get CSRF Token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/csrf-token",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","csrf-token"]
+        }
+      }
+    },
+    {
+      "name": "Register (customer)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Customer\",\n  \"phone\": \"9000000001\",\n  \"password\": \"pass123\",\n  \"role\": \"customer\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","auth","register"]
+        }
+      }
+    },
+    {
+      "name": "Login (customer)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"9000000001\",\n  \"password\": \"pass123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","auth","login"]
+        }
+      }
+    },
+    {
+      "name": "Create Contractor",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"business_name\": \"Handy Services\",\n  \"description\": \"Plumbing and repairs\",\n  \"categories\": [\"plumbing\"],\n  \"services\": [\"leakfix\"],\n  \"latitude\": 28.6,\n  \"longitude\": 77.2\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/contractors",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","contractors"]
+        }
+      }
+    }
+  ]
+}

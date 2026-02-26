@@ -1,0 +1,642 @@
+openapi: 3.0.3
+info:
+  title: Thekedaar API
+  version: 1.0.0
+  description: |
+    OpenAPI specification for Thekedaar backend.
+    This spec documents authentication, contractor profile management, uploads and reviews.
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+  schemas:
+    Error:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Not found"
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [customer, contractor, admin]
+    Contractor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        business_name:
+          type: string
+        description:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        services:
+          type: array
+          items:
+            type: string
+        rating:
+          type: number
+          format: float
+        reviews_count:
+          type: integer
+        latitude:
+          type: number
+          format: float
+        longitude:
+          type: number
+          format: float
+        image_url:
+          type: string
+        portfolio_urls:
+          type: array
+          items:
+            type: string
+        id_proof_url:
+          type: string
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        contractor_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+        comment:
+          type: string
+
+paths:
+  /csrf-token:
+    get:
+      summary: Get CSRF token
+      description: Returns a CSRF token to include in state-changing requests.
+      responses:
+        '200':
+          description: CSRF token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  csrfToken:
+                    type: string
+
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [customer, contractor]
+                business_name:
+                  type: string
+                description:
+                  type: string
+                categories:
+                  type: array
+                  items:
+                    type: string
+                services:
+                  type: array
+                  items:
+                    type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+      responses:
+        '200':
+          description: Created user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      summary: Login with phone or email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/otp/request:
+    post:
+      summary: Request OTP for phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: OTP sent (stub)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  result:
+                    type: object
+
+  /auth/otp/verify:
+    post:
+      summary: Verify OTP and authenticate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        '200':
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user or null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  user:
+                    anyOf:
+                      - $ref: '#/components/schemas/User'
+                      - type: 'null'
+
+  /auth/logout:
+    post:
+      summary: Logout and clear auth cookie
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+
+  /contractors:
+    get:
+      summary: List contractors
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Contractor list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contractor'
+    post:
+      summary: Create contractor profile (requires auth)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                business_name:
+                  type: string
+                description:
+                  type: string
+                categories:
+                  type: array
+                  items:
+                    type: string
+                services:
+                  type: array
+                  items:
+                    type: string
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractor:
+                    $ref: '#/components/schemas/Contractor'
+
+  /contractors/search:
+    get:
+      summary: Search contractors
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
+          name: lat
+          schema:
+            type: number
+        - in: query
+          name: lng
+          schema:
+            type: number
+        - in: query
+          name: radiusKm
+          schema:
+            type: number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contractor'
+
+  /contractors/{id}:
+    get:
+      summary: Get contractor by id
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contractor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractor:
+                    $ref: '#/components/schemas/Contractor'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update contractor (owner only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractor:
+                    $ref: '#/components/schemas/Contractor'
+    delete:
+      summary: Delete contractor (owner only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+
+  /contractors/{id}/upload:
+    post:
+      summary: Upload profile image (multipart)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractor:
+                    $ref: '#/components/schemas/Contractor'
+
+  /contractors/{id}/portfolio:
+    post:
+      summary: Upload portfolio photos (multipart)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractor:
+                    $ref: '#/components/schemas/Contractor'
+
+  /contractors/{id}/idproof:
+    post:
+      summary: Upload ID proof image (multipart)
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id_proof:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  contractor:
+                    $ref: '#/components/schemas/Contractor'
+
+  /contractors/{id}/reviews:
+    post:
+      summary: Add review for contractor
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: integer
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Review created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  review:
+                    $ref: '#/components/schemas/Review'
+
+  /reviews/contractor/{id}:
+    get:
+      summary: Deprecated: use /contractors/{id}/reviews
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reviews for contractor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+
+security:
+  - cookieAuth: []
