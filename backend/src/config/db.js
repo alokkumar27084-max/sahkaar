@@ -6,7 +6,9 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
   max: 10,
+  connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS || 30000),
   idleTimeoutMillis: 30000,
+  keepAlive: true,
 });
 
 module.exports = {

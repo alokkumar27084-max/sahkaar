@@ -24,6 +24,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "smoke": "bash ./scripts/smoke-test.sh",
     "check:release": "bash ./scripts/release-check.sh"
   },
   "eslintConfig": {

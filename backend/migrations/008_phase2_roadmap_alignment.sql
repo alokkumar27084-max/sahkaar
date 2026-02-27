@@ -42,7 +42,7 @@ SET portfolio_photos = COALESCE(portfolio_photos, portfolio_urls, '{}');
 
 -- OTP table
 CREATE TABLE IF NOT EXISTS otps (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   phone VARCHAR(15) NOT NULL,
   code VARCHAR(6) NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL,
@@ -54,7 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_otps_phone ON otps(phone);
 
 -- Session table
 CREATE TABLE IF NOT EXISTS sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   refresh_token TEXT UNIQUE NOT NULL,
   expires_at TIMESTAMPTZ NOT NULL
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 -- Reports table
 CREATE TABLE IF NOT EXISTS reports (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   reporter_id UUID REFERENCES users(id),
   contractor_id UUID REFERENCES contractors(id),
   reason TEXT,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS reports (
 
 -- Notifications table
 CREATE TABLE IF NOT EXISTS notifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
   type VARCHAR(50),

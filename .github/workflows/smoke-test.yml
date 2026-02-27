@@ -1,0 +1,38 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install backend deps
+        run: npm ci --prefix backend
+
+      - name: Start backend
+        run: |
+          npm --prefix backend run dev &
+
+      - name: Wait for backend
+        run: |
+          n=0
+          until [ $n -ge 30 ]
+          do
+            if curl -sS http://localhost:5000/health >/dev/null 2>&1; then
+              echo "backend up"
+              break
+            fi
+            n=$((n+1))
+            sleep 1
+          done
+
+      - name: Run smoke tests
+        run: bash ./scripts/smoke-test.sh

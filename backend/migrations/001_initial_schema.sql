@@ -4,11 +4,12 @@
 -- Optional: enable PostGIS for geo queries (uncomment if using PostGIS)
 -- CREATE EXTENSION IF NOT EXISTS postgis;
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Use pgcrypto for UUID generation (pgcrypto is available on Supabase)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Users: customers, contractors, admins
 CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT,
   phone TEXT UNIQUE NOT NULL,
   password_hash TEXT,
@@ -18,7 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Contractors: profile details linked to a user
 CREATE TABLE IF NOT EXISTS contractors (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   business_name TEXT,
   description TEXT,
@@ -33,7 +34,7 @@ CREATE TABLE IF NOT EXISTS contractors (
 
 -- Reviews left by customers for contractors
 CREATE TABLE IF NOT EXISTS reviews (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   contractor_id UUID REFERENCES contractors(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   rating SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),

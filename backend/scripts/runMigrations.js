@@ -6,6 +6,9 @@ const { Pool } = require('pg');
 // Create a new pool for migrations (fresh connection)
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
+  connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS || 30000),
+  keepAlive: true,
 });
 
 async function runFile(file) {
