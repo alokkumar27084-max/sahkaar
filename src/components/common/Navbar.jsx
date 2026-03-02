@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiSettings, FiUser, FiX } from "react-icons/fi";
+import { ThekedaarLogo } from "./ThekedaarLogo";
 import toast from "react-hot-toast";
 
 export default function Navbar() {
@@ -10,8 +11,10 @@ export default function Navbar() {
   const { user, logout, isContractor, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [panelState, setPanelState] = useState("closed");
   const [hideNav, setHideNav] = useState(false);
+
   const panelVisible = panelState !== "closed";
 
   useEffect(() => {
@@ -26,7 +29,6 @@ export default function Navbar() {
       setHideNav(goingDown && y > 80 && !panelVisible);
       lastY = y;
     };
-
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [panelVisible]);
@@ -38,23 +40,20 @@ export default function Navbar() {
     };
   }, [panelVisible]);
 
+  const navLinks = useMemo(
+    () => [
+      { href: "/#home", label: "Home" },
+      { href: "/#services", label: "Services" },
+      { href: "/#about", label: "About" },
+      { href: "/#contact", label: "Contact" },
+    ],
+    []
+  );
+
   async function handleLogout() {
     await logout();
-    toast.success(lang === "hi" ? "लॉगआउट हो गए" : "Logged out");
+    toast.success(lang === "hi" ? "Logged out" : "Logged out");
     navigate("/");
-  }
-
-  const panelPrimaryLinks = [
-    { to: "/", label: t("nav.home") || "Home", icon: <FiHome size={16} /> },
-    { to: "/search", label: t("nav.search") || "Search", icon: <FiSearch size={16} /> },
-  ];
-
-  if (user) {
-    panelPrimaryLinks.push({
-      to: isAdmin ? "/admin/dashboard" : isContractor ? "/contractor/dashboard" : "/",
-      label: isAdmin ? (lang === "hi" ? "एडमिन" : "Admin") : isContractor ? t("nav.dashboard") : t("nav.profile"),
-      icon: <FiUser size={16} />,
-    });
   }
 
   function openPanel() {
@@ -72,23 +71,51 @@ export default function Navbar() {
     if (panelState === "closed") openPanel();
   }
 
+  const dashboardPath = isAdmin ? "/admin/dashboard" : isContractor ? "/contractor/dashboard" : "/";
+  const showDashboardLink = isAdmin || isContractor;
+
   return (
     <>
-      <header className={`sticky top-3 z-50 px-3 md:px-5 navbar-shell ${hideNav ? "nav-hidden" : ""}`}>
-        <nav className="glass-nav max-w-6xl mx-auto rounded-2xl px-4 py-3 fade-rise">
-        <div className="flex items-center justify-between gap-4">
-          <Link to="/" className="brand-logo text-slate-100">
-            The<span className="text-cyan-200">kedaar</span>
-          </Link>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
 
-          <button
-            className="btn-secondary !px-3 !py-2"
-            onClick={togglePanel}
-            aria-label="Toggle menu"
-          >
-            {panelVisible ? <FiX size={18} /> : <FiMenu size={18} />}
-          </button>
-        </div>
+      <header className={`sticky top-0 z-50 px-3 md:px-5 py-2 navbar-shell ${hideNav ? "nav-hidden" : ""}`}>
+        <nav className="glass-nav mx-auto max-w-[1400px] px-4 md:px-5 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <Link to="/" className="flex items-center min-w-[56px]">
+              <ThekedaarLogo className="h-12 w-12 md:h-14 md:w-14" />
+            </Link>
+
+            <div className="hidden lg:flex items-center gap-7 text-[15px] text-slate-700 font-medium">
+              {navLinks.map((item) => (
+                <a key={item.href} href={item.href} className="hover:text-[#1E3A8A] transition-colors">
+                  {item.label}
+                </a>
+              ))}
+            </div>
+
+            <div className="hidden md:flex items-center gap-2">
+              {user ? (
+                <>
+                  {showDashboardLink ? <Link to={dashboardPath} className="btn-outline-cyan">{t("nav.dashboard") || "Dashboard"}</Link> : null}
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="btn-outline-cyan">{t("nav.login")}</Link>
+                  <Link to="/register/contractor" className="btn-primary">{t("nav.register")}</Link>
+                </>
+              )}
+            </div>
+
+            <button
+              className={`${user ? "inline-flex" : "md:hidden inline-flex"} items-center justify-center w-11 h-11 rounded-xl border border-slate-300 bg-white text-slate-700`}
+              onClick={togglePanel}
+              aria-label="Toggle menu"
+            >
+              {panelVisible ? <FiX size={20} /> : <FiMenu size={20} />}
+            </button>
+          </div>
         </nav>
       </header>
 
@@ -97,77 +124,71 @@ export default function Navbar() {
       {panelVisible && (
         <aside className={`side-panel ${panelState === "closing" ? "closing" : ""}`}>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm uppercase tracking-[0.14em] text-slate-300/90">Navigation</p>
-            <button className="btn-secondary !px-3 !py-2" onClick={closePanel} aria-label="Close panel">
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Navigation</p>
+            <button className="panel-action !w-auto !px-3 !py-2" onClick={closePanel} aria-label="Close panel">
               <FiX size={18} />
             </button>
           </div>
 
-          <div className="surface-panel rounded-2xl p-4 mb-1 panel-item" style={{ animationDelay: "40ms" }}>
-            <p className="text-xs text-slate-300/85 mb-1">{lang === "hi" ? "लॉगिन स्टेटस" : "Account"}</p>
-            <p className="text-sm font-semibold text-slate-100">
-              {user ? (user.name || t("nav.profile")) : (lang === "hi" ? "गेस्ट यूज़र" : "Guest user")}
-            </p>
-          </div>
+          <p className="panel-section-title">Discover</p>
+          <a href="/#home" className="panel-link" onClick={closePanel}>
+            <FiHome size={16} />
+            Home
+            <FiChevronRight className="ml-auto opacity-60" />
+          </a>
+          <Link to="/search" className="panel-link" onClick={closePanel}>
+            <FiSearch size={16} />
+            {t("nav.search") || "Search"}
+            <FiChevronRight className="ml-auto opacity-60" />
+          </Link>
+          {showDashboardLink ? (
+            <Link to={dashboardPath} className="panel-link" onClick={closePanel}>
+              <FiUser size={16} />
+              {t("nav.dashboard") || "Dashboard"}
+              <FiChevronRight className="ml-auto opacity-60" />
+            </Link>
+          ) : null}
 
-          <p className="panel-section-title">{lang === "hi" ? "डिस्कवर" : "Discover"}</p>
-          <div className="flex flex-col gap-2">
-            {panelPrimaryLinks.map((item, index) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="panel-link hover-lift panel-item"
-                style={{ animationDelay: `${80 + index * 60}ms` }}
-                onClick={closePanel}
-              >
-                {item.icon}
-                {item.label}
-                <FiChevronRight className="ml-auto opacity-70" />
-              </Link>
-            ))}
-          </div>
-
-          <p className="panel-section-title">{lang === "hi" ? "प्रेफरेंसेस" : "Preferences"}</p>
-          <div className="flex items-center rounded-full bg-white/5 border border-white/10 p-1 mt-1 mb-1 w-fit panel-item" style={{ animationDelay: "220ms" }}>
+          <p className="panel-section-title">Language</p>
+          <div className="flex items-center rounded-full bg-slate-100 border border-slate-200 p-1 w-fit">
             {["en", "hi"].map((l) => (
               <button
                 key={l}
                 onClick={() => setLang(l)}
-                className={`lang-pill ${lang === l ? "bg-cyan-200 text-slate-950" : "text-slate-300 hover:text-white"}`}
+                className={`lang-pill ${lang === l ? "bg-[#1E3A8A] text-white" : "text-slate-600"}`}
               >
-                {l === "en" ? "EN" : "हि"}
+                {l === "en" ? "EN" : "HI"}
               </button>
             ))}
           </div>
 
-          <p className="panel-section-title">{lang === "hi" ? "खाता" : "Account Actions"}</p>
-          <div className="mt-auto flex flex-col gap-2 pb-2">
-            {user ? (
-              <button
-                onClick={() => {
-                  closePanel();
-                  handleLogout();
-                }}
-                className="btn-primary justify-start panel-item"
-                style={{ animationDelay: "280ms" }}
-              >
-                {t("nav.logout")}
-              </button>
-            ) : (
-              <>
-                <Link to="/login" className="btn-secondary justify-start hover-lift panel-item" style={{ animationDelay: "260ms" }} onClick={closePanel}>
-                  <FiLogIn size={16} />
-                  {t("nav.login")}
-                </Link>
-                <Link to="/register/contractor" className="btn-primary justify-start hover-lift panel-item" style={{ animationDelay: "320ms" }} onClick={closePanel}>
-                  <FiSettings size={16} />
-                  {t("nav.register")}
-                </Link>
-              </>
-            )}
-          </div>
+          <p className="panel-section-title">Account</p>
+          {user ? (
+            <button
+              onClick={() => {
+                closePanel();
+                handleLogout();
+              }}
+              className="panel-action"
+            >
+              <FiLogIn size={16} />
+              {t("nav.logout")}
+            </button>
+          ) : (
+            <>
+              <Link to="/login" className="panel-link" onClick={closePanel}>
+                <FiLogIn size={16} />
+                {t("nav.login")}
+              </Link>
+              <Link to="/register/contractor" className="panel-link" onClick={closePanel}>
+                <FiSettings size={16} />
+                {t("nav.register")}
+              </Link>
+            </>
+          )}
         </aside>
       )}
     </>
   );
 }
+

@@ -12,7 +12,7 @@ export default function StarRating({ value = 0, onChange, readonly = true, size 
   const iconSize = iconSizes[size] || iconSizes["text-xl"];
 
   return (
-    <div className="flex gap-0.5">
+    <div className="flex gap-0.5" aria-label={`Rating ${value} out of 5`}>
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
@@ -20,7 +20,7 @@ export default function StarRating({ value = 0, onChange, readonly = true, size 
           onClick={() => !readonly && onChange?.(star)}
           className={`transition-transform ${
             !readonly ? "hover:scale-110 cursor-pointer" : "cursor-default"
-          } ${star <= value ? "text-amber-200 drop-shadow-[0_0_8px_rgba(255,207,102,0.4)]" : "text-slate-500"}`}
+          } ${star <= value ? "text-[#F59E0B]" : "text-slate-300"}`}
           disabled={readonly}
           aria-label={`${star} star`}
         >

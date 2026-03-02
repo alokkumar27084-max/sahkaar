@@ -9,6 +9,13 @@ const Contractor = require('../models/contractorModel');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const ALLOWED_LOCATION_SOURCES = new Set(['browser_gps', 'manual_pin', 'ip_approx']);
+
+function toFiniteNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
 function signUserToken(user) {
   return jwt.sign(
@@ -129,12 +136,55 @@ exports.me = async (req, res, next) => {
         : null);
     if (!token) return res.json({ ok: true, user: null });
     const payload = require('jsonwebtoken').verify(token, JWT_SECRET);
-    const result = await db.query('SELECT id, name, phone, email, role FROM users WHERE id = $1', [payload.sub || payload.id]);
+    const result = await db.query(
+      `SELECT id, name, phone, email, role,
+              location_lat, location_lng, location_accuracy_m, location_source, location_captured_at
+       FROM users
+       WHERE id = $1`,
+      [payload.sub || payload.id]
+    );
     const user = result.rows[0] || null;
     res.json({ ok: true, user });
   } catch (err) {
     // If token invalid, return null user rather than error
     res.json({ ok: true, user: null });
+  }
+};
+
+exports.updateMyLocation = async (req, res, next) => {
+  try {
+    const lat = toFiniteNumber(req.body?.lat ?? req.body?.latitude);
+    const lng = toFiniteNumber(req.body?.lng ?? req.body?.longitude);
+    const accuracy = toFiniteNumber(req.body?.accuracy_m ?? req.body?.accuracy);
+    const sourceRaw = String(req.body?.source || 'browser_gps').trim().toLowerCase();
+    const source = ALLOWED_LOCATION_SOURCES.has(sourceRaw) ? sourceRaw : 'browser_gps';
+
+    if (lat === null || lng === null) {
+      return res.status(400).json({ ok: false, message: 'lat and lng are required' });
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return res.status(400).json({ ok: false, message: 'invalid coordinates' });
+    }
+    if (accuracy !== null && (accuracy < 0 || accuracy > 50000)) {
+      return res.status(400).json({ ok: false, message: 'invalid accuracy' });
+    }
+
+    await db.query(
+      `UPDATE users
+       SET location_lat = $2,
+           location_lng = $3,
+           location_accuracy_m = $4,
+           location_source = $5,
+           location_captured_at = now(),
+           updated_at = now()
+       WHERE id = $1`,
+      [req.user.id, lat, lng, accuracy, source]
+    );
+
+    const user = await User.findById(req.user.id);
+    return res.json({ ok: true, user });
+  } catch (err) {
+    return next(err);
   }
 };
 

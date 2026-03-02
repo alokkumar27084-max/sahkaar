@@ -2,17 +2,35 @@
 const db = require('../config/db');
 
 exports.findByPhone = async (phone) => {
-  const res = await db.query('SELECT id, name, phone, email, role, password_hash FROM users WHERE phone = $1', [phone]);
+  const res = await db.query(
+    `SELECT id, name, phone, email, role, password_hash,
+            location_lat, location_lng, location_accuracy_m, location_source, location_captured_at
+     FROM users
+     WHERE phone = $1`,
+    [phone]
+  );
   return res.rows[0];
 };
 
 exports.findByEmail = async (email) => {
-  const res = await db.query('SELECT id, name, phone, email, role, password_hash FROM users WHERE email = $1', [email]);
+  const res = await db.query(
+    `SELECT id, name, phone, email, role, password_hash,
+            location_lat, location_lng, location_accuracy_m, location_source, location_captured_at
+     FROM users
+     WHERE email = $1`,
+    [email]
+  );
   return res.rows[0];
 };
 
 exports.findById = async (id) => {
-  const res = await db.query('SELECT id, name, phone, email, role FROM users WHERE id = $1', [id]);
+  const res = await db.query(
+    `SELECT id, name, phone, email, role,
+            location_lat, location_lng, location_accuracy_m, location_source, location_captured_at
+     FROM users
+     WHERE id = $1`,
+    [id]
+  );
   return res.rows[0];
 };
 

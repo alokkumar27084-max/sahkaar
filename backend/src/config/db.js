@@ -11,6 +11,11 @@ const pool = new Pool({
   keepAlive: true,
 });
 
+// Handle connection errors gracefully
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+});
+
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,

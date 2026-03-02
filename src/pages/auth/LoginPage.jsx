@@ -12,10 +12,19 @@ export default function LoginPage() {
   const { t, lang } = useLanguage();
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const nextParam = new URLSearchParams(window.location.search).get("next");
+  const customerNext = nextParam && nextParam.startsWith("/") ? nextParam : "/";
 
   useEffect(() => {
-    if (user) navigate("/");
-  }, [user, navigate]);
+    if (!user) return;
+    navigate(
+      user.role === "admin"
+        ? "/admin/dashboard"
+        : user.role === "contractor"
+        ? "/contractor/dashboard"
+        : customerNext
+    );
+  }, [user, navigate, customerNext]);
 
   const [mode, setMode] = useState("phone");
   const [step, setStep] = useState(1);
@@ -26,6 +35,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [errors, setErrors] = useState({});
+
+  // Open email mode for admin route, but never prefill credentials
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("admin") === "1") {
+      setMode("email");
+      setEmail("");
+      setPassword("");
+    }
+  }, []);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -72,7 +91,13 @@ export default function LoginPage() {
       const res = await authAPI.verifyOTP(cleanPhone, cleanOTP);
       login(res.data.user);
       toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
-      navigate(res.data.user.role === "contractor" ? "/contractor/dashboard" : "/");
+      navigate(
+        res.data.user.role === "admin"
+          ? "/admin/dashboard"
+          : res.data.user.role === "contractor"
+          ? "/contractor/dashboard"
+          : customerNext
+      );
     } catch {
       setErrors({ otp: t("err.invalid_otp") });
     } finally {
@@ -97,7 +122,13 @@ export default function LoginPage() {
       const res = await authAPI.login({ email: cleanEmail, password });
       login(res.data.user);
       toast.success("Logged in!");
-      navigate(res.data.user.role === "contractor" ? "/contractor/dashboard" : "/");
+      navigate(
+        res.data.user.role === "admin"
+          ? "/admin/dashboard"
+          : res.data.user.role === "contractor"
+          ? "/contractor/dashboard"
+          : customerNext
+      );
     } catch (err) {
       toast.error(err.response?.data?.message || t("app.error"));
     } finally {
@@ -113,6 +144,11 @@ export default function LoginPage() {
             The<span className="text-cyan-200">kedaar</span>
           </h1>
           <p className="text-sm text-slate-300 mt-1">{lang === "hi" ? "हर काम का एक ठेकेदार" : "Premium Contractor Network"}</p>
+          {new URLSearchParams(window.location.search).get('admin') === '1' && (
+            <p className="mt-2 text-xs text-amber-300">
+              {lang === 'hi' ? 'एडमिन लॉगिन मोड' : 'Admin login mode'}
+            </p>
+          )}
         </div>
 
         <div className="glass-card p-6 md:p-7">
@@ -233,7 +269,7 @@ export default function LoginPage() {
           )}
 
           <p className="text-center text-sm text-slate-300 mt-5">
-            {t("auth.no_account")} <Link to="/register" className="text-cyan-200 font-semibold hover:underline">{lang === "hi" ? "रजिस्टर करें" : "Register"}</Link>
+            {t("auth.no_account")} <Link to={customerNext !== "/" ? `/register?next=${encodeURIComponent(customerNext)}` : "/register"} className="text-cyan-200 font-semibold hover:underline">{lang === "hi" ? "रजिस्टर करें" : "Register"}</Link>
           </p>
         </div>
       </div>

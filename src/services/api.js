@@ -1,12 +1,3 @@
-// ─────────────────────────────────────────────
-// api.js — Central API service
-//
-// All HTTP requests go through this file.
-// It automatically:
-//   - Adds the backend URL prefix
-//   - Sends cookies (for auth)
-//   - Handles 401 errors (token expired → logout)
-// ─────────────────────────────────────────────
 import axios from "axios";
 
 const api = axios.create({
@@ -41,44 +32,57 @@ api.interceptors.response.use(
 export default api;
 
 export const authAPI = {
-  sendOTP:     (phone)         => api.post("/auth/otp/request",      { phone }),
-  verifyOTP:   (phone, otp)    => api.post("/auth/otp/verify",       { phone, otp }),
-  register:    (data)          => api.post("/auth/register",          data),
-  login:       (data)          => api.post("/auth/login",             data),
-  logout:      ()              => api.post("/auth/logout"),
-  me:          ()              => api.get("/auth/me"),
+  sendOTP: (phone) => api.post("/auth/otp/request", { phone }),
+  verifyOTP: (phone, otp) => api.post("/auth/otp/verify", { phone, otp }),
+  register: (data) => api.post("/auth/register", data),
+  login: (data) => api.post("/auth/login", data),
+  updateLocation: (data) => api.put("/auth/location", data),
+  logout: () => api.post("/auth/logout"),
+  me: () => api.get("/auth/me"),
 };
 
 export const contractorAPI = {
-  getFeatured: ()             => api.get("/contractors/featured"),
-  search:      (params)        => api.get("/contractors/search",       { params }),
-  getById:     (id)            => api.get(`/contractors/${id}`),
-  getAll:      (params)        => api.get("/contractors", { params }),
-  getMyProfile:()              => api.get("/contractors/me/profile"),
-  create:      (data)          => api.post("/contractors",             data),
-  updateMe:    (data)          => api.put("/contractors/me",            data),
-  update:      (id, data)      => api.put(`/contractors/${id}`,         data),
-  setAvail:    (available)     => api.patch("/contractors/me/availability", { available }),
-  uploadMyPhoto:(formData)     => api.post("/contractors/photo", formData, { headers: { "Content-Type": "multipart/form-data" } }),
-  uploadMyWork: (formData)     => api.post("/contractors/portfolio", formData, { headers: { "Content-Type": "multipart/form-data" } }),
-  setMyPortfolio:(photos)      => api.put("/contractors/portfolio", { photos }),
-  uploadPhoto: (id, formData)  => api.post(`/contractors/${id}/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
-  uploadWork:  (id, formData)  => api.post(`/contractors/${id}/portfolio`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
-  uploadIdProof:(id, formData)  => api.post(`/contractors/${id}/idproof`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
-  addReview:   (id, data)      => api.post(`/contractors/${id}/reviews`, data),
-  recordLead:  (id)            => api.post(`/contractors/${id}/lead`),
+  getFeatured: () => api.get("/contractors/featured"),
+  search: (params) => api.get("/contractors/search", { params }),
+  getById: (id) => api.get(`/contractors/${id}`),
+  getAll: (params) => api.get("/contractors", { params }),
+  getMyProfile: () => api.get("/contractors/me/profile"),
+  create: (data) => api.post("/contractors", data),
+  updateMe: (data) => api.put("/contractors/me", data),
+  update: (id, data) => api.put(`/contractors/${id}`, data),
+  setAvail: (available) => api.patch("/contractors/me/availability", { available }),
+  uploadMyPhoto: (formData) => api.post("/contractors/photo", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  uploadMyWork: (formData) => api.post("/contractors/portfolio", formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  setMyPortfolio: (photos) => api.put("/contractors/portfolio", { photos }),
+  uploadPhoto: (id, formData) => api.post(`/contractors/${id}/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  uploadWork: (id, formData) => api.post(`/contractors/${id}/portfolio`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  uploadIdProof: (id, formData) => api.post(`/contractors/${id}/idproof`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  addReview: (id, data) => api.post(`/contractors/${id}/reviews`, data),
+  recordLead: (id) => api.post(`/contractors/${id}/lead`),
 };
 
 export const reviewAPI = {
-  // Reviews are handled under contractor endpoints in the backend.
-  getForContractor: (id)       => api.get(`/reviews/contractor/${id}`),
-  submit:      (id, data)      => api.post(`/reviews/contractor/${id}`, data),
+  getForContractor: (id) => api.get(`/reviews/contractor/${id}`),
+  submit: (id, data) => api.post(`/reviews/contractor/${id}`, data),
 };
 
 export const adminAPI = {
-  getPendingContractors: ()      => api.get("/admin/contractors/pending"),
-  verifyContractor: (id)         => api.patch(`/admin/contractors/${id}/verify`),
-  getStats: ()                   => api.get("/admin/stats"),
+  getStats: () => api.get("/admin/stats"),
+  getActivity: () => api.get("/admin/activity"),
+
+  getUsers: (params) => api.get("/admin/users", { params }),
+  getUser: (id) => api.get(`/admin/users/${id}`),
+  createUser: (data) => api.post("/admin/users", data),
+  updateUser: (id, data) => api.patch(`/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+
+  getContractors: (params) => api.get("/admin/contractors", { params }),
+  getPendingContractors: () => api.get("/admin/contractors/pending"),
+  createContractor: (data) => api.post("/admin/contractors", data),
+  updateContractor: (id, data) => api.patch(`/admin/contractors/${id}`, data),
+  verifyContractor: (id) => api.patch(`/admin/contractors/${id}/verify`),
+  deleteContractor: (id) => api.delete(`/admin/contractors/${id}`),
+
   getReports: (status = "pending") => api.get("/admin/reports", { params: { status } }),
-  resolveReport: (id, status)    => api.patch(`/admin/reports/${id}`, { status }),
+  resolveReport: (id, status) => api.patch(`/admin/reports/${id}`, { status }),
 };

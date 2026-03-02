@@ -11,6 +11,8 @@ export default function RegisterPage() {
   const { t, lang } = useLanguage();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const nextParam = new URLSearchParams(window.location.search).get("next");
+  const customerNext = nextParam && nextParam.startsWith("/") ? nextParam : "/";
 
   const [form, setForm] = useState({ name: "", phone: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
@@ -45,7 +47,7 @@ export default function RegisterPage() {
       const res = await authAPI.register(payload);
       login(res.data.user);
       toast.success(lang === "hi" ? "अकाउंट बन गया!" : "Account created!");
-      navigate("/");
+      navigate(customerNext);
     } catch (err) {
       toast.error(err.response?.data?.message || t("app.error"));
     } finally {
@@ -93,7 +95,7 @@ export default function RegisterPage() {
           </form>
 
           <p className="text-center text-sm text-slate-300 mt-4">
-            {t("auth.have_account")} <Link to="/login" className="text-cyan-200 font-semibold hover:underline">{t("nav.login")}</Link>
+            {t("auth.have_account")} <Link to={customerNext !== "/" ? `/login?next=${encodeURIComponent(customerNext)}` : "/login"} className="text-cyan-200 font-semibold hover:underline">{t("nav.login")}</Link>
           </p>
 
           <div className="mt-4 pt-4 border-t glass-divider text-center">

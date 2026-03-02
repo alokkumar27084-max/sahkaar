@@ -70,6 +70,38 @@
   --bottom-nav-height: 64px;
 }
 
+/* light mode overrides */
+.light {
+  --navy:        #f0f4f8;
+  --navy-2:      #ffffff;
+  --navy-3:      #e2e8f0;
+  --cyan:        #00B4D8;
+  --cyan-light:  #90E0EF;
+  --cyan-glow:   rgba(0, 180, 216, 0.15);
+  --amber:       #E9A63A;
+  --amber-light: #FDE68A;
+  --amber-glow:  rgba(233, 166, 58, 0.12);
+
+  --white:       #0A192F;
+  --off-white:   #334155;
+  --gray-100:    #E2E8F0;
+  --gray-300:    #94A3B8;
+  --gray-500:    #64748B;
+  --gray-700:    #334155;
+  --gray-900:    #0F172A;
+
+  /* adjust body background and text as well */
+  background-color: var(--white);
+  color: var(--navy);
+}
+
+/* light-mode body adjustments for full coverage */
+.light body {
+  background-color: var(--white) !important;
+  color: var(--navy) !important;
+}
+
+
 /* ── RESET ────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;

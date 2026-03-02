@@ -12,10 +12,11 @@ import { useState, useCallback } from "react";
 export function useGeolocation() {
   const [lat,     setLat]     = useState(null);
   const [lng,     setLng]     = useState(null);
+  const [accuracy, setAccuracy] = useState(null);
   const [error,   setError]   = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const request = useCallback(() => {
+  const request = useCallback((options = {}) => {
     // Check if browser supports geolocation
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
@@ -30,6 +31,7 @@ export function useGeolocation() {
       (position) => {
         setLat(position.coords.latitude);
         setLng(position.coords.longitude);
+        setAccuracy(position.coords.accuracy ?? null);
         setLoading(false);
       },
       // Error: user denied or something went wrong
@@ -42,9 +44,15 @@ export function useGeolocation() {
         setError(messages[err.code] || "Failed to get location");
         setLoading(false);
       },
-      { timeout: 10000, maximumAge: 60000 }   // 10s timeout, cache 1 min
+      {
+        enableHighAccuracy: options.enableHighAccuracy ?? true,
+        timeout: options.timeout ?? 15000,
+        maximumAge: options.maximumAge ?? 0,
+      }
     );
   }, []);
 
-  return { lat, lng, error, loading, request };
+  const clearError = useCallback(() => setError(null), []);
+
+  return { lat, lng, accuracy, error, loading, request, clearError };
 }

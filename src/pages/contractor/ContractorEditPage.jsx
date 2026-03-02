@@ -6,6 +6,8 @@ import { sanitizeForm, isValidImageFile } from "../../utils/validators";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Icon from "../../components/common/Icon";
 import toast from "react-hot-toast";
+import { getImageUrl } from "../../utils/imageUtils";
+import { useGeolocation } from "../../hooks/useGeolocation";
 
 export default function ContractorEditPage() {
   const { t, lang } = useLanguage();
@@ -16,6 +18,8 @@ export default function ContractorEditPage() {
   const [dragIndex, setDragIndex] = useState(null);
   const [profile, setProfile] = useState(null);
   const [portfolio, setPortfolio] = useState([]);
+  const [geo, setGeo] = useState({ lat: null, lng: null, accuracy: null });
+  const { lat, lng, accuracy, request: getLocation, loading: geoLoading, error: geoError } = useGeolocation();
   const [form, setForm] = useState({
     category: "",
     description: "",
@@ -35,6 +39,11 @@ export default function ContractorEditPage() {
         const p = res.data.contractor;
         setProfile(p);
         setPortfolio(p?.portfolio_photos || p?.portfolio_urls || []);
+        setGeo({
+          lat: p?.lat ?? p?.latitude ?? null,
+          lng: p?.lng ?? p?.longitude ?? null,
+          accuracy: null,
+        });
         setForm({
           category: p.category || p.categories?.[0] || "",
           description: p.description || "",
@@ -54,6 +63,11 @@ export default function ContractorEditPage() {
       .finally(() => setLoading(false));
   }, [navigate, t]);
 
+  useEffect(() => {
+    if (lat === null || lng === null) return;
+    setGeo({ lat, lng, accuracy: accuracy ?? null });
+  }, [lat, lng, accuracy]);
+
   function update(field) {
     return (e) => {
       const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -72,13 +86,15 @@ export default function ContractorEditPage() {
         experience_years: form.experience_years ? Number(form.experience_years) : 0,
         team_size: form.team_size ? Number(form.team_size) : 1,
         location_text: form.location_text,
+        latitude: geo.lat !== null ? Number(geo.lat) : null,
+        longitude: geo.lng !== null ? Number(geo.lng) : null,
         services: form.services.split(",").map((x) => x.trim()).filter(Boolean),
         is_labour_group: form.is_labour_group,
         is_responsibility_model: form.is_responsibility_model,
       });
       const res = await contractorAPI.updateMe(payload);
       setProfile(res.data.contractor || profile);
-      toast.success(lang === "hi" ? "प्रोफ़ाइल सेव हो गई" : "Profile updated");
+      toast.success(lang === "hi" ? "Profile saved" : "Profile updated");
     } catch (err) {
       toast.error(err.response?.data?.message || t("app.error"));
     } finally {
@@ -97,7 +113,7 @@ export default function ContractorEditPage() {
       fd.append("image", file);
       const res = await contractorAPI.uploadMyPhoto(fd);
       setProfile(res.data.contractor || profile);
-      toast.success(lang === "hi" ? "फोटो अपडेट हो गई" : "Photo updated");
+      toast.success("Photo updated");
     } catch (err) {
       toast.error(err.response?.data?.message || t("app.error"));
     } finally {
@@ -118,7 +134,7 @@ export default function ContractorEditPage() {
       const updated = res.data.contractor || profile;
       setProfile(updated);
       setPortfolio(updated?.portfolio_photos || updated?.portfolio_urls || []);
-      toast.success(lang === "hi" ? "पोर्टफोलियो अपडेट हो गया" : "Portfolio updated");
+      toast.success("Portfolio updated");
     } catch (err) {
       toast.error(err.response?.data?.message || t("app.error"));
     } finally {
@@ -164,7 +180,7 @@ export default function ContractorEditPage() {
     setSaving(true);
     try {
       await contractorAPI.setMyPortfolio(portfolio);
-      toast.success(lang === "hi" ? "पोर्टफोलियो सेव हो गया" : "Portfolio saved");
+      toast.success("Portfolio saved");
     } catch (err) {
       toast.error(err.response?.data?.message || t("app.error"));
     } finally {
@@ -184,9 +200,7 @@ export default function ContractorEditPage() {
     <div className="max-w-4xl mx-auto px-4 py-6 md:px-6">
       <section className="glass-card p-5 md:p-7">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="font-['Space_Grotesk'] text-2xl text-slate-100 font-semibold">
-            {lang === "hi" ? "प्रोफ़ाइल संपादित करें" : "Edit Profile"}
-          </h1>
+          <h1 className="font-['Space_Grotesk'] text-2xl text-slate-100 font-semibold">Edit Profile</h1>
           <button onClick={() => navigate("/contractor/dashboard")} className="btn-secondary !py-2 !px-4">
             {t("app.back")}
           </button>
@@ -195,36 +209,32 @@ export default function ContractorEditPage() {
         <div className="grid md:grid-cols-2 gap-4 mb-5">
           <label className="card text-center cursor-pointer">
             <img
-              src={profile?.photo_url || "/default-contractor.png"}
+              src={getImageUrl(profile?.photo_url || profile?.image_url)}
               alt="profile"
               className="w-24 h-24 rounded-xl object-cover mx-auto border border-white/20"
             />
-            <p className="text-xs text-slate-300 mt-3">{lang === "hi" ? "प्रोफाइल फोटो बदलें" : "Change profile photo"}</p>
+            <p className="text-xs text-slate-300 mt-3">Change profile photo</p>
             <input type="file" className="hidden" accept="image/jpeg,image/png" onChange={uploadSingle} />
           </label>
           <label className="card text-center cursor-pointer">
             <span className="inline-flex justify-center text-cyan-100">
               <Icon name="camera" className="w-8 h-8" />
             </span>
-            <p className="text-xs text-slate-300 mt-3">{lang === "hi" ? "पोर्टफोलियो फोटो जोड़ें (max 5)" : "Add portfolio photos (max 5)"}</p>
+            <p className="text-xs text-slate-300 mt-3">Add portfolio photos (max 5)</p>
             <input type="file" className="hidden" accept="image/jpeg,image/png" multiple onChange={uploadPortfolio} />
           </label>
         </div>
 
         <div className="card mb-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-100">
-              {lang === "hi" ? "मौजूदा पोर्टफोलियो" : "Current Portfolio"}
-            </h2>
+            <h2 className="text-sm font-semibold text-slate-100">Current Portfolio</h2>
             <button type="button" onClick={savePortfolioOrder} disabled={saving} className="btn-secondary !py-1.5 !px-3 text-xs">
-              {lang === "hi" ? "क्रम सेव करें" : "Save Order"}
+              Save Order
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mb-2">
-            {lang === "hi" ? "फोटो को drag करके क्रम बदलें" : "Drag photos to reorder before saving."}
-          </p>
+          <p className="text-[11px] text-slate-400 mb-2">Drag photos to reorder before saving.</p>
           {portfolio.length === 0 ? (
-            <p className="text-xs text-slate-300">{lang === "hi" ? "अभी कोई फोटो नहीं" : "No portfolio photos yet."}</p>
+            <p className="text-xs text-slate-300">No portfolio photos yet.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {portfolio.map((url, idx) => (
@@ -236,12 +246,20 @@ export default function ContractorEditPage() {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => onDropAt(idx)}
                 >
-                  <img src={url} alt={`portfolio-${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                  <img src={getImageUrl(url)} alt={`portfolio-${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
                   <div className="flex gap-1 mt-1.5">
-                    <button type="button" onClick={() => movePortfolioItem(idx, -1)} className="btn-secondary !py-1 !px-2 text-xs">↑</button>
-                    <button type="button" onClick={() => movePortfolioItem(idx, 1)} className="btn-secondary !py-1 !px-2 text-xs">↓</button>
-                    <button type="button" onClick={() => removePortfolioItem(idx)} className="btn-secondary !py-1 !px-2 text-xs text-rose-200 border-rose-300/40">
-                      {lang === "hi" ? "हटाएं" : "Remove"}
+                    <button type="button" onClick={() => movePortfolioItem(idx, -1)} className="btn-secondary !py-1 !px-2 text-xs">
+                      Up
+                    </button>
+                    <button type="button" onClick={() => movePortfolioItem(idx, 1)} className="btn-secondary !py-1 !px-2 text-xs">
+                      Down
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removePortfolioItem(idx)}
+                      className="btn-secondary !py-1 !px-2 text-xs text-rose-200 border-rose-300/40"
+                    >
+                      Remove
                     </button>
                   </div>
                 </div>
@@ -251,30 +269,52 @@ export default function ContractorEditPage() {
         </div>
 
         <form onSubmit={saveProfile} className="space-y-3">
-          <input className="input-field" value={form.category} onChange={update("category")} placeholder={lang === "hi" ? "श्रेणी" : "Category"} />
-          <textarea className="input-field resize-none" rows={4} value={form.description} onChange={update("description")} placeholder={lang === "hi" ? "विवरण" : "Description"} />
+          <input className="input-field" value={form.category} onChange={update("category")} placeholder="Category" />
+          <textarea className="input-field resize-none" rows={4} value={form.description} onChange={update("description")} placeholder="Description" />
           <div className="grid grid-cols-2 gap-3">
-            <input className="input-field" type="number" min="0" value={form.daily_rate} onChange={update("daily_rate")} placeholder={lang === "hi" ? "दैनिक दर" : "Daily rate"} />
-            <input className="input-field" type="number" min="0" value={form.experience_years} onChange={update("experience_years")} placeholder={lang === "hi" ? "अनुभव (वर्ष)" : "Experience (years)"} />
+            <input className="input-field" type="number" min="0" value={form.daily_rate} onChange={update("daily_rate")} placeholder="Daily rate" />
+            <input className="input-field" type="number" min="0" value={form.experience_years} onChange={update("experience_years")} placeholder="Experience (years)" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <input className="input-field" type="number" min="1" value={form.team_size} onChange={update("team_size")} placeholder={lang === "hi" ? "टीम साइज" : "Team size"} />
-            <input className="input-field" value={form.location_text} onChange={update("location_text")} placeholder={lang === "hi" ? "लोकेशन" : "Location"} />
+            <input className="input-field" type="number" min="1" value={form.team_size} onChange={update("team_size")} placeholder="Team size" />
+            <input className="input-field" value={form.location_text} onChange={update("location_text")} placeholder="Location text" />
           </div>
-          <input className="input-field" value={form.services} onChange={update("services")} placeholder={lang === "hi" ? "सेवाएं (comma separated)" : "Services (comma separated)"} />
+          <div className="rounded-xl border border-cyan-200/30 bg-cyan-200/10 p-3">
+            <button
+              type="button"
+              onClick={() => getLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })}
+              disabled={geoLoading}
+              className="btn-secondary !py-2 !px-3 text-xs"
+            >
+              {geoLoading ? "Capturing..." : "Use my precise GPS location"}
+            </button>
+            {geo.lat !== null && geo.lng !== null && (
+              <p className="text-xs text-cyan-100 mt-2">
+                GPS: {Number(geo.lat).toFixed(6)}, {Number(geo.lng).toFixed(6)}
+                {geo.accuracy ? ` (+/-${Math.round(geo.accuracy)}m)` : ""}
+              </p>
+            )}
+            {geoError && <p className="text-xs text-amber-200 mt-2">{geoError}</p>}
+          </div>
+          <input className="input-field" value={form.services} onChange={update("services")} placeholder="Services (comma separated)" />
           <div className="flex flex-wrap gap-4 text-sm text-slate-200 pt-1">
             <label className="inline-flex items-center gap-2">
               <input type="checkbox" checked={form.is_labour_group} onChange={update("is_labour_group")} className="accent-cyan-200" />
-              {lang === "hi" ? "लेबर ग्रुप" : "Labour Group"}
+              Labour Group
             </label>
             <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={form.is_responsibility_model} onChange={update("is_responsibility_model")} className="accent-cyan-200" />
-              {lang === "hi" ? "Responsibility Model" : "Responsibility Model"}
+              <input
+                type="checkbox"
+                checked={form.is_responsibility_model}
+                onChange={update("is_responsibility_model")}
+                className="accent-cyan-200"
+              />
+              Responsibility Model
             </label>
           </div>
 
-          <button type="submit" disabled={saving || uploading} className="btn-primary w-full !text-slate-900 mt-2">
-            {saving || uploading ? <LoadingSpinner size="sm" /> : t("app.save")}
+          <button type="submit" disabled={saving || uploading || geoLoading} className="btn-primary w-full !text-slate-900 mt-2">
+            {saving || uploading || geoLoading ? <LoadingSpinner size="sm" /> : t("app.save")}
           </button>
         </form>
       </section>

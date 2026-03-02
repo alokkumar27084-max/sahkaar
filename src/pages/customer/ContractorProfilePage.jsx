@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { contractorAPI, reviewAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
 import { WHATSAPP_URL } from "../../utils/constants";
+import { getImageUrl } from "../../utils/imageUtils";
 import StarRating from "../../components/common/StarRating";
 import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -116,7 +117,7 @@ export default function ContractorProfilePage() {
       <section className="glass-card mt-4 overflow-hidden p-0">
         <div className="relative h-56 md:h-72 bg-slate-950/60">
           {portfolio_photos[0] ? (
-            <img src={portfolio_photos[0]} alt="work" className="w-full h-full object-cover opacity-65" />
+            <img src={getImageUrl(portfolio_photos[0])} alt="work" className="w-full h-full object-cover opacity-65" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-cyan-300/30 via-indigo-400/25 to-slate-900" />
           )}
@@ -130,7 +131,7 @@ export default function ContractorProfilePage() {
           <div className="surface-panel p-4 md:p-6 mb-4">
             <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-5">
               <img
-                src={photo_url || "/default-contractor.png"}
+                src={getImageUrl(photo_url)}
                 alt={name}
                 className="w-24 h-24 rounded-2xl object-cover border-2 border-white/30"
               />
@@ -267,7 +268,7 @@ export default function ContractorProfilePage() {
                   {portfolio_photos.map((url, i) => (
                     <img
                       key={i}
-                      src={url}
+                      src={getImageUrl(url)}
                       alt={`Work ${i + 1}`}
                       className="w-full h-36 md:h-44 object-cover rounded-xl border border-white/15"
                       loading="lazy"

@@ -18,14 +18,10 @@
 
 /* Logo */
 .header-logo {
-  font-family: var(--font-heading);
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
 }
-.logo-the    { color: var(--white); }
-.logo-kedaar { color: var(--cyan); }
 
 /* Right side */
 .header-right {

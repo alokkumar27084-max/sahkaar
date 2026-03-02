@@ -1,5 +1,16 @@
 const db = require('../config/db');
 
+function parseCoordinate(value, min, max, label) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) {
+    const err = new Error(`invalid ${label}`);
+    err.status = 400;
+    throw err;
+  }
+  return parsed;
+}
+
 function contractorSelect() {
   return `
     SELECT c.*, u.name AS user_name, u.phone,
@@ -15,8 +26,8 @@ function contractorSelect() {
 exports.create = async (data) => {
   const categories = Array.isArray(data.categories) ? data.categories : (data.category ? [data.category] : []);
   const category = data.category || categories[0] || null;
-  const lat = data.lat ?? data.latitude ?? null;
-  const lng = data.lng ?? data.longitude ?? null;
+  const lat = parseCoordinate(data.lat ?? data.latitude ?? null, -90, 90, 'latitude');
+  const lng = parseCoordinate(data.lng ?? data.longitude ?? null, -180, 180, 'longitude');
 
   const res = await db.query(
     `INSERT INTO contractors (
@@ -117,8 +128,8 @@ exports.findByUserId = async (userId) => {
 exports.update = async (id, data) => {
   const categories = Array.isArray(data.categories) ? data.categories : undefined;
   const category = data.category || (categories && categories[0]) || undefined;
-  const lat = data.lat ?? data.latitude;
-  const lng = data.lng ?? data.longitude;
+  const lat = parseCoordinate(data.lat ?? data.latitude, -90, 90, 'latitude');
+  const lng = parseCoordinate(data.lng ?? data.longitude, -180, 180, 'longitude');
 
   const res = await db.query(
     `UPDATE contractors
@@ -173,6 +184,8 @@ exports.search = async ({
   labour_group,
   lat,
   lng,
+  radius_km,
+  min_radius_km,
   sort,
   page = 1,
   limit = 20,
@@ -180,11 +193,16 @@ exports.search = async ({
   const safeLimit = Math.max(1, Math.min(parseInt(limit, 10) || 20, 100));
   const safePage = Math.max(1, parseInt(page, 10) || 1);
   const offset = (safePage - 1) * safeLimit;
-  const hasCoordinates = lat !== undefined && lng !== undefined && lat !== '' && lng !== '';
-  const latValue = hasCoordinates ? parseFloat(lat) : 0;
-  const lngValue = hasCoordinates ? parseFloat(lng) : 0;
+  const latValue = Number(lat);
+  const lngValue = Number(lng);
+  const hasCoordinates = Number.isFinite(latValue) && Number.isFinite(lngValue) &&
+    latValue >= -90 && latValue <= 90 && lngValue >= -180 && lngValue <= 180;
+  const maxRadiusKm = Math.max(2, Math.min(parseFloat(radius_km) || 5, 5));
+  const minRadiusKmSafe = Math.max(0, Math.min(parseFloat(min_radius_km) || 0, maxRadiusKm));
+  const maxRadiusMeters = maxRadiusKm * 1000;
+  const minRadiusMeters = minRadiusKmSafe * 1000;
 
-  const params = [latValue, lngValue];
+  const params = [];
   const where = ['COALESCE(array_length(c.categories, 1), 0) > 0'];
 
   if (q) {
@@ -203,7 +221,40 @@ exports.search = async ({
   if (featured === true || featured === 'true') where.push('c.is_featured = true');
   if (labour_group === true || labour_group === 'true') where.push('c.is_labour_group = true');
 
-  const orderBy = sort === 'rating' ? 'c.rating DESC NULLS LAST' : 'distance_km ASC NULLS LAST';
+  let distanceSql = 'NULL::float8 AS distance_km';
+  let orderBy = sort === 'distance' ? 'c.created_at DESC' : 'c.rating DESC NULLS LAST, c.created_at DESC';
+
+  if (hasCoordinates) {
+    params.push(latValue, lngValue, maxRadiusMeters, minRadiusMeters);
+    const latIdx = params.length - 3;
+    const lngIdx = params.length - 2;
+    const maxRadiusIdx = params.length - 1;
+    const minRadiusIdx = params.length;
+
+    distanceSql = `
+      (earth_distance(
+        ll_to_earth($${latIdx}, $${lngIdx}),
+        ll_to_earth(
+          COALESCE(c.lat, c.latitude)::float8,
+          COALESCE(c.lng, c.longitude)::float8
+        )
+      ) / 1000.0) AS distance_km
+    `;
+
+    where.push('COALESCE(c.lat, c.latitude) IS NOT NULL');
+    where.push('COALESCE(c.lng, c.longitude) IS NOT NULL');
+    where.push(`
+      earth_box(ll_to_earth($${latIdx}, $${lngIdx}), $${maxRadiusIdx}) @>
+      ll_to_earth(COALESCE(c.lat, c.latitude)::float8, COALESCE(c.lng, c.longitude)::float8)
+    `);
+    where.push(`
+      earth_distance(
+        ll_to_earth($${latIdx}, $${lngIdx}),
+        ll_to_earth(COALESCE(c.lat, c.latitude)::float8, COALESCE(c.lng, c.longitude)::float8)
+      ) BETWEEN $${minRadiusIdx} AND $${maxRadiusIdx}
+    `);
+    orderBy = 'distance_km ASC, c.rating DESC NULLS LAST, c.created_at DESC';
+  }
 
   params.push(safeLimit, offset);
   const limitIdx = params.length - 1;
@@ -215,17 +266,11 @@ exports.search = async ({
       COALESCE(c.category, c.categories[1], NULL) AS category,
       COALESCE(c.review_count, c.reviews_count, 0) AS review_count,
       COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos,
-      (
-        6371 * acos(
-          cos(radians($1)) * cos(radians(COALESCE(c.lat, c.latitude)))
-          * cos(radians(COALESCE(c.lng, c.longitude)) - radians($2))
-          + sin(radians($1)) * sin(radians(COALESCE(c.lat, c.latitude)))
-        )
-      ) AS distance_km
+      ${distanceSql}
     FROM contractors c
     JOIN users u ON u.id = c.user_id
     WHERE ${where.join(' AND ')}
-    ORDER BY ${orderBy}, c.created_at DESC
+    ORDER BY ${orderBy}
     LIMIT $${limitIdx} OFFSET $${offsetIdx}
   `;
 

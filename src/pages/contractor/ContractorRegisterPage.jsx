@@ -3,7 +3,7 @@
 // Step 2: Services & pricing (description, daily rate, experience)
 // Step 3: Portfolio photos upload
 // Step 4: ID proof & final submission
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
@@ -43,7 +43,13 @@ export default function ContractorRegisterPage() {
     location_text: "",
   });
 
-  const { lat, lng, request: getLocation, error: geoError } = useGeolocation();
+  const { lat, lng, accuracy, request: getLocation, error: geoError, loading: geoLoading } = useGeolocation();
+
+  useEffect(() => {
+    if (step === 4 && (lat === null || lng === null)) {
+      getLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    }
+  }, [step, lat, lng, getLocation]);
 
   const update = (field) => (e) => {
     const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -66,6 +72,7 @@ export default function ContractorRegisterPage() {
     }
     if (s === 4) {
       if (!form.location_text.trim())   errs.location_text = t("err.required");
+      if (lat === null || lng === null) errs.gps = lang === "hi" ? "GPS लोकेशन आवश्यक है" : "Precise GPS location is required";
     }
     return errs;
   }
@@ -113,8 +120,8 @@ export default function ContractorRegisterPage() {
         is_responsibility_model: form.is_responsibility_model,
         services:              form.services.split(",").map(s => s.trim()).filter(Boolean),
         location_text:         form.location_text,
-        latitude:              lat || undefined,
-        longitude:             lng || undefined,
+        latitude:              lat !== null ? Number(lat) : undefined,
+        longitude:             lng !== null ? Number(lng) : undefined,
       });
       const createRes = await contractorAPI.create(profileData);
       const contractorId = createRes.data.contractor?.id;
@@ -372,9 +379,20 @@ export default function ContractorRegisterPage() {
                   className={`input-field ${errors.location_text ? "border-red-400":""}`} />
                 {errors.location_text && <p className="text-red-300 text-xs mt-1">{errors.location_text}</p>}
                 <div className="mt-2">
-                  <button type="button" onClick={getLocation} className="btn-secondary !py-2 !px-3 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => getLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })}
+                    className="btn-secondary !py-2 !px-3 text-xs"
+                  >
                     {lang === "hi" ? "मेरी GPS लोकेशन लें" : "Use my GPS location"}
                   </button>
+                  {lat !== null && lng !== null && (
+                    <p className="text-emerald-200 text-xs mt-1">
+                      GPS: {Number(lat).toFixed(6)}, {Number(lng).toFixed(6)}
+                      {accuracy ? ` (+/-${Math.round(accuracy)}m)` : ""}
+                    </p>
+                  )}
+                  {errors.gps && <p className="text-red-300 text-xs mt-1">{errors.gps}</p>}
                   {geoError && <p className="text-amber-200 text-xs mt-1">{geoError}</p>}
                 </div>
               </div>
@@ -402,7 +420,7 @@ export default function ContractorRegisterPage() {
                   </span>
                 </p>
               </div>
-              <button type="submit" disabled={loading} className="btn-primary w-full text-sm py-3">
+              <button type="submit" disabled={loading || geoLoading} className="btn-primary w-full text-sm py-3">
                 {loading ? <LoadingSpinner size="sm" /> : t("creg.submit")}
               </button>
             </form>

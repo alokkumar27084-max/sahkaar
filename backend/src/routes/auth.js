@@ -20,6 +20,7 @@ router.post('/verify-otp', controller.verifyOtp);
 
 // Auth helpers
 router.get('/me', controller.me);
+router.put('/location', requireAuth, controller.updateMyLocation);
 router.post('/logout', requireAuth, controller.logout);
 
 module.exports = router;

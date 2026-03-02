@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { ThekedaarLogo } from '../common/ThekedaarLogo';
 import './Header.css';
 
 export default function Header() {
@@ -40,8 +41,7 @@ export default function Header() {
 
         {/* ── LOGO ── */}
         <Link to="/" className="header-logo">
-          <span className="logo-the">The</span>
-          <span className="logo-kedaar">kedaar</span>
+          <ThekedaarLogo className="h-11 w-11" />
         </Link>
 
         {/* ── RIGHT SIDE ── */}

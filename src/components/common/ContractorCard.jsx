@@ -7,6 +7,7 @@ import Icon from "./Icon";
 import { WHATSAPP_URL } from "../../utils/constants";
 import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
+import { getImageUrl } from "../../utils/imageUtils";
 
 export default function ContractorCard({ contractor }) {
   const { t, lang } = useLanguage();
@@ -46,32 +47,32 @@ export default function ContractorCard({ contractor }) {
   }
 
   return (
-    <article className={`card hover-lift fade-rise ${is_featured ? "ring-1 ring-amber-200/55" : ""}`}>
-      <div className="flex gap-3 md:gap-4">
+    <article className={`bg-white border rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(30,58,138,0.12)] ${is_featured ? "border-[#06B6D4]" : "border-[#E5E7EB]"}`}>
+      <div className="flex gap-4">
         <div className="relative flex-shrink-0">
           <img
-            src={photo_url || "/default-contractor.png"}
+            src={getImageUrl(photo_url)}
             alt={resolvedName}
-            className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover border border-white/20"
+            className="w-20 h-20 rounded-full object-cover border-[3px] border-[#06B6D4]"
             loading="lazy"
             onError={(e) => {
               e.target.src = "/default-contractor.png";
             }}
           />
-          <div className="absolute -top-1 -right-1 bg-slate-950/75 border border-white/20 rounded-full px-2 py-0.5 text-[10px] text-slate-100">
-            {is_available ? (lang === "hi" ? "उपलब्ध" : "Available") : (lang === "hi" ? "व्यस्त" : "Busy")}
-          </div>
+          <span className={`absolute -bottom-1 -right-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${is_available ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+            {is_available ? (lang === "hi" ? "??????" : "Available") : lang === "hi" ? "??????" : "Busy"}
+          </span>
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="font-semibold text-slate-100 text-base md:text-lg leading-tight truncate">{resolvedName}</h3>
-              <p className="text-xs text-slate-300 capitalize mt-0.5">{resolvedCategory?.replace("_", " ")}</p>
+              <h3 className="font-['Poppins'] text-base md:text-lg text-[#111827] font-semibold leading-tight truncate">{resolvedName}</h3>
+              <p className="text-xs text-[#374151] capitalize mt-0.5">{resolvedCategory?.replace("_", " ")}</p>
             </div>
             {daily_rate && (
-              <span className="text-xs font-semibold text-cyan-200 whitespace-nowrap surface-panel !rounded-full px-2 py-1">
-                ₹{Number(daily_rate || 0).toLocaleString("en-IN")}
+              <span className="text-xs font-semibold text-[#1E3A8A] bg-slate-100 rounded-full px-2 py-1 whitespace-nowrap">
+                ?{Number(daily_rate || 0).toLocaleString("en-IN")}
                 {t("profile.per_day")}
               </span>
             )}
@@ -79,27 +80,27 @@ export default function ContractorCard({ contractor }) {
 
           <div className="flex items-center gap-2 mt-2">
             <StarRating value={Math.round(Number(rating) || 0)} readonly size="text-sm" />
-            <span className="text-xs text-slate-300">
-              {(Number(rating) || 0).toFixed(1)} ({resolvedReviewCount} {t("search.reviews")})
+            <span className="text-xs text-[#6B7280]">
+              {(Number(rating) || 0).toFixed(1)} ({resolvedReviewCount})
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 mt-2 text-xs text-slate-300">
+          <div className="flex flex-wrap gap-1.5 mt-2 text-xs text-[#374151]">
             {distance_km != null && (
-              <span className="inline-flex items-center gap-1 surface-panel !rounded-full px-2 py-1">
-                <Icon name="location" className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">
+                <Icon name="location" className="w-3.5 h-3.5 text-[#06B6D4]" />
                 {(Number(distance_km) || 0).toFixed(1)} {t("search.km_away")}
               </span>
             )}
             {experience_years > 0 && (
-              <span className="inline-flex items-center gap-1 surface-panel !rounded-full px-2 py-1">
-                <Icon name="trophy" className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">
+                <Icon name="trophy" className="w-3.5 h-3.5 text-[#06B6D4]" />
                 {experience_years} {t("profile.years")}
               </span>
             )}
             {is_labour_group && team_size > 0 && (
-              <span className="inline-flex items-center gap-1 surface-panel !rounded-full px-2 py-1">
-                <Icon name="worker" className="w-3.5 h-3.5" />
+              <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">
+                <Icon name="worker" className="w-3.5 h-3.5 text-[#06B6D4]" />
                 {team_size} {t("profile.workers")}
               </span>
             )}
@@ -114,12 +115,12 @@ export default function ContractorCard({ contractor }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-4 pt-1 border-t glass-divider">
+      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-200">
         <a
           href={WHATSAPP_URL(resolvedPhone, resolvedName)}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-primary text-sm !py-2.5 !px-3 !text-slate-900"
+          className="btn-outline-cyan text-sm !py-2.5 !px-3"
           onClick={handleWhatsAppTap}
         >
           <span className="inline-flex items-center gap-1.5">
@@ -127,10 +128,11 @@ export default function ContractorCard({ contractor }) {
             {t("search.contact")}
           </span>
         </a>
-        <Link to={`/contractor/${id}`} className="btn-secondary text-sm !py-2.5 !px-3 text-center">
+        <Link to={`/contractor/${id}`} className="btn-primary text-sm !py-2.5 !px-3 text-center">
           {t("search.view_profile")}
         </Link>
       </div>
     </article>
   );
 }
+
