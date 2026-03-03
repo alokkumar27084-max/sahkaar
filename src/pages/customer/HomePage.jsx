@@ -1,13 +1,51 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { CATEGORIES } from "../../utils/constants";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Icon from "../../components/common/Icon";
 import { useAuth } from "../../context/AuthContext";
+import { FiTrendingUp, FiSearch, FiArrowRight, FiStar, FiUsers, FiCheckCircle, FiMapPin } from "react-icons/fi";
+
+/* ── Animation Variants ── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+};
+
+const stagger = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 120, damping: 20 } }
+};
+
+/* ── Animated Counter ── */
+function AnimatedCounter({ target, suffix = "", duration = 2000 }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) { setCount(target); clearInterval(timer); return; }
+      setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(timer);
+  }, [isInView, target, duration]);
+
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+}
 
 export default function HomePage() {
   const { t, lang } = useLanguage();
@@ -17,56 +55,31 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [showTrending, setShowTrending] = useState(false);
   const { request: getLocation, lat, lng } = useGeolocation();
 
+  const trendingSearches = ["Plumber", "Electrician", "Civil Contractor", "Carpenter", "Painter"];
+
   useEffect(() => {
-    if (user?.role === "admin") {
-      navigate("/admin/dashboard", { replace: true });
-    }
+    if (user?.role === "admin") navigate("/admin/dashboard", { replace: true });
   }, [user, navigate]);
 
   useEffect(() => {
-    contractorAPI
-      .getFeatured()
+    contractorAPI.getFeatured()
       .then((res) => setFeatured(res.data.contractors || []))
       .catch(() => setFeatured([]))
       .finally(() => setFeaturedLoading(false));
   }, []);
 
   useEffect(() => {
-    const items = Array.from(document.querySelectorAll("[data-reveal]"));
-    if (!items.length) return undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.14, rootMargin: "0px 0px -30px 0px" }
-    );
-
-    items.forEach((item) => observer.observe(item));
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setActiveTestimonial((prev) => (prev + 1) % 3);
-    }, 4200);
-    return () => window.clearInterval(timer);
+    const timer = setInterval(() => setActiveTestimonial((prev) => (prev + 1) % 3), 5000);
+    return () => clearInterval(timer);
   }, []);
 
   function handleSearch(e) {
     e.preventDefault();
     const params = new URLSearchParams({ q: query });
-    if (lat && lng) {
-      params.set("lat", lat);
-      params.set("lng", lng);
-    }
+    if (lat && lng) { params.set("lat", lat); params.set("lng", lng); }
     navigate(`/search?${params}`);
   }
 
@@ -74,259 +87,414 @@ export default function HomePage() {
     navigate(`/search?category=${categoryId}`);
   }
 
-  const testimonials = useMemo(
-    () => [
-      {
-        quote:
-          lang === "hi"
-            ? "Hamne 24 ghante ke andar verified contractor hire kiya. Response aur quality dono excellent the."
-            : "We hired a verified contractor in less than 24 hours. Response time and work quality were excellent.",
-        name: "Rohit Mehta",
-        role: lang === "hi" ? "Homeowner" : "Homeowner",
-      },
-      {
-        quote:
-          lang === "hi"
-            ? "Thekedaar ne meri contractor team ko serious clients dilaye. Conversion clearly improve hua."
-            : "Thekedaar helped my crew connect with serious clients. Our lead conversion improved significantly.",
-        name: "Anil Chauhan",
-        role: lang === "hi" ? "Contractor Partner" : "Contractor Partner",
-      },
-      {
-        quote:
-          lang === "hi"
-            ? "Filters aur profile comparison se sahi professional choose karna bahut easy ho gaya."
-            : "Search filters and profile comparison made selecting the right professional very easy.",
-        name: "Sneha Agrawal",
-        role: lang === "hi" ? "Small Business Owner" : "Small Business Owner",
-      },
-    ],
-    [lang]
-  );
+  const stats = [
+    { icon: <FiUsers />, value: 500, suffix: "+", label: "Contractors" },
+    { icon: <FiStar />, value: 10, suffix: "k+", label: "Projects Done" },
+    { icon: <FiCheckCircle />, value: 98, suffix: "%", label: "Satisfaction" },
+    { icon: <FiMapPin />, value: 50, suffix: "+", label: "Cities" }
+  ];
+
+  const testimonials = useMemo(() => [
+    {
+      quote: lang === "hi"
+        ? "24 ghante mein verified contractor mil gaya. Quality aur response dono laajawab the."
+        : "We hired a verified contractor in under 24 hours. Response time and quality were outstanding.",
+      name: "Shivang Singh", role: "Homeowner", avatar: "RM"
+    },
+    {
+      quote: lang === "hi"
+        ? "Thekedaar ne serious clients connect kiye. Lead conversion clearly improve hua."
+        : "Thekedaar connected us with serious clients. Our lead conversion improved significantly.",
+      name: "Alok Kumar", role: "Contractor Partner", avatar: "AC"
+    },
+    {
+      quote: lang === "hi"
+        ? "Filters aur profile comparison se right professional choose karna bahut easy ho gaya."
+        : "Search filters and profile comparison made choosing the right professional incredibly easy.",
+      name: "Mudit Kalya", role: "Business Owner", avatar: "SA"
+    },
+  ], [lang]);
 
   return (
-    <main id="main-content" className="pb-14">
-      <section id="home" className="min-h-[70vh] md:min-h-[80vh] lg:min-h-screen relative overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src="https://images.pexels.com/photos/3184357/pexels-photo-3184357.jpeg?auto=compress&cs=tinysrgb&w=1920"
-            alt="Happy customers and service professionals"
-            className="w-full h-full object-cover"
+    <main id="main-content" className="overflow-hidden">
+
+      {/* ═══════ HERO ═══════ */}
+      <section id="home" className="relative min-h-[85vh] md:min-h-screen flex items-center">
+        {/* Background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-dark via-navy to-navy-light" />
+          {/* Animated orbs */}
+          <motion.div
+            animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[15%] left-[10%] w-[300px] h-[300px] rounded-full bg-primary/20 blur-[100px]"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1E3A8A]/90 to-[#06B6D4]/70" />
+          <motion.div
+            animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] rounded-full bg-accent/15 blur-[120px]"
+          />
+          <motion.div
+            animate={{ x: [0, 15, 0], y: [0, 15, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-[50%] left-[50%] w-[200px] h-[200px] rounded-full bg-primary/10 blur-[80px]"
+          />
+          {/* Grid overlay */}
+          <div className="absolute inset-0 opacity-[0.03]" style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
+            backgroundSize: "60px 60px"
+          }} />
         </div>
 
-        <span className="hero-orb w-28 h-28 bg-cyan-300/45 left-[7%] top-[18%]" />
-        <span className="hero-orb w-40 h-40 bg-blue-200/35 right-[8%] bottom-[16%]" style={{ animationDelay: "1.8s" }} />
+        <div className="relative z-30 max-w-[1400px] mx-auto px-4 md:px-6 pt-20 md:pt-28 pb-20 w-full">
+          <motion.div
+            initial="hidden"
+            animate="show"
+            variants={stagger}
+            className="max-w-3xl"
+          >
+            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-accent-light text-sm font-medium mb-6 backdrop-blur">
+              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+              {lang === "hi" ? "Trust-first contractor network" : "Trust-first contractor network"}
+            </motion.div>
 
-        <div className="relative z-10 max-w-[1400px] mx-auto px-4 md:px-6 pt-16 md:pt-24 lg:pt-28 pb-16">
-          <div className="max-w-3xl reveal-item is-visible" data-reveal>
-            <p className="text-cyan-100 text-sm md:text-base font-medium tracking-wide mb-4">
-              {lang === "hi" ? "Trust-first contractor discovery platform" : "Trust-first contractor discovery platform"}
-            </p>
-            <h1 className="font-['Poppins'] text-white font-extrabold leading-[1.08] text-[2.2rem] md:text-[3.4rem] lg:text-[4rem] mb-4">
-              Connect. Build. Grow.
-            </h1>
-            <p className="text-white/85 text-base md:text-xl max-w-2xl leading-relaxed mb-7">
-              Find verified contractors and business partners through powerful search, trusted ratings, and clear service profiles.
-            </p>
+            <motion.h1 variants={fadeUp} className="font-display text-hero text-white mb-6">
+              Find & Hire{" "}
+              <span className="bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
+                Verified
+              </span>{" "}
+              Contractors
+            </motion.h1>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <motion.p variants={fadeUp} className="text-white/70 text-hero-sub max-w-2xl mb-8">
+              Connect with trusted professionals through powerful search, verified ratings, and transparent service profiles.
+            </motion.p>
+
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => navigate("/search")}
-                className="h-[52px] px-7 rounded-xl bg-[#06B6D4] text-[#1E3A8A] font-semibold hover-glow btn-shimmer"
+                className="h-[52px] px-7 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white font-semibold shadow-btn btn-shimmer hover:shadow-btn-hover hover:-translate-y-0.5 transition-all"
               >
                 Explore Services
+                <FiArrowRight className="inline ml-2" />
               </button>
               <button
                 onClick={() => navigate("/register/contractor")}
-                className="h-[52px] px-7 rounded-xl border-2 border-white text-white font-semibold hover-glow"
+                className="h-[52px] px-7 rounded-xl border-2 border-white/20 text-white font-semibold hover:bg-white/10 transition-all backdrop-blur"
               >
                 Join as Partner
               </button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <form
+          {/* Search Bar */}
+          <motion.form
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             onSubmit={handleSearch}
-            className="mt-10 bg-white border border-slate-200 rounded-xl max-w-4xl shadow-[0_10px_36px_rgba(15,23,42,0.2)] overflow-hidden reveal-item"
-            data-reveal
-            style={{ "--reveal-delay": "80ms" }}
+            className="mt-12 glass rounded-2xl max-w-4xl shadow-glass-lg relative z-50"
           >
-            <div className="grid md:grid-cols-[1fr_170px_130px]">
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search contractors, services, or location..."
-                className="input-field border-0 rounded-none h-14"
-              />
+            <div className="grid md:grid-cols-[1fr_auto_auto]">
+              <div className="relative">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 w-5 h-5" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setShowTrending(true)}
+                  onBlur={() => setTimeout(() => setShowTrending(false), 200)}
+                  placeholder="Search contractors, services, or location..."
+                  className="w-full h-14 pl-12 pr-4 bg-transparent text-white placeholder-white/40 border-0 outline-none text-[15px]"
+                />
+                <AnimatePresence>
+                  {showTrending && !query && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-[var(--color-surface)] rounded-xl shadow-glass-lg border border-[var(--color-border)] z-[999] max-h-[280px] overflow-y-auto"
+                    >
+                      <div className="px-4 py-3 border-b border-[var(--color-border)]">
+                        <p className="text-[11px] font-bold text-[var(--color-muted)] uppercase tracking-wider flex items-center gap-2">
+                          <FiTrendingUp size={12} /> Trending
+                        </p>
+                      </div>
+                      <div className="p-1.5">
+                        {trendingSearches.map(term => (
+                          <button
+                            key={term}
+                            type="button"
+                            onClick={() => { setQuery(term); setShowTrending(false); }}
+                            className="w-full text-left px-3 py-2.5 text-sm text-[var(--color-body)] hover:bg-[var(--color-border)] rounded-lg transition-colors flex items-center gap-3"
+                          >
+                            <FiSearch className="w-3.5 h-3.5 text-[var(--color-muted)]" />
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               <button
                 type="button"
                 onClick={getLocation}
-                className="h-14 px-3 border-t md:border-t-0 md:border-l border-slate-200 inline-flex items-center justify-center gap-2 text-slate-700 font-medium"
+                className="h-14 px-5 border-t md:border-t-0 md:border-l border-white/10 text-white/60 hover:text-white font-medium flex items-center justify-center gap-2 transition-colors"
               >
-                <Icon name="location" className="w-4 h-4 text-[#06B6D4]" />
-                Location
+                <FiMapPin className="w-4 h-4" /> Location
               </button>
-              <button type="submit" className="h-14 bg-[#06B6D4] text-white font-semibold">
+              <button type="submit" className="h-14 px-8 bg-gradient-to-r from-primary to-accent text-white font-semibold rounded-r-2xl md:rounded-l-none hover:opacity-90 transition-opacity">
                 {t("app.search")}
               </button>
             </div>
-          </form>
+          </motion.form>
 
-          <div className="mt-10 flex justify-center reveal-item" data-reveal style={{ "--reveal-delay": "140ms" }}>
-            <a href="/#services" className="inline-flex flex-col items-center text-white/90 text-xs uppercase tracking-[0.16em]">
+          {/* Scroll indicator */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2 }}
+            className="mt-14 flex justify-center"
+          >
+            <a href="/#services" className="inline-flex flex-col items-center text-white/50 text-[11px] uppercase tracking-[0.2em] hover:text-white/80 transition-colors">
               Scroll
-              <span className="mt-2 w-5 h-8 rounded-full border border-white/70 inline-flex items-start justify-center p-1">
+              <span className="mt-2 w-5 h-8 rounded-full border border-white/30 inline-flex items-start justify-center p-1">
                 <span className="hero-scroll-dot" />
               </span>
             </a>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      <section id="services" className="max-w-[1400px] mx-auto px-4 md:px-6 py-12 md:py-16">
-        <div className="mb-7">
-          <h2 className="section-title">Core Services</h2>
-          <p className="section-subtitle mt-2">Choose a category and connect with verified contractors in minutes.</p>
-        </div>
+      {/* ═══════ STATS ═══════ */}
+      <section className="relative -mt-16 z-20 max-w-[1200px] mx-auto px-4 md:px-6">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={stagger}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+        >
+          {stats.map((stat, i) => (
+            <motion.div
+              key={i}
+              variants={cardVariant}
+              className="glass-card p-6 text-center group"
+            >
+              <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+                {stat.icon}
+              </div>
+              <p className="font-display text-3xl md:text-4xl font-bold text-[var(--color-heading)]">
+                <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+              </p>
+              <p className="text-sm text-[var(--color-muted)] mt-1 font-medium">{stat.label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {CATEGORIES.slice(0, 8).map((cat, index) => (
-            <button
+      {/* ═══════ SERVICES ═══════ */}
+      <section id="services" className="max-w-[1400px] mx-auto px-4 md:px-6 py-20 md:py-28">
+        <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="mb-10">
+          <motion.h2 variants={fadeUp} className="section-title">Core Services</motion.h2>
+          <motion.p variants={fadeUp} className="section-subtitle mt-3">Choose a category and connect with verified contractors in minutes.</motion.p>
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-80px" }}
+          variants={stagger}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          {CATEGORIES.slice(0, 7).map((cat) => (
+            <motion.button
+              variants={cardVariant}
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
-              className="text-left bg-white border border-[#E5E7EB] rounded-2xl p-7 transition-all duration-300 hover:-translate-y-2 hover:border-[#06B6D4] hover:shadow-[0_20px_40px_rgba(30,58,138,0.15)] reveal-item hover-glow"
-              data-reveal
-              style={{ "--reveal-delay": `${index * 45}ms` }}
+              whileHover={{ y: -6 }}
+              className="text-left glass-card p-7 group"
             >
-              <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-xl bg-cyan-50 text-[#06B6D4]">
-                <Icon name={cat.icon} className="w-7 h-7" />
+              <div className="mb-4 w-12 h-12 rounded-xl bg-[var(--color-primary)]/8 text-[var(--color-primary)] flex items-center justify-center group-hover:scale-110 group-hover:bg-[var(--color-primary)]/15 transition-all">
+                <Icon name={cat.icon} className="w-6 h-6" />
               </div>
-              <p className="font-['Poppins'] text-[1.05rem] font-semibold text-[#111827]">{t(cat.key)}</p>
-              <p className="text-sm text-[#374151] mt-1 line-clamp-3">Compare ratings and contact professionals quickly.</p>
-            </button>
+              <p className="font-display text-base font-semibold text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">{t(cat.key)}</p>
+              <p className="text-sm text-[var(--color-muted)] mt-1.5 leading-relaxed">{cat.subtitle}</p>
+              <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity">
+                Explore <FiArrowRight size={12} />
+              </div>
+            </motion.button>
           ))}
-        </div>
+          {/* Explore All Services card */}
+          <motion.button
+            variants={cardVariant}
+            onClick={() => navigate("/search")}
+            whileHover={{ y: -6 }}
+            className="text-left glass-card p-7 group bg-gradient-to-br from-[var(--color-primary)]/5 to-[var(--color-accent)]/5 border-dashed border-[var(--color-primary)]/20 hover:border-[var(--color-primary)]/40"
+          >
+            <div className="mb-4 w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white flex items-center justify-center group-hover:scale-110 transition-all">
+              <FiArrowRight className="w-6 h-6" />
+            </div>
+            <p className="font-display text-base font-semibold text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">Explore All Services</p>
+            <p className="text-sm text-[var(--color-muted)] mt-1.5 leading-relaxed">Browse all categories and discover more professionals.</p>
+            <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] group-hover:gap-2 transition-all">
+              View All <FiArrowRight size={12} />
+            </div>
+          </motion.button>
+        </motion.div>
       </section>
 
-      <section className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 md:py-6 reveal-item" data-reveal>
-        <div className="mb-6">
-          <h2 className="section-title">{t("home.featured")}</h2>
-          <p className="section-subtitle mt-2">Curated high-trust contractor profiles.</p>
-        </div>
+      {/* ═══════ FEATURED ═══════ */}
+      <section className="max-w-[1400px] mx-auto px-4 md:px-6 pb-20">
+        <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="mb-8">
+          <motion.h2 variants={fadeUp} className="section-title">{t("home.featured")}</motion.h2>
+          <motion.p variants={fadeUp} className="section-subtitle mt-3">Curated high-trust contractor profiles.</motion.p>
+        </motion.div>
+
         {featuredLoading ? (
-          <div className="py-14">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : featured.length > 0 ? (
           <div className="grid lg:grid-cols-2 gap-4">
-            {featured.slice(0, 4).map((c) => (
-              <ContractorCard key={c.id} contractor={c} />
+            {[1, 2, 3, 4].map(n => (
+              <div key={n} className="glass-card p-5">
+                <div className="flex gap-4">
+                  <div className="skeleton w-[72px] h-[72px] rounded-full shrink-0" />
+                  <div className="flex-1 space-y-3 pt-1">
+                    <div className="skeleton h-5 w-3/4 rounded-md" />
+                    <div className="skeleton h-4 w-1/2 rounded-md" />
+                    <div className="flex gap-2">
+                      <div className="skeleton h-6 w-20 rounded-full" />
+                      <div className="skeleton h-6 w-16 rounded-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
+        ) : featured.length > 0 ? (
+          <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="grid lg:grid-cols-2 gap-4">
+            {featured.slice(0, 4).map((c) => (
+              <motion.div variants={cardVariant} key={c.id}>
+                <ContractorCard contractor={c} />
+              </motion.div>
+            ))}
+          </motion.div>
         ) : (
-          <p className="text-slate-500 text-sm py-8 text-center">No featured contractors yet.</p>
+          <p className="text-[var(--color-muted)] text-sm py-12 text-center">No featured contractors yet.</p>
         )}
       </section>
 
-      <section id="about" className="max-w-[1400px] mx-auto px-4 md:px-6 py-12 md:py-16">
-        <div className="max-w-[800px] mx-auto text-center mb-8">
-          <h2 className="section-title">What People Say</h2>
-          <p className="section-subtitle mt-2">Trust-building testimonials from customers and contractors.</p>
-        </div>
+      {/* ═══════ TESTIMONIALS ═══════ */}
+      <section id="about" className="max-w-[1400px] mx-auto px-4 md:px-6 py-20 md:py-28">
+        <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="text-center mb-12">
+          <motion.h2 variants={fadeUp} className="section-title">What People Say</motion.h2>
+          <motion.p variants={fadeUp} className="section-subtitle mt-3 mx-auto">Trust-building testimonials from customers and contractors.</motion.p>
+        </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="grid md:grid-cols-3 gap-5">
           {testimonials.map((item, index) => (
-            <article
+            <motion.article
+              variants={cardVariant}
               key={item.name}
-              className={`bg-white rounded-[20px] border border-slate-200 shadow-[0_4px_24px_rgba(0,0,0,0.07)] p-6 transition-all duration-500 hover-glow ${
-                activeTestimonial === index ? "md:-translate-y-1 md:shadow-[0_18px_40px_rgba(30,58,138,0.22)] border-[#06B6D4]" : ""
-              }`}
+              className={`glass-card p-7 transition-all duration-500 ${activeTestimonial === index ? "ring-2 ring-[var(--color-primary)]/30 shadow-glow" : ""
+                }`}
             >
-              <div className="text-[#06B6D4] mb-3 text-2xl">"</div>
-              <p className="text-[#374151] italic leading-relaxed text-[15px]">{item.quote}</p>
-              <div className="mt-5">
-                <p className="font-['Poppins'] text-[#111827] font-semibold">{item.name}</p>
-                <p className="text-sm text-[#6B7280]">{item.role}</p>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center text-white text-sm font-bold">
+                  {item.avatar}
+                </div>
+                <div>
+                  <p className="font-display text-[var(--color-heading)] font-semibold text-sm">{item.name}</p>
+                  <p className="text-xs text-[var(--color-muted)]">{item.role}</p>
+                </div>
               </div>
-            </article>
+              <p className="text-[var(--color-body)] leading-relaxed text-[15px]">"{item.quote}"</p>
+              <div className="flex gap-0.5 mt-4 text-amber-400">
+                {[...Array(5)].map((_, i) => <FiStar key={i} size={14} fill="currentColor" />)}
+              </div>
+            </motion.article>
           ))}
-        </div>
+        </motion.div>
       </section>
 
-      <section className="max-w-[1400px] mx-auto px-4 md:px-6 pb-12 reveal-item" data-reveal>
-        <div className="rounded-3xl bg-gradient-to-r from-[#1E3A8A] to-[#0E7490] p-8 md:p-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6 hover-glow">
-          <div>
-            <h3 className="font-['Poppins'] text-white text-3xl md:text-[2.25rem] font-bold">Ready to grow with us?</h3>
-            <p className="text-white/80 mt-2">Connect with top contractors today.</p>
+      {/* ═══════ CTA ═══════ */}
+      <section className="max-w-[1400px] mx-auto px-4 md:px-6 pb-20">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="rounded-3xl bg-gradient-to-br from-navy via-navy-light to-primary-dark p-10 md:p-16 relative overflow-hidden"
+        >
+          {/* Accent orbs */}
+          <div className="absolute top-0 right-0 w-[300px] h-[300px] rounded-full bg-primary/10 blur-[100px]" />
+          <div className="absolute bottom-0 left-0 w-[200px] h-[200px] rounded-full bg-accent/10 blur-[80px]" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div>
+              <h3 className="font-display text-white text-3xl md:text-4xl font-bold">Ready to grow with us?</h3>
+              <p className="text-white/60 mt-3 text-lg max-w-md">Join thousands of happy customers and trusted contractors on our platform.</p>
+            </div>
+            <button
+              onClick={() => navigate("/search")}
+              className="h-[52px] px-8 rounded-xl bg-white text-navy font-semibold self-start md:self-auto btn-shimmer hover:-translate-y-1 transition-all shadow-lg"
+            >
+              Get Started <FiArrowRight className="inline ml-1" />
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/search")}
-            className="h-[52px] px-8 rounded-full bg-white text-[#1E3A8A] font-semibold self-start md:self-auto btn-shimmer hover-glow"
-          >
-            Contact Today
-          </button>
-        </div>
+        </motion.div>
       </section>
 
-      <footer id="contact" className="bg-[#0F172A] text-white/80 reveal-item" data-reveal>
-        <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* ═══════ FOOTER ═══════ */}
+      <footer id="contact" className="bg-navy-dark text-white/60 border-t border-white/5">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
-            <p className="font-['Poppins'] text-white text-2xl font-bold">Thekedaar</p>
-            <p className="text-sm mt-3 leading-relaxed">Trusted contractor network for businesses and customers.</p>
+            <p className="font-display text-white text-xl font-bold mb-1">Thekedaar</p>
+            <p className="text-sm leading-relaxed">India's trusted contractor discovery platform for businesses and homeowners.</p>
           </div>
-
           <div>
-            <p className="font-['Poppins'] text-white font-semibold mb-3">Quick Links</p>
-            <div className="grid gap-2 text-sm">
-              <a href="/#home">Home</a>
-              <a href="/#services">Services</a>
-              <a href="/#about">About</a>
-              <a href="/#contact">Contact</a>
+            <p className="font-display text-white font-semibold text-sm mb-4 uppercase tracking-wider">Quick Links</p>
+            <div className="grid gap-2.5 text-sm">
+              {["Home", "Services", "About", "Contact"].map(l => (
+                <a key={l} href={`/#${l.toLowerCase()}`} className="hover:text-white transition-colors">{l}</a>
+              ))}
             </div>
           </div>
-
           <div>
-            <p className="font-['Poppins'] text-white font-semibold mb-3">Contact</p>
-            <div className="grid gap-2 text-sm">
-              <p>hello@thekedaar.com</p>
-              <p>+91 90000 00000</p>
-              <p>Bhopal, Madhya Pradesh</p>
-              <p>Mon - Sat, 9:00 AM - 7:00 PM</p>
+            <p className="font-display text-white font-semibold text-sm mb-4 uppercase tracking-wider">Contact</p>
+            <div className="grid gap-2.5 text-sm">
+              <p>apkathekedaar@gmail.com</p>
+              <p>+91 8303959728</p>
+              <p>Manit Bhopal, Madhya Pradesh</p>
+              <p>Mon – Sat, 9 AM – 7 PM</p>
             </div>
           </div>
-
           <div>
-            <p className="font-['Poppins'] text-white font-semibold mb-3">Social</p>
+            <p className="font-display text-white font-semibold text-sm mb-4 uppercase tracking-wider">Social</p>
             <div className="flex gap-2 flex-wrap">
               {[
                 { label: "LinkedIn", href: "https://www.linkedin.com" },
                 { label: "X", href: "https://x.com" },
                 { label: "Instagram", href: "https://www.instagram.com" },
                 { label: "WhatsApp", href: "https://wa.me/919000000000" },
-              ].map((social) => (
-                <a key={social.label} href={social.href} className="px-3 py-2 rounded-lg border border-[#1E3A8A] text-xs hover:border-[#06B6D4]">
-                  {social.label}
+              ].map((s) => (
+                <a key={s.label} href={s.href} className="px-3 py-2 rounded-lg border border-white/10 text-xs hover:border-[var(--color-primary)] hover:text-white transition-all">
+                  {s.label}
                 </a>
               ))}
             </div>
             <a
               href="/login?admin=1"
-              className="inline-flex items-center justify-center px-3 py-2 mt-4 rounded-lg border border-[#06B6D4] text-[#06B6D4] font-semibold hover:bg-[#06B6D4] hover:text-[#111827] transition-colors w-fit"
+              className="inline-flex items-center px-3 py-2 mt-4 rounded-lg border border-[var(--color-accent)]/40 text-[var(--color-accent)] text-xs font-semibold hover:bg-[var(--color-accent)] hover:text-navy transition-all"
             >
               Admin Login
             </a>
           </div>
         </div>
-
-        <div className="border-t border-[#1E3A8A]">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 text-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="border-t border-white/5">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-5 text-xs flex flex-wrap items-center justify-between gap-3">
             <p>© 2026 Thekedaar. All rights reserved.</p>
-            <div className="flex items-center gap-4">
-              <a href="/privacy-policy">Privacy Policy</a>
-              <a href="/terms">Terms</a>
+            <div className="flex items-center gap-5">
+              <a href="/privacy-policy" className="hover:text-white transition-colors">Privacy</a>
+              <a href="/terms" className="hover:text-white transition-colors">Terms</a>
             </div>
           </div>
         </div>
@@ -334,4 +502,3 @@ export default function HomePage() {
     </main>
   );
 }
-

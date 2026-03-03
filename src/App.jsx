@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import Icon from "./components/common/Icon";
 import LocationPromptModal from "./components/common/LocationPromptModal";
+import QuickServiceRequest from "./components/common/QuickServiceRequest";
 
 const HomePage = lazy(() => import("./pages/customer/HomePage"));
 const SearchPage = lazy(() => import("./pages/customer/SearchPage"));
@@ -52,6 +53,7 @@ export default function App() {
             <div className="app-shell">
               <div className="content-layer">
                 <LocationPromptModal />
+                <QuickServiceRequest />
                 <Navbar />
 
                 <Suspense fallback={<PageFallback />}>

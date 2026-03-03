@@ -40,22 +40,17 @@ function cookieOptions() {
 // Register: create a user record (very minimal)
 exports.register = async (req, res, next) => {
   try {
-    // Accept role to allow `contractor` or `customer` signup
     const { name, phone, password, role } = req.body;
     if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
 
-    // Hash password if provided (passwordless allowed for OTP flows)
     const { sanitize, sanitizeObject } = require('../utils/sanitizers');
     const hashed = password ? await bcrypt.hash(password, 10) : null;
 
-    // Create user via model helper
     const cleanName = sanitize(name || null);
     const cleanPhone = sanitize(phone || null);
     const cleanEmail = sanitize(req.body.email || null);
     const user = await User.create({ name: cleanName, phone: cleanPhone, email: cleanEmail, password_hash: hashed, role: role || 'customer' });
 
-    // If registering as contractor and profile fields are provided, create profile in one step.
-    // Otherwise, frontend can create profile later via /contractors after auth cookie is set below.
     if ((role || 'customer') === 'contractor') {
       const { business_name, description, categories, services, latitude, longitude } = req.body;
       const hasProfilePayload =
@@ -80,7 +75,6 @@ exports.register = async (req, res, next) => {
       }
     }
 
-    // Auto-login after registration so protected endpoints (e.g. /contractors) work immediately.
     const safeUser = await User.findById(user.id);
     const token = signUserToken(safeUser);
     res.cookie('token', token, cookieOptions());
@@ -97,19 +91,14 @@ exports.login = async (req, res, next) => {
     const { phone, email, password } = req.body;
     if ((!phone && !email) || !password) return res.status(400).json({ ok: false, message: 'identifier and password required' });
 
-    // Find user by phone or email
     let user = null;
     if (phone) user = await User.findByPhone(phone);
     if (!user && email) user = await User.findByEmail(email);
     if (!user) return res.status(401).json({ ok: false, message: 'Invalid credentials' });
 
-    const { sanitize } = require('../utils/sanitizers');
-    const cleanPhone = sanitize(phone || null);
-    const cleanEmail = sanitize(email || null);
     const match = user.password_hash ? await bcrypt.compare(password, user.password_hash) : false;
     if (!match) return res.status(401).json({ ok: false, message: 'Invalid credentials' });
 
-    // Return safe user fields
     const safeUser = await User.findById(user.id);
     const token = signUserToken(safeUser);
     const refreshToken = crypto.randomBytes(48).toString('hex');
@@ -146,7 +135,6 @@ exports.me = async (req, res, next) => {
     const user = result.rows[0] || null;
     res.json({ ok: true, user });
   } catch (err) {
-    // If token invalid, return null user rather than error
     res.json({ ok: true, user: null });
   }
 };
@@ -195,13 +183,13 @@ exports.logout = async (req, res, next) => {
     try {
       const payload = jwt.verify(token, JWT_SECRET);
       await db.query('DELETE FROM sessions WHERE user_id = $1', [payload.sub || payload.id]);
-    } catch (err) {
-      // no-op
-    }
+    } catch (_) { /* no-op */ }
   }
   res.clearCookie('token');
   res.json({ ok: true });
 };
+
+// ── Phone OTP ─────────────────────────────────────────
 
 // Request OTP: send OTP via MSG91
 exports.requestOtp = async (req, res, next) => {
@@ -213,7 +201,6 @@ exports.requestOtp = async (req, res, next) => {
       return res.status(400).json({ ok: false, message: 'valid 10 digit phone required' });
     }
 
-    // Keep one active OTP per phone
     await db.query('DELETE FROM otps WHERE phone = $1 OR expires_at < now() OR used = true', [cleanPhone]);
 
     const otpCode = String(Math.floor(100000 + Math.random() * 900000));
@@ -223,7 +210,6 @@ exports.requestOtp = async (req, res, next) => {
       [cleanPhone, otpCode]
     );
 
-    // Try SMS provider, but keep developer fallback if credentials are absent in non-production.
     try {
       const result = await msg91.sendOtp(cleanPhone);
       const response = { ok: true, success: true, message: result.message || 'OTP sent' };
@@ -247,7 +233,7 @@ exports.requestOtp = async (req, res, next) => {
   }
 };
 
-// Verify OTP: verify with MSG91 (stub)
+// Verify phone OTP: only if account exists
 exports.verifyOtp = async (req, res, next) => {
   try {
     const { phone, otp } = req.body;
@@ -257,11 +243,7 @@ exports.verifyOtp = async (req, res, next) => {
     const cleanPhone = String(sanitize(phone)).replace(/\D/g, '').slice(-10);
     const cleanOtp = sanitize(otp);
     const otpResult = await db.query(
-      `SELECT id, code, expires_at, used
-       FROM otps
-       WHERE phone = $1
-       ORDER BY created_at DESC
-       LIMIT 1`,
+      `SELECT id, code, expires_at, used FROM otps WHERE phone = $1 ORDER BY created_at DESC LIMIT 1`,
       [cleanPhone]
     );
 
@@ -280,18 +262,103 @@ exports.verifyOtp = async (req, res, next) => {
 
     await db.query('UPDATE otps SET used = true WHERE id = $1', [latest.id]);
 
-    // On success, upsert user and return token (simplified)
-    // Use model helper to return full user
+    // Account must exist — do NOT auto-create
     const existing = await db.query('SELECT id FROM users WHERE phone = $1', [cleanPhone]);
-    let user;
-    if (existing.rows.length) {
-      const id = existing.rows[0].id;
-      user = await User.findById(id);
-    } else {
-      const created = await User.create({ name: null, phone: cleanPhone, password_hash: null, role: 'customer' });
-      user = created;
+    if (!existing.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        code: 'ACCOUNT_NOT_FOUND',
+        message: 'No account found with this phone number. Please register first.',
+      });
     }
 
+    const user = await User.findById(existing.rows[0].id);
+    const token = signUserToken(user);
+    res.cookie('token', token, cookieOptions());
+    res.json({ ok: true, success: true, user, token });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── Email OTP ─────────────────────────────────────────
+const { sendOtpEmail } = require('../services/emailService');
+
+// Request email OTP
+exports.requestEmailOtp = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ ok: false, message: 'email required' });
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    const existing = await db.query('SELECT id FROM users WHERE LOWER(email) = $1', [cleanEmail]);
+    if (!existing.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        code: 'ACCOUNT_NOT_FOUND',
+        message: 'No account found with this email. Please register first.',
+      });
+    }
+
+    await db.query("DELETE FROM otps WHERE phone = $1 OR expires_at < now() OR used = true", [cleanEmail]);
+
+    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
+    await db.query(
+      `INSERT INTO otps (phone, code, expires_at, used)
+       VALUES ($1, $2, now() + interval '10 minutes', false)`,
+      [cleanEmail, otpCode]
+    );
+
+    try { await sendOtpEmail(cleanEmail, otpCode); } catch (e) {
+      console.error('Failed to send OTP email:', e.message);
+    }
+
+    const response = { ok: true, success: true, message: 'OTP sent to email' };
+    if (process.env.NODE_ENV !== 'production') response.otp_for_testing = otpCode;
+    return res.json(response);
+  } catch (err) {
+    console.error('requestEmailOtp error:', err.message);
+    res.status(400).json({ ok: false, message: err.message });
+  }
+};
+
+// Verify email OTP
+exports.verifyEmailOtp = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ ok: false, message: 'email and otp required' });
+
+    const { sanitize } = require('../utils/sanitizers');
+    const cleanEmail = String(sanitize(email)).trim().toLowerCase();
+    const cleanOtp = sanitize(otp);
+
+    const otpResult = await db.query(
+      `SELECT id, code, expires_at, used FROM otps WHERE phone = $1 ORDER BY created_at DESC LIMIT 1`,
+      [cleanEmail]
+    );
+
+    const latest = otpResult.rows[0];
+    if (!latest) return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+    if (latest.used) return res.status(400).json({ ok: false, message: 'OTP already used' });
+    if (new Date(latest.expires_at).getTime() < Date.now()) {
+      return res.status(400).json({ ok: false, message: 'OTP expired' });
+    }
+    if (String(latest.code) !== String(cleanOtp)) {
+      return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+    }
+
+    await db.query('UPDATE otps SET used = true WHERE id = $1', [latest.id]);
+
+    const existing = await db.query('SELECT id FROM users WHERE LOWER(email) = $1', [cleanEmail]);
+    if (!existing.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        code: 'ACCOUNT_NOT_FOUND',
+        message: 'No account found with this email. Please register first.',
+      });
+    }
+
+    const user = await User.findById(existing.rows[0].id);
     const token = signUserToken(user);
     res.cookie('token', token, cookieOptions());
     res.json({ ok: true, success: true, user, token });

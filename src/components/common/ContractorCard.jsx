@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import StarRating from "./StarRating";
 import Badge from "./Badge";
@@ -34,79 +35,88 @@ export default function ContractorCard({ contractor }) {
 
   async function handleWhatsAppTap(e) {
     e.stopPropagation();
-    try {
-      await contractorAPI.recordLead(id);
-    } catch {
-      // no-op
-    }
-    trackEvent("whatsapp_tap", {
-      contractor_id: id,
-      category: resolvedCategory,
-      source: "card",
-    });
+    try { await contractorAPI.recordLead(id); } catch { /* no-op */ }
+    trackEvent("whatsapp_tap", { contractor_id: id, category: resolvedCategory, source: "card" });
   }
 
   return (
-    <article className={`bg-white border rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(30,58,138,0.12)] ${is_featured ? "border-[#06B6D4]" : "border-[#E5E7EB]"}`}>
+    <motion.article
+      whileHover={{ y: -6 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className={`glass-card p-5 group ${is_featured ? "ring-1 ring-[var(--color-accent)]" : ""}`}
+    >
       <div className="flex gap-4">
+        {/* Avatar */}
         <div className="relative flex-shrink-0">
-          <img
-            src={getImageUrl(photo_url)}
-            alt={resolvedName}
-            className="w-20 h-20 rounded-full object-cover border-[3px] border-[#06B6D4]"
-            loading="lazy"
-            onError={(e) => {
-              e.target.src = "/default-contractor.png";
-            }}
-          />
-          <span className={`absolute -bottom-1 -right-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${is_available ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-            {is_available ? (lang === "hi" ? "??????" : "Available") : lang === "hi" ? "??????" : "Busy"}
+          <div className="relative">
+            <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] opacity-60 blur-sm group-hover:opacity-100 transition-opacity" />
+            <img
+              src={getImageUrl(photo_url)}
+              alt={resolvedName}
+              className="relative w-[72px] h-[72px] rounded-full object-cover border-2 border-[var(--color-surface)]"
+              loading="lazy"
+              onError={(e) => { e.target.src = "/default-contractor.png"; }}
+            />
+          </div>
+          <span className={`absolute -bottom-0.5 -right-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full border border-[var(--color-surface)] ${is_available
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+            }`}>
+            {is_available ? "●" : "◐"}
           </span>
         </div>
 
+        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="font-['Poppins'] text-base md:text-lg text-[#111827] font-semibold leading-tight truncate">{resolvedName}</h3>
-              <p className="text-xs text-[#374151] capitalize mt-0.5">{resolvedCategory?.replace("_", " ")}</p>
+              <h3 className="font-display text-base md:text-lg text-[var(--color-heading)] font-semibold leading-tight truncate">
+                {resolvedName}
+              </h3>
+              <p className="text-xs text-[var(--color-muted)] capitalize mt-0.5 font-medium">
+                {resolvedCategory?.replace("_", " ")}
+              </p>
             </div>
             {daily_rate && (
-              <span className="text-xs font-semibold text-[#1E3A8A] bg-slate-100 rounded-full px-2 py-1 whitespace-nowrap">
-                ?{Number(daily_rate || 0).toLocaleString("en-IN")}
-                {t("profile.per_day")}
+              <span className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 rounded-full px-2.5 py-1 whitespace-nowrap border border-[var(--color-primary)]/10">
+                ₹{Number(daily_rate || 0).toLocaleString("en-IN")}
+                <span className="text-[var(--color-muted)] font-normal">{t("profile.per_day")}</span>
               </span>
             )}
           </div>
 
+          {/* Rating */}
           <div className="flex items-center gap-2 mt-2">
             <StarRating value={Math.round(Number(rating) || 0)} readonly size="text-sm" />
-            <span className="text-xs text-[#6B7280]">
+            <span className="text-xs text-[var(--color-muted)] font-medium">
               {(Number(rating) || 0).toFixed(1)} ({resolvedReviewCount})
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-1.5 mt-2 text-xs text-[#374151]">
+          {/* Info pills */}
+          <div className="flex flex-wrap gap-1.5 mt-2.5">
             {distance_km != null && (
-              <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">
-                <Icon name="location" className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-body)] bg-[var(--color-border)] rounded-full px-2.5 py-1">
+                <Icon name="location" className="w-3 h-3 text-[var(--color-accent)]" />
                 {(Number(distance_km) || 0).toFixed(1)} {t("search.km_away")}
               </span>
             )}
             {experience_years > 0 && (
-              <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">
-                <Icon name="trophy" className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-body)] bg-[var(--color-border)] rounded-full px-2.5 py-1">
+                <Icon name="trophy" className="w-3 h-3 text-[var(--color-accent)]" />
                 {experience_years} {t("profile.years")}
               </span>
             )}
             {is_labour_group && team_size > 0 && (
-              <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-full px-2 py-1">
-                <Icon name="worker" className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-body)] bg-[var(--color-border)] rounded-full px-2.5 py-1">
+                <Icon name="worker" className="w-3 h-3 text-[var(--color-accent)]" />
                 {team_size} {t("profile.workers")}
               </span>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-1 mt-2.5">
+          {/* Badges */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
             {is_verified && <Badge type="verified" lang={lang} />}
             {is_featured && <Badge type="featured" lang={lang} />}
             {is_labour_group && <Badge type="labour_group" lang={lang} />}
@@ -115,24 +125,22 @@ export default function ContractorCard({ contractor }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-200">
+      {/* Actions */}
+      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-[var(--color-border)]">
         <a
           href={WHATSAPP_URL(resolvedPhone, resolvedName)}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-outline-cyan text-sm !py-2.5 !px-3"
+          className="btn-outline-cyan text-sm !py-2.5 !min-h-0 text-center"
           onClick={handleWhatsAppTap}
         >
-          <span className="inline-flex items-center gap-1.5">
-            <Icon name="message" className="w-4 h-4" />
-            {t("search.contact")}
-          </span>
+          <Icon name="message" className="w-4 h-4" />
+          {t("search.contact")}
         </a>
-        <Link to={`/contractor/${id}`} className="btn-primary text-sm !py-2.5 !px-3 text-center">
+        <Link to={`/contractor/${id}`} className="btn-primary text-sm !py-2.5 !min-h-0 text-center btn-shimmer">
           {t("search.view_profile")}
         </Link>
       </div>
-    </article>
+    </motion.article>
   );
 }
-

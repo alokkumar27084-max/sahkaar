@@ -6,10 +6,24 @@ const multer = require('multer');
 const path = require('path');
 const Contractor = require('../models/contractorModel');
 
-// store uploads in backend/uploads
+// Use diskStorage to preserve file extensions (fixes image display bug)
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '../../uploads/'),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg';
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`);
+  },
+});
+
 const upload = multer({
-  dest: path.join(__dirname, '../../uploads/'),
+  storage,
   limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|webp/;
+    const extOk = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mimeOk = allowed.test(file.mimetype);
+    cb(null, extOk && mimeOk);
+  },
 });
 
 // Public: get featured, list contractors and search
@@ -55,6 +69,12 @@ router.post('/photo', requireAuth, upload.single('image'), async (req, res, next
   }
 });
 router.post('/:id/upload', requireAuth, upload.single('image'), controller.uploadImage);
+
+// Base64 image upload routes
+router.post('/photo/base64', requireAuth, controller.uploadImageBase64);
+router.post('/:id/upload/base64', requireAuth, controller.uploadImageBase64);
+router.post('/portfolio/base64', requireAuth, controller.uploadPortfolioBase64);
+router.post('/:id/portfolio/base64', requireAuth, controller.uploadPortfolioBase64);
 
 // Upload portfolio photos (photos[])
 router.post('/portfolio', requireAuth, upload.array('photos', 5), async (req, res, next) => {

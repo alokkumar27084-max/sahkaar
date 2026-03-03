@@ -11,9 +11,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(
-  (config) => {
-    return config;
-  },
+  (config) => config,
   (error) => Promise.reject(error)
 );
 
@@ -34,6 +32,8 @@ export default api;
 export const authAPI = {
   sendOTP: (phone) => api.post("/auth/otp/request", { phone }),
   verifyOTP: (phone, otp) => api.post("/auth/otp/verify", { phone, otp }),
+  sendEmailOTP: (email) => api.post("/auth/otp/email/request", { email }),
+  verifyEmailOTP: (email, otp) => api.post("/auth/otp/email/verify", { email, otp }),
   register: (data) => api.post("/auth/register", data),
   login: (data) => api.post("/auth/login", data),
   updateLocation: (data) => api.put("/auth/location", data),
@@ -51,12 +51,16 @@ export const contractorAPI = {
   updateMe: (data) => api.put("/contractors/me", data),
   update: (id, data) => api.put(`/contractors/${id}`, data),
   setAvail: (available) => api.patch("/contractors/me/availability", { available }),
+  // Multipart uploads
   uploadMyPhoto: (formData) => api.post("/contractors/photo", formData, { headers: { "Content-Type": "multipart/form-data" } }),
   uploadMyWork: (formData) => api.post("/contractors/portfolio", formData, { headers: { "Content-Type": "multipart/form-data" } }),
   setMyPortfolio: (photos) => api.put("/contractors/portfolio", { photos }),
   uploadPhoto: (id, formData) => api.post(`/contractors/${id}/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
   uploadWork: (id, formData) => api.post(`/contractors/${id}/portfolio`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
   uploadIdProof: (id, formData) => api.post(`/contractors/${id}/idproof`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  // Base64 uploads
+  uploadPhotoBase64: (base64) => api.post("/contractors/photo/base64", { image: base64 }),
+  uploadWorkBase64: (base64Array) => api.post("/contractors/portfolio/base64", { images: base64Array }),
   addReview: (id, data) => api.post(`/contractors/${id}/reviews`, data),
   recordLead: (id) => api.post(`/contractors/${id}/lead`),
 };
@@ -69,6 +73,7 @@ export const reviewAPI = {
 export const adminAPI = {
   getStats: () => api.get("/admin/stats"),
   getActivity: () => api.get("/admin/activity"),
+  getAnalytics: (days) => api.get("/admin/analytics", { params: { days } }),
 
   getUsers: (params) => api.get("/admin/users", { params }),
   getUser: (id) => api.get(`/admin/users/${id}`),
@@ -85,4 +90,10 @@ export const adminAPI = {
 
   getReports: (status = "pending") => api.get("/admin/reports", { params: { status } }),
   resolveReport: (id, status) => api.patch(`/admin/reports/${id}`, { status }),
+
+  getReviews: (params) => api.get("/admin/reviews", { params }),
+  deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
+
+  getSettings: () => api.get("/admin/settings"),
+  updateSettings: (data) => api.put("/admin/settings", data),
 };

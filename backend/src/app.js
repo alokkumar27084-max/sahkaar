@@ -12,8 +12,10 @@ const path = require('path');
 
 const app = express();
 
-// Basic security headers
-app.use(helmet());
+// Basic security headers — allow cross-origin resource loading for uploaded images
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 
 // CORS - restrict to configured frontend URL(s)
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -33,10 +35,29 @@ app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use('/api/auth/send-otp', rateLimit({ windowMs: 10 * 60 * 1000, max: 5 }));
 app.use('/api/auth/otp/request', rateLimit({ windowMs: 10 * 60 * 1000, max: 5 }));
 
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// Detect MIME type for extensionless uploaded files via magic bytes
+app.use('/uploads', (req, res, next) => {
+  const ext = path.extname(req.path);
+  if (!ext) {
+    const filePath = path.join(__dirname, '../uploads', req.path);
+    try {
+      const fd = fs.openSync(filePath, 'r');
+      const buf = Buffer.alloc(4);
+      fs.readSync(fd, buf, 0, 4, 0);
+      fs.closeSync(fd);
+      // Detect type from magic bytes
+      if (buf[0] === 0xFF && buf[1] === 0xD8) res.type('image/jpeg');
+      else if (buf[0] === 0x89 && buf[1] === 0x50) res.type('image/png');
+      else if (buf.toString('ascii', 0, 4) === 'RIFF') res.type('image/webp');
+      else res.type('application/octet-stream');
+    } catch { /* let static serve handle errors */ }
+  }
+  next();
+});
 // Serve uploaded files from backend/uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

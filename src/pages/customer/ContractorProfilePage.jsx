@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { contractorAPI, reviewAPI } from "../../services/api";
@@ -8,9 +9,13 @@ import { WHATSAPP_URL } from "../../utils/constants";
 import { getImageUrl } from "../../utils/imageUtils";
 import StarRating from "../../components/common/StarRating";
 import Badge from "../../components/common/Badge";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-import Icon from "../../components/common/Icon";
 import toast from "react-hot-toast";
+import { FiArrowLeft, FiShare2, FiMessageCircle, FiMapPin } from "react-icons/fi";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
+};
 
 export default function ContractorProfilePage() {
   const { id } = useParams();
@@ -33,59 +38,37 @@ export default function ContractorProfilePage() {
         const cRes = await contractorAPI.getById(id);
         setContractor(cRes.data.contractor);
         trackEvent("profile_view", { contractor_id: id });
-        try {
-          const rRes = await reviewAPI.getForContractor(id);
-          setReviews(rRes.data.reviews || []);
-        } catch {
-          setReviews([]);
-        }
-      } catch {
-        toast.error(t("app.error"));
-        navigate("/search");
-      } finally {
-        setLoading(false);
-      }
+        try { const rRes = await reviewAPI.getForContractor(id); setReviews(rRes.data.reviews || []); }
+        catch { setReviews([]); }
+      } catch { toast.error(t("app.error")); navigate("/search"); }
+      finally { setLoading(false); }
     }
     load();
   }, [id, navigate, t]);
 
   async function submitReview(e) {
     e.preventDefault();
-    if (!user) {
-      navigate("/login");
-      return;
-    }
-    if (myRating === 0) {
-      toast.error(lang === "hi" ? "कृपया रेटिंग दें" : "Please give a rating");
-      return;
-    }
-
+    if (!user) { navigate("/login"); return; }
+    if (myRating === 0) { toast.error(lang === "hi" ? "कृपया रेटिंग दें" : "Please give a rating"); return; }
     setSubmitting(true);
     try {
       await reviewAPI.submit(id, { rating: myRating, comment: myComment });
       toast.success(lang === "hi" ? "समीक्षा सबमिट हो गई!" : "Review submitted!");
-      setMyRating(0);
-      setMyComment("");
+      setMyRating(0); setMyComment("");
       const res = await reviewAPI.getForContractor(id);
       setReviews(res.data.reviews || []);
-    } catch (err) {
-      toast.error(err.response?.data?.message || t("app.error"));
-    } finally {
-      setSubmitting(false);
-    }
+    } catch (err) { toast.error(err.response?.data?.message || t("app.error")); }
+    finally { setSubmitting(false); }
   }
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <span className="w-8 h-8 border-3 border-[var(--color-primary)]/30 border-t-[var(--color-primary)] rounded-full animate-spin" />
       </div>
     );
   }
-
-  if (!contractor) {
-    return null;
-  }
+  if (!contractor) return null;
 
   const name = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";
   const category = contractor?.category || contractor?.categories?.[0] || "general";
@@ -113,147 +96,118 @@ export default function ContractorProfilePage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 pb-10 md:px-6">
-      <section className="glass-card mt-4 overflow-hidden p-0">
-        <div className="relative h-56 md:h-72 bg-slate-950/60">
+    <div className="max-w-5xl mx-auto px-4 pb-14 md:px-6">
+      {/* Hero banner */}
+      <motion.section initial="hidden" animate="show" variants={fadeUp} className="glass-card mt-4 overflow-hidden p-0">
+        <div className="relative h-52 md:h-64">
           {portfolio_photos[0] ? (
-            <img src={getImageUrl(portfolio_photos[0])} alt="work" className="w-full h-full object-cover opacity-65" />
+            <img src={getImageUrl(portfolio_photos[0])} alt="work" className="w-full h-full object-cover opacity-70" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cyan-300/30 via-indigo-400/25 to-slate-900" />
+            <div className="w-full h-full bg-gradient-to-br from-[var(--color-primary)]/30 via-[var(--color-accent)]/20 to-[var(--color-bg)]" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent" />
-          <button onClick={() => navigate(-1)} className="absolute top-4 left-4 btn-secondary !py-2 !px-4">
-            ← {t("app.back")}
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-surface)] via-[var(--color-surface)]/20 to-transparent" />
+          <button onClick={() => navigate(-1)}
+            className="absolute top-4 left-4 h-9 px-4 rounded-lg bg-[var(--color-surface)]/80 backdrop-blur text-[var(--color-body)] text-sm font-medium flex items-center gap-1.5 hover:bg-[var(--color-surface)] transition-colors border border-[var(--color-border)]">
+            <FiArrowLeft size={14} /> {t("app.back")}
           </button>
         </div>
 
-        <div className="px-4 md:px-8 pb-7 -mt-14 relative z-10">
-          <div className="surface-panel p-4 md:p-6 mb-4">
-            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-5">
-              <img
-                src={getImageUrl(photo_url)}
-                alt={name}
-                className="w-24 h-24 rounded-2xl object-cover border-2 border-white/30"
-              />
+        {/* Profile info */}
+        <div className="px-5 md:px-8 pb-6 -mt-12 relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-5">
+            <div className="relative">
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] opacity-60 blur-sm" />
+              <img src={getImageUrl(photo_url)} alt={name}
+                className="relative w-24 h-24 rounded-2xl object-cover border-3 border-[var(--color-surface)]" />
+            </div>
 
-              <div className="flex-1">
-                <h1 className="font-['Space_Grotesk'] text-2xl md:text-3xl text-white font-semibold mb-1">{name}</h1>
-                <p className="text-slate-300 text-sm capitalize">{category?.replace("_", " ")}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <StarRating value={Math.round(rating)} readonly size="text-base" />
-                  <span className="text-xs text-slate-300">{rating.toFixed(1)} ({review_count})</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {is_verified && <Badge type="verified" lang={lang} />}
-                  {is_featured && <Badge type="featured" lang={lang} />}
-                  {is_labour_group && <Badge type="labour_group" lang={lang} />}
-                  {is_responsibility_model && <Badge type="responsibility" lang={lang} />}
-                </div>
+            <div className="flex-1">
+              <h1 className="font-display text-2xl md:text-3xl text-[var(--color-heading)] font-bold">{name}</h1>
+              <p className="text-[var(--color-muted)] text-sm capitalize mt-0.5">{category?.replace("_", " ")}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <StarRating value={Math.round(rating)} readonly size="text-base" />
+                <span className="text-xs text-[var(--color-muted)] font-medium">{rating.toFixed(1)} ({review_count})</span>
               </div>
-
-              <div className="text-right">
-                <p className={`text-sm font-semibold ${is_available ? "text-emerald-300" : "text-amber-300"}`}>
-                  {is_available ? t("profile.available") : t("profile.unavailable")}
-                </p>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {is_verified && <Badge type="verified" lang={lang} />}
+                {is_featured && <Badge type="featured" lang={lang} />}
+                {is_labour_group && <Badge type="labour_group" lang={lang} />}
+                {is_responsibility_model && <Badge type="responsibility" lang={lang} />}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4 pt-4 border-t glass-divider">
-              {[
-                {
-                  label: t("profile.rate"),
-                  value: daily_rate ? `₹${daily_rate.toLocaleString("en-IN")}${t("profile.per_day")}` : "—",
-                },
-                {
-                  label: t("profile.experience"),
-                  value: experience_years ? `${experience_years} ${t("profile.years")}` : "—",
-                },
-                {
-                  label: t("profile.team_size"),
-                  value: is_labour_group ? `${team_size || 0} ${t("profile.workers")}` : "—",
-                },
-                {
-                  label: lang === "hi" ? "रेटिंग" : "Rating",
-                  value: rating.toFixed(1),
-                },
-              ].map((s) => (
-                <div key={s.label} className="glass-card p-3 text-center rounded-xl">
-                  <p className="text-xs text-slate-300">{s.label}</p>
-                  <p className="text-sm md:text-base text-slate-100 font-semibold mt-1">{s.value}</p>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 md:self-start md:pt-14">
+              <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${is_available
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                }`}>
+                {is_available ? t("profile.available") : t("profile.unavailable")}
+              </span>
             </div>
-
-            {location_text && (
-              <p className="text-xs text-slate-300 mt-4 inline-flex items-center gap-1.5">
-                <Icon name="location" className="w-3.5 h-3.5" />
-                {location_text}
-              </p>
-            )}
           </div>
 
-          <div className="flex flex-wrap gap-3 mb-4">
-            <a
-              href={WHATSAPP_URL(phone, name)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-primary !text-slate-900"
-              onClick={async () => {
-                try {
-                  await contractorAPI.recordLead(id);
-                } catch {
-                  // no-op
-                }
-                trackEvent("whatsapp_tap", { contractor_id: id, source: "profile" });
-              }}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <Icon name="message" className="w-4 h-4" />
-                {t("profile.contact_whatsapp")}
-              </span>
+          {/* Stats row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+            {[
+              { label: t("profile.rate"), value: daily_rate ? `₹${daily_rate.toLocaleString("en-IN")}${t("profile.per_day")}` : "—" },
+              { label: t("profile.experience"), value: experience_years ? `${experience_years} ${t("profile.years")}` : "—" },
+              { label: t("profile.team_size"), value: is_labour_group ? `${team_size || 0} ${t("profile.workers")}` : "—" },
+              { label: lang === "hi" ? "रेटिंग" : "Rating", value: rating.toFixed(1) },
+            ].map((s) => (
+              <div key={s.label} className="glass-card p-3.5 text-center rounded-xl">
+                <p className="text-xs text-[var(--color-muted)] font-medium">{s.label}</p>
+                <p className="text-base text-[var(--color-heading)] font-bold mt-1">{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {location_text && (
+            <p className="text-xs text-[var(--color-muted)] mt-4 inline-flex items-center gap-1.5">
+              <FiMapPin className="w-3.5 h-3.5" /> {location_text}
+            </p>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-3 mt-5">
+            <a href={WHATSAPP_URL(phone, name)} target="_blank" rel="noopener noreferrer"
+              className="btn-primary btn-shimmer"
+              onClick={async () => { try { await contractorAPI.recordLead(id); } catch { } trackEvent("whatsapp_tap", { contractor_id: id, source: "profile" }); }}>
+              <FiMessageCircle size={16} /> {t("profile.contact_whatsapp")}
             </a>
-            <button
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({ title: name, url: window.location.href });
-                }
-              }}
-              className="btn-secondary"
-            >
-              {t("profile.share")}
+            <button onClick={() => { if (navigator.share) navigator.share({ title: name, url: window.location.href }); }}
+              className="btn-secondary">
+              <FiShare2 size={16} /> {t("profile.share")}
             </button>
           </div>
 
-          <div className="surface-panel p-2 rounded-2xl mb-4 flex flex-wrap gap-2">
+          {/* Tabs */}
+          <div className="flex gap-1 mt-6 p-1 bg-[var(--color-border)] rounded-xl">
             {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-                  activeTab === tab.id ? "bg-cyan-200 text-slate-950" : "text-slate-200 hover:bg-white/10"
-                }`}
-              >
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
+                  ? "bg-[var(--color-primary)] text-white shadow-sm"
+                  : "text-[var(--color-muted)] hover:text-[var(--color-body)]"
+                  }`}>
                 {tab.label}
               </button>
             ))}
           </div>
 
+          {/* Tab content */}
           {activeTab === "about" && (
-            <div className="grid md:grid-cols-2 gap-3 animate-fade-in">
+            <div className="grid md:grid-cols-2 gap-4 mt-5">
               {description && (
-                <div className="card">
-                  <h3 className="font-semibold text-slate-100 mb-2">{t("profile.about")}</h3>
-                  <p className="text-sm text-slate-300 leading-relaxed">{description}</p>
+                <div className="glass-card p-5">
+                  <h3 className="font-display text-[var(--color-heading)] font-semibold mb-2">{t("profile.about")}</h3>
+                  <p className="text-sm text-[var(--color-body)] leading-relaxed">{description}</p>
                 </div>
               )}
               {services.length > 0 && (
-                <div className="card">
-                  <h3 className="font-semibold text-slate-100 mb-3">{t("profile.services")}</h3>
+                <div className="glass-card p-5">
+                  <h3 className="font-display text-[var(--color-heading)] font-semibold mb-3">{t("profile.services")}</h3>
                   <div className="flex flex-wrap gap-2">
                     {services.map((s, i) => (
-                      <span key={i} className="pill-chip">
-                        {s}
-                      </span>
+                      <span key={i} className="pill-chip">{s}</span>
                     ))}
                   </div>
                 </div>
@@ -262,67 +216,60 @@ export default function ContractorProfilePage() {
           )}
 
           {activeTab === "portfolio" && (
-            <div className="animate-fade-in">
+            <div className="mt-5">
               {portfolio_photos.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {portfolio_photos.map((url, i) => (
-                    <img
-                      key={i}
-                      src={getImageUrl(url)}
-                      alt={`Work ${i + 1}`}
-                      className="w-full h-36 md:h-44 object-cover rounded-xl border border-white/15"
-                      loading="lazy"
-                    />
+                    <img key={i} src={getImageUrl(url)} alt={`Work ${i + 1}`}
+                      className="w-full h-36 md:h-44 object-cover rounded-xl border border-[var(--color-border)]" loading="lazy" />
                   ))}
                 </div>
               ) : (
-                <p className="text-center text-slate-300 text-sm py-8">{lang === "hi" ? "अभी कोई फोटो नहीं" : "No photos yet"}</p>
+                <p className="text-center text-[var(--color-muted)] text-sm py-8">{lang === "hi" ? "अभी कोई फोटो नहीं" : "No photos yet"}</p>
               )}
             </div>
           )}
 
           {activeTab === "reviews" && (
-            <div className="animate-fade-in space-y-4">
-              <div className="card">
-                <h3 className="font-semibold text-slate-100 mb-3">{t("profile.write_review")}</h3>
+            <div className="mt-5 space-y-4">
+              <div className="glass-card p-5">
+                <h3 className="font-display text-[var(--color-heading)] font-semibold mb-3">{t("profile.write_review")}</h3>
                 <form onSubmit={submitReview} className="space-y-3">
                   <StarRating value={myRating} onChange={setMyRating} readonly={false} size="text-3xl" />
-                  <textarea
-                    value={myComment}
-                    onChange={(e) => setMyComment(e.target.value)}
+                  <textarea value={myComment} onChange={(e) => setMyComment(e.target.value)}
                     placeholder={lang === "hi" ? "अपना अनुभव लिखें..." : "Write your experience..."}
-                    rows={3}
-                    maxLength={500}
-                    className="input-field resize-none"
-                  />
-                  <button type="submit" disabled={submitting || myRating === 0} className="btn-primary w-full !text-slate-900">
-                    {submitting ? <LoadingSpinner size="sm" /> : t("app.submit")}
+                    rows={3} maxLength={500} className="input-field resize-none" />
+                  <button type="submit" disabled={submitting || myRating === 0} className="btn-primary w-full btn-shimmer">
+                    {submitting ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : t("app.submit")}
                   </button>
                 </form>
               </div>
 
               {reviews.map((r) => (
-                <div key={r.id} className="card">
+                <div key={r.id} className="glass-card p-5">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-100">{r.reviewer_name}</p>
-                      <StarRating value={r.rating} readonly size="text-sm" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center text-white text-xs font-bold">
+                        {(r.reviewer_name || "U")[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--color-heading)]">{r.reviewer_name}</p>
+                        <StarRating value={r.rating} readonly size="text-xs" />
+                      </div>
                     </div>
-                    <span className="text-xs text-slate-400">{new Date(r.created_at).toLocaleDateString("en-IN")}</span>
+                    <span className="text-xs text-[var(--color-muted)]">{new Date(r.created_at).toLocaleDateString("en-IN")}</span>
                   </div>
-                  {r.comment && <p className="text-sm text-slate-300 mt-2">{r.comment}</p>}
+                  {r.comment && <p className="text-sm text-[var(--color-body)] mt-3 leading-relaxed">{r.comment}</p>}
                 </div>
               ))}
 
               {reviews.length === 0 && (
-                <p className="text-center text-slate-300 text-sm py-3">
-                  {lang === "hi" ? "अभी कोई समीक्षा नहीं" : "No reviews yet - be the first!"}
-                </p>
+                <p className="text-center text-[var(--color-muted)] text-sm py-4">{lang === "hi" ? "अभी कोई समीक्षा नहीं" : "No reviews yet — be the first!"}</p>
               )}
             </div>
           )}
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 }

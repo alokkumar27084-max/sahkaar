@@ -280,8 +280,8 @@ exports.createUser = async (req, res, next) => {
       const categories = Array.isArray(contractorData.categories)
         ? contractorData.categories
         : contractorData.category
-        ? [contractorData.category]
-        : [];
+          ? [contractorData.category]
+          : [];
       await client.query(
         `INSERT INTO contractors (
           user_id, business_name, category, categories, description, services,
@@ -378,8 +378,8 @@ exports.updateUser = async (req, res, next) => {
         const categories = Array.isArray(contractorData.categories)
           ? contractorData.categories
           : contractorData.category
-          ? [contractorData.category]
-          : [];
+            ? [contractorData.category]
+            : [];
         await client.query(
           `INSERT INTO contractors (
             user_id, business_name, category, categories, description, services,
@@ -406,8 +406,8 @@ exports.updateUser = async (req, res, next) => {
         const categories = Array.isArray(contractorData.categories)
           ? contractorData.categories
           : contractorData.category
-          ? [contractorData.category]
-          : undefined;
+            ? [contractorData.category]
+            : undefined;
         await client.query(
           `UPDATE contractors
            SET business_name = COALESCE($2, business_name),
@@ -635,8 +635,8 @@ exports.createContractor = async (req, res, next) => {
     const categories = Array.isArray(payload.categories)
       ? payload.categories
       : payload.category
-      ? [payload.category]
-      : [];
+        ? [payload.category]
+        : [];
 
     const contractorRes = await client.query(
       `INSERT INTO contractors (
@@ -687,8 +687,8 @@ exports.updateContractor = async (req, res, next) => {
     const categories = Array.isArray(payload.categories)
       ? payload.categories
       : payload.category
-      ? [payload.category]
-      : undefined;
+        ? [payload.category]
+        : undefined;
 
     const result = await db.query(
       `UPDATE contractors
@@ -788,3 +788,174 @@ exports.activity = async (req, res, next) => {
     return next(err);
   }
 };
+
+// ── Reviews management ──────────────────────────────────────────
+
+exports.listReviews = async (req, res, next) => {
+  try {
+    const { page, limit, offset } = parsePage(req);
+    const q = sanitize(req.query.q || '');
+    const values = [];
+    const where = [];
+
+    if (q) {
+      values.push(`%${q}%`);
+      const idx = values.length;
+      where.push(`(COALESCE(u.name, '') ILIKE $${idx} OR COALESCE(r.comment, '') ILIKE $${idx})`);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const countRes = await db.query(
+      `SELECT COUNT(*)::int AS count FROM reviews r LEFT JOIN users u ON u.id = r.user_id ${whereSql}`,
+      values
+    );
+
+    values.push(limit, offset);
+    const limitIdx = values.length - 1;
+    const offsetIdx = values.length;
+
+    const result = await db.query(
+      `SELECT r.*, u.name AS reviewer_name,
+              c.business_name AS contractor_name
+       FROM reviews r
+       LEFT JOIN users u ON u.id = r.user_id
+       LEFT JOIN contractors c ON c.id = r.contractor_id
+       ${whereSql}
+       ORDER BY r.created_at DESC
+       LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+      values
+    );
+
+    return res.json({
+      ok: true,
+      reviews: result.rows,
+      pagination: { page, limit, total: countRes.rows[0].count },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.deleteReview = async (req, res, next) => {
+  try {
+    const id = parseIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, message: 'invalid id' });
+
+    const reviewRes = await db.query('SELECT id, contractor_id FROM reviews WHERE id = $1', [id]);
+    const review = reviewRes.rows[0];
+    if (!review) return res.status(404).json({ ok: false, message: 'Review not found' });
+
+    await db.query('DELETE FROM reviews WHERE id = $1', [id]);
+
+    // Recalculate contractor rating
+    const agg = await db.query(
+      `SELECT AVG(rating)::numeric(3,2) as avg, COUNT(*)::int as cnt FROM reviews WHERE contractor_id = $1`,
+      [review.contractor_id]
+    );
+    await db.query(
+      `UPDATE contractors SET rating = $1, reviews_count = $2, review_count = $2, updated_at = now() WHERE id = $3`,
+      [agg.rows[0].avg || 0, agg.rows[0].cnt || 0, review.contractor_id]
+    );
+
+    return res.json({ ok: true, deleted: id });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// ── Analytics ──────────────────────────────────────────
+
+exports.analytics = async (req, res, next) => {
+  try {
+    const days = Math.min(Math.max(parseInt(req.query.days || '30', 10), 7), 90);
+
+    const [regTrend, reviewTrend, topContractors] = await Promise.all([
+      db.query(
+        `SELECT d::date AS date, COUNT(u.id)::int AS count
+         FROM generate_series(now() - ($1 || ' days')::interval, now(), '1 day') d
+         LEFT JOIN users u ON u.created_at::date = d::date
+         GROUP BY d::date ORDER BY d::date`,
+        [days]
+      ),
+      db.query(
+        `SELECT d::date AS date, COUNT(r.id)::int AS count
+         FROM generate_series(now() - ($1 || ' days')::interval, now(), '1 day') d
+         LEFT JOIN reviews r ON r.created_at::date = d::date
+         GROUP BY d::date ORDER BY d::date`,
+        [days]
+      ),
+      db.query(
+        `SELECT c.id, COALESCE(c.business_name, u.name) AS name, c.category,
+                c.rating, c.views_count, c.leads_count,
+                COALESCE(c.review_count, c.reviews_count, 0) AS review_count
+         FROM contractors c JOIN users u ON u.id = c.user_id
+         ORDER BY c.leads_count DESC NULLS LAST, c.views_count DESC NULLS LAST
+         LIMIT 10`
+      ),
+    ]);
+
+    return res.json({
+      ok: true,
+      analytics: {
+        registration_trend: regTrend.rows,
+        review_trend: reviewTrend.rows,
+        top_contractors: topContractors.rows,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// ── Site settings ──────────────────────────────────────────
+
+const DEFAULT_SETTINGS = {
+  maintenance_mode: false,
+  featured_limit: 8,
+  site_name: 'Thekedaar',
+  support_email: 'hello@thekedaar.com',
+  support_phone: '+91 90000 00000',
+  max_portfolio_photos: 5,
+};
+
+exports.getSettings = async (req, res, next) => {
+  try {
+    const result = await db.query(`SELECT key, value FROM site_settings`).catch(() => ({ rows: [] }));
+    const settings = { ...DEFAULT_SETTINGS };
+    for (const row of result.rows) {
+      try { settings[row.key] = JSON.parse(row.value); } catch { settings[row.key] = row.value; }
+    }
+    return res.json({ ok: true, settings });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.updateSettings = async (req, res, next) => {
+  try {
+    const payload = sanitizeObject(req.body || {});
+    const allowedKeys = Object.keys(DEFAULT_SETTINGS);
+
+    for (const [key, value] of Object.entries(payload)) {
+      if (!allowedKeys.includes(key)) continue;
+      const jsonValue = JSON.stringify(value);
+      await db.query(
+        `INSERT INTO site_settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = now()`,
+        [key, jsonValue]
+      );
+    }
+
+    // Return updated settings
+    const result = await db.query(`SELECT key, value FROM site_settings`).catch(() => ({ rows: [] }));
+    const settings = { ...DEFAULT_SETTINGS };
+    for (const row of result.rows) {
+      try { settings[row.key] = JSON.parse(row.value); } catch { settings[row.key] = row.value; }
+    }
+    return res.json({ ok: true, settings });
+  } catch (err) {
+    return next(err);
+  }
+};
+

@@ -1,5 +1,7 @@
 const Contractor = require('../models/contractorModel');
 const db = require('../config/db');
+const fs = require('fs');
+const path = require('path');
 
 // Get featured contractors (or fallback to top rated recent listings)
 exports.featured = async (req, res, next) => {
@@ -65,20 +67,7 @@ exports.list = async (req, res, next) => {
 exports.search = async (req, res, next) => {
   try {
     const { q, category, verified, featured, labour_group, lat, lng, radius_km, min_radius_km, sort, page, limit } = req.query;
-    const contractors = await Contractor.search({
-      q,
-      category,
-      verified,
-      featured,
-      labour_group,
-      lat,
-      lng,
-      radius_km,
-      min_radius_km,
-      sort,
-      page,
-      limit,
-    });
+    const contractors = await Contractor.search({ q, category, verified, featured, labour_group, lat, lng, radius_km, min_radius_km, sort, page, limit });
     return res.json({ ok: true, contractors });
   } catch (err) {
     return next(err);
@@ -207,7 +196,6 @@ exports.uploadImage = async (req, res, next) => {
     if (existing.user_id !== req.user.id) return res.status(403).json({ ok: false, message: 'Forbidden' });
     if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
     if (!isValidImage(req.file)) return res.status(400).json({ ok: false, message: 'Invalid image type' });
-
     const imagePath = `/uploads/${req.file.filename}`;
     const updated = await Contractor.setImage(id, imagePath);
     return res.json({ ok: true, contractor: updated, imageUrl: imagePath });
@@ -223,11 +211,10 @@ exports.uploadPortfolio = async (req, res, next) => {
     if (!existing) return res.status(404).json({ ok: false, message: 'Not found' });
     if (existing.user_id !== req.user.id) return res.status(403).json({ ok: false, message: 'Forbidden' });
     if (!req.files || req.files.length === 0) return res.status(400).json({ ok: false, message: 'No files uploaded' });
-    if (req.files.some((f) => !isValidImage(f))) {
+    if (req.files.some(f => !isValidImage(f))) {
       return res.status(400).json({ ok: false, message: 'Only JPG/PNG/WEBP files are allowed' });
     }
-
-    const imagePaths = req.files.map((f) => `/uploads/${f.filename}`);
+    const imagePaths = req.files.map(f => `/uploads/${f.filename}`);
     const updated = await Contractor.appendPortfolio(id, imagePaths);
     return res.json({ ok: true, contractor: updated, uploaded: imagePaths });
   } catch (err) {
@@ -241,11 +228,9 @@ exports.setPortfolio = async (req, res, next) => {
     const existing = await Contractor.findById(id);
     if (!existing) return res.status(404).json({ ok: false, message: 'Not found' });
     if (existing.user_id !== req.user.id) return res.status(403).json({ ok: false, message: 'Forbidden' });
-
     const photos = Array.isArray(req.body?.photos) ? req.body.photos : null;
     if (!photos) return res.status(400).json({ ok: false, message: 'photos array required' });
-
-    const clean = photos.filter((x) => typeof x === 'string' && x.startsWith('/uploads/')).slice(0, 20);
+    const clean = photos.filter(x => typeof x === 'string' && x.startsWith('/uploads/')).slice(0, 20);
     const updated = await Contractor.setPortfolio(id, clean);
     return res.json({ ok: true, contractor: updated, portfolio_photos: clean });
   } catch (err) {
@@ -261,10 +246,74 @@ exports.uploadIdProof = async (req, res, next) => {
     if (existing.user_id !== req.user.id) return res.status(403).json({ ok: false, message: 'Forbidden' });
     if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
     if (!isValidImage(req.file)) return res.status(400).json({ ok: false, message: 'Invalid image type' });
-
     const imagePath = `/uploads/${req.file.filename}`;
     const updated = await Contractor.setIdProof(id, imagePath);
     return res.json({ ok: true, contractor: updated, idProof: imagePath });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// ── Base64 upload helpers ──────────────────────────────────────────
+
+function saveBase64Image(base64String) {
+  const match = base64String.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/i);
+  if (!match) return null;
+  const ext = match[1].toLowerCase() === 'jpg' ? 'jpeg' : match[1].toLowerCase();
+  const buffer = Buffer.from(match[2], 'base64');
+  if (buffer.length > 5 * 1024 * 1024) return null;
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const filepath = path.join(__dirname, '../../uploads/', filename);
+  fs.writeFileSync(filepath, buffer);
+  return `/uploads/${filename}`;
+}
+
+exports.uploadImageBase64 = async (req, res, next) => {
+  try {
+    const { image } = req.body;
+    if (!image) return res.status(400).json({ ok: false, message: 'image (base64) required' });
+    const imagePath = saveBase64Image(image);
+    if (!imagePath) return res.status(400).json({ ok: false, message: 'Invalid base64 image (JPEG/PNG/WEBP, max 5MB)' });
+
+    let contractorId = req.params.id;
+    if (!contractorId) {
+      const my = await Contractor.findByUserId(req.user.id);
+      if (!my) return res.status(404).json({ ok: false, message: 'Contractor profile not found' });
+      contractorId = my.id;
+    }
+    const existing = await Contractor.findById(contractorId);
+    if (!existing) return res.status(404).json({ ok: false, message: 'Not found' });
+    if (existing.user_id !== req.user.id) return res.status(403).json({ ok: false, message: 'Forbidden' });
+
+    const updated = await Contractor.setImage(contractorId, imagePath);
+    return res.json({ ok: true, contractor: updated, imageUrl: imagePath });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.uploadPortfolioBase64 = async (req, res, next) => {
+  try {
+    const { images } = req.body;
+    if (!Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ ok: false, message: 'images[] (base64 array) required' });
+    }
+
+    let contractorId = req.params.id;
+    if (!contractorId) {
+      const my = await Contractor.findByUserId(req.user.id);
+      if (!my) return res.status(404).json({ ok: false, message: 'Contractor profile not found' });
+      contractorId = my.id;
+    }
+    const existing = await Contractor.findById(contractorId);
+    if (!existing) return res.status(404).json({ ok: false, message: 'Not found' });
+    if (existing.user_id !== req.user.id) return res.status(403).json({ ok: false, message: 'Forbidden' });
+
+    const imagePaths = images.slice(0, 5).map(img => saveBase64Image(img)).filter(Boolean);
+    if (imagePaths.length === 0) return res.status(400).json({ ok: false, message: 'No valid images' });
+
+    const updated = await Contractor.appendPortfolio(contractorId, imagePaths);
+    return res.json({ ok: true, contractor: updated, uploaded: imagePaths });
   } catch (err) {
     return next(err);
   }

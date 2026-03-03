@@ -8,6 +8,7 @@ router.use(requireAuth, checkRole('admin'));
 
 router.get('/stats', controller.stats);
 router.get('/activity', controller.activity);
+router.get('/analytics', controller.analytics);
 
 router.get('/users', controller.listUsers);
 router.get('/users/:id', controller.getUser);
@@ -24,5 +25,11 @@ router.delete('/contractors/:id', controller.deleteContractor);
 
 router.get('/reports', controller.reports);
 router.patch('/reports/:id', controller.resolveReport);
+
+router.get('/reviews', controller.listReviews);
+router.delete('/reviews/:id', controller.deleteReview);
+
+router.get('/settings', controller.getSettings);
+router.put('/settings', controller.updateSettings);
 
 module.exports = router;
