@@ -27,6 +27,7 @@ export default function ContractorDashboard() {
   useEffect(() => {
     loadProfile();
     loadBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [t]);
 
   function loadBookings() {

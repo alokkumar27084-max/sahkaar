@@ -64,6 +64,7 @@ export default function ChatLayout() {
             console.log("Disconnecting socket...");
             newSocket.disconnect();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, activeChatId]);
 
     useEffect(() => {
@@ -77,6 +78,7 @@ export default function ChatLayout() {
             // Clear state to avoid re-init
             navigate("/chat", { replace: true });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.state, navigate]);
 
     const loadChats = async () => {
@@ -298,8 +300,8 @@ export default function ChatLayout() {
                                             return (
                                                 <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                                     <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm ${isMe
-                                                            ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-br-none'
-                                                            : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-bl-none border border-slate-100 dark:border-white/5'
+                                                        ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white rounded-br-none'
+                                                        : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white rounded-bl-none border border-slate-100 dark:border-white/5'
                                                         }`}>
                                                         <p className="text-[15px] leading-relaxed break-words">{msg.content}</p>
                                                         <div className={`text-[9px] mt-1 text-right ${isMe ? 'text-indigo-200' : 'text-slate-400'}`}>
