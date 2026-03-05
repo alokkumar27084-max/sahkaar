@@ -19,7 +19,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (!window.location.pathname.startsWith("/login")) {
+      const url = error.config?.url || "";
+      // Don't redirect for /auth/me — AuthContext handles that gracefully
+      if (!url.includes("/auth/me") && !window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
       }
     }

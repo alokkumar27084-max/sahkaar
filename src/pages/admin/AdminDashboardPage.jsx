@@ -8,7 +8,7 @@ import {
   FiUsers, FiUserCheck, FiShield, FiTrendingUp, FiSettings, FiStar,
   FiAlertTriangle, FiActivity, FiSearch, FiDownload, FiTrash2, FiEye,
   FiCheckCircle, FiXCircle, FiRefreshCw, FiPlus,
-  FiAward, FiBarChart2, FiGrid,
+  FiAward, FiBarChart2, FiGrid, FiMenu,
 } from "react-icons/fi";
 
 /* ──────────── constants ──────────── */
@@ -151,12 +151,20 @@ function DetailModal({ data, onClose }) {
   );
 }
 
-/* ──────────── MAIN ──────────── */
 export default function AdminDashboardPage() {
   const [tab, setTab] = useState("overview");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Data
   const [stats, setStats] = useState(null);
@@ -331,19 +339,32 @@ export default function AdminDashboardPage() {
   return (
     <main className="min-h-screen bg-[var(--color-bg)]">
       <div className="flex">
+        {/* ──── Mobile Sidebar Overlay ──── */}
+        <AnimatePresence>
+          {sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] md:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
         {/* ──── Sidebar ──── */}
-        <aside className={`${sidebarOpen ? "w-60" : "w-16"} flex-shrink-0 border-r border-white/10 bg-[var(--color-surface)] min-h-screen sticky top-0 transition-all duration-300`}>
+        <aside className={`${sidebarOpen ? "translate-x-0 w-60" : "-translate-x-full w-60 md:translate-x-0 md:w-16"} fixed md:sticky top-0 left-0 z-[100] flex-shrink-0 border-r border-white/10 bg-[var(--color-surface)] h-screen overflow-y-auto transition-transform duration-300 md:transition-all`}>
           <div className="p-4 border-b border-white/10 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-white font-bold text-lg shadow-lg flex-shrink-0">
               T
             </div>
             {sidebarOpen && <h2 className="text-lg font-bold text-[var(--color-heading)] font-['Space_Grotesk'] truncate">Admin Panel</h2>}
           </div>
-          <nav className="p-2 space-y-1 mt-2">
+          <nav className="p-2 space-y-1 mt-2 mb-16">
             {SIDEBAR.map(item => (
               <button
                 key={item.id}
-                onClick={() => setTab(item.id)}
+                onClick={() => { setTab(item.id); if (window.innerWidth <= 768) setSidebarOpen(false); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${tab === item.id
                   ? "bg-gradient-to-r from-indigo-500/15 to-cyan-400/10 text-indigo-400 border border-indigo-500/20"
                   : "text-[var(--color-muted)] hover:text-[var(--color-body)] hover:bg-white/5"
@@ -362,16 +383,24 @@ export default function AdminDashboardPage() {
         </aside>
 
         {/* ──── Content ──── */}
-        <div className="flex-1 min-w-0 p-6 md:p-8">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-[var(--color-heading)] font-['Space_Grotesk']">
-                {SIDEBAR.find(s => s.id === tab)?.label || "Admin"}
-              </h1>
-              <p className="text-sm text-[var(--color-muted)] mt-1">Full platform control and analytics</p>
+        <div className="flex-1 min-w-0 p-4 md:p-8 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="md:hidden p-2 -ml-2 rounded-xl text-[var(--color-body)] hover:bg-white/5"
+              >
+                <FiMenu size={22} />
+              </button>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-[var(--color-heading)] font-['Space_Grotesk']">
+                  {SIDEBAR.find(s => s.id === tab)?.label || "Admin"}
+                </h1>
+                <p className="hidden md:block text-sm text-[var(--color-muted)] mt-1">Full platform control and analytics</p>
+              </div>
             </div>
-            <BtnPrimary onClick={loadAll} disabled={busy}>
-              <span className="flex items-center gap-2"><FiRefreshCw size={14} className={busy ? "animate-spin" : ""} /> Refresh</span>
+            <BtnPrimary onClick={loadAll} disabled={busy} className="self-end sm:self-auto">
+              <span className="flex items-center gap-2"><FiRefreshCw size={14} className={busy ? "animate-spin" : ""} /> <span className="hidden sm:inline">Refresh</span></span>
             </BtnPrimary>
           </div>
 
@@ -472,8 +501,8 @@ export default function AdminDashboardPage() {
                     <BtnOutline onClick={() => downloadCsv("users.csv", users)}><FiDownload className="inline mr-1" />Export</BtnOutline>
                   </div>
 
-                  <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
-                    <table className="w-full text-sm">
+                  <div className="glass-card rounded-2xl border border-white/10 overflow-x-auto">
+                    <table className="w-full text-sm min-w-[600px]">
                       <thead className="bg-white/5 text-[var(--color-muted)]">
                         <tr>
                           <th className="text-left p-3">Name</th>
@@ -597,8 +626,8 @@ export default function AdminDashboardPage() {
                     <BtnOutline onClick={() => downloadCsv("reviews.csv", reviews)}><FiDownload className="inline mr-1" />Export</BtnOutline>
                   </div>
 
-                  <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
-                    <table className="w-full text-sm">
+                  <div className="glass-card rounded-2xl border border-white/10 overflow-x-auto">
+                    <table className="w-full text-sm min-w-[800px]">
                       <thead className="bg-white/5 text-[var(--color-muted)]">
                         <tr>
                           <th className="text-left p-3">Reviewer</th>
@@ -677,8 +706,8 @@ export default function AdminDashboardPage() {
 
                   <div className="glass-card rounded-2xl p-5 border border-white/10">
                     <h3 className="font-semibold text-[var(--color-heading)] mb-4 flex items-center gap-2"><FiAward size={16} className="text-amber-400" /> Top Contractors by Leads</h3>
-                    <div className="overflow-auto">
-                      <table className="w-full text-sm">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm min-w-[700px]">
                         <thead className="text-[var(--color-muted)]">
                           <tr>
                             <th className="text-left p-2">#</th>
