@@ -8,13 +8,13 @@ import toast from "react-hot-toast";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 export default function BookingCheckoutPage() {
-    const { id } = useParams();
+    useParams();
     const { state } = useLocation();
     const navigate = useNavigate();
     const { user } = useAuth();
     const { lat, lng, address, loading: geoLoading, request: requestLocation, error: geoError } = useGeolocation();
 
-    const [contractor, setContractor] = useState(state?.contractor || null);
+    const [contractor] = useState(state?.contractor || null);
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(false);
 

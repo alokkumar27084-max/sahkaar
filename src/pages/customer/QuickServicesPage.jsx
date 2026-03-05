@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { servicesAPI } from "../../services/api";
-import Icon from "../../components/common/Icon";
+
 import {
     FiSearch, FiArrowRight, FiStar, FiClock, FiShield,
     FiCheckCircle, FiZap, FiDroplet, FiTool, FiScissors,
@@ -33,7 +33,7 @@ function getIcon(name) {
 
 
 export default function QuickServicesPage() {
-    const { t, lang } = useLanguage();
+    const { lang } = useLanguage();
     const navigate = useNavigate();
     const [categories, setCategories] = useState([]);
     const [services, setServices] = useState([]);
