@@ -16,11 +16,11 @@ const RADIUS_OPTIONS = [2, 3, 5];
 
 const stagger = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.06 } }
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 const cardVariant = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 150, damping: 20 } }
+  hidden: { opacity: 0, y: 24, filter: "blur(4px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 120, damping: 18 } }
 };
 
 export default function SearchPage() {

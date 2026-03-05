@@ -18,9 +18,24 @@ const types = {
     icon: "worker",
   },
   responsibility: {
-    label: { en: "Full Ownership", hi: "????? ??????????" },
+    label: { en: "Full Ownership", hi: "पूरी जिम्मेदारी" },
     cls: "bg-[#DBEAFE] text-[#1D4ED8] border-[#93C5FD]",
     icon: "team",
+  },
+  tier_silver: {
+    label: { en: "Silver Pro", hi: "सिल्वर प्रो" },
+    cls: "bg-slate-100 text-slate-500 border-slate-300",
+    icon: "trophy",
+  },
+  tier_gold: {
+    label: { en: "Gold Pro", hi: "गोल्ड प्रो" },
+    cls: "bg-amber-100 text-amber-600 border-amber-300",
+    icon: "trophy",
+  },
+  tier_platinum: {
+    label: { en: "Platinum Pro", hi: "प्लैटिनम प्रो" },
+    cls: "bg-purple-100 text-purple-600 border-purple-300",
+    icon: "trophy",
   },
 };
 

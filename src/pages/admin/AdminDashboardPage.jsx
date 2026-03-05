@@ -8,7 +8,7 @@ import {
   FiUsers, FiUserCheck, FiShield, FiTrendingUp, FiSettings, FiStar,
   FiAlertTriangle, FiActivity, FiSearch, FiDownload, FiTrash2, FiEye,
   FiCheckCircle, FiXCircle, FiRefreshCw, FiPlus,
-  FiAward, FiBarChart2,
+  FiAward, FiBarChart2, FiGrid,
 } from "react-icons/fi";
 
 /* ──────────── constants ──────────── */
@@ -16,6 +16,7 @@ const SIDEBAR = [
   { id: "overview", label: "Overview", icon: FiBarChart2 },
   { id: "users", label: "Users", icon: FiUsers },
   { id: "contractors", label: "Contractors", icon: FiUserCheck },
+  { id: "services", label: "Services", icon: FiGrid },
   { id: "reviews", label: "Reviews", icon: FiStar },
   { id: "moderation", label: "Moderation", icon: FiAlertTriangle },
   { id: "analytics", label: "Analytics", icon: FiTrendingUp },
@@ -173,6 +174,14 @@ export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [settings, setSettings] = useState({});
 
+  // Services management state
+  const [svcCategories, setSvcCategories] = useState([]);
+  const [svcServices, setSvcServices] = useState([]);
+  const [svcRequests, setSvcRequests] = useState([]);
+  const [svcSubTab, setSvcSubTab] = useState("categories");
+  const [svcCatForm, setSvcCatForm] = useState({ name: "", name_hi: "", slug: "", type: "chhota", icon: "", description: "" });
+  const [svcServiceForm, setSvcServiceForm] = useState({ name: "", name_hi: "", slug: "", category_id: "", price_starts_at: "", icon: "", description: "" });
+
   const [userForm, setUserForm] = useState(emptyUserForm);
   const [contractorForm, setContractorForm] = useState(emptyContractorForm);
   const [selectedDetail, setSelectedDetail] = useState(null);
@@ -218,16 +227,31 @@ export default function AdminDashboardPage() {
     setSettings(res.data.settings || {});
   }, []);
 
+  const loadSvcCategories = useCallback(async () => {
+    const res = await adminAPI.getServiceCategories();
+    setSvcCategories(res.data.categories || []);
+  }, []);
+
+  const loadSvcServices = useCallback(async () => {
+    const res = await adminAPI.getAdminServices();
+    setSvcServices(res.data.services || []);
+  }, []);
+
+  const loadSvcRequests = useCallback(async () => {
+    const res = await adminAPI.getServiceRequests();
+    setSvcRequests(res.data.requests || []);
+  }, []);
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      await Promise.all([loadOverview(), loadUsers(), loadContractors(), loadActivity(), loadReviews(), loadAnalytics(), loadSettings()]);
+      await Promise.all([loadOverview(), loadUsers(), loadContractors(), loadActivity(), loadReviews(), loadAnalytics(), loadSettings(), loadSvcCategories(), loadSvcServices(), loadSvcRequests()]);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load admin data");
     } finally {
       setLoading(false);
     }
-  }, [loadOverview, loadUsers, loadContractors, loadActivity, loadReviews, loadAnalytics, loadSettings]);
+  }, [loadOverview, loadUsers, loadContractors, loadActivity, loadReviews, loadAnalytics, loadSettings, loadSvcCategories, loadSvcServices, loadSvcRequests]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
   useEffect(() => { loadUsers().catch(() => { }); }, [loadUsers]);
@@ -270,9 +294,35 @@ export default function AdminDashboardPage() {
   async function handleDeleteContractor(id) { if (!window.confirm("Delete contractor + user?")) return; await withBusy(async () => { await adminAPI.deleteContractor(id); toast.success("Deleted"); await loadAll(); }); }
   async function handleQuickRoleChange(u, role) { await withBusy(async () => { await adminAPI.updateUser(u.id, { role }); toast.success(`Role → ${role}`); await Promise.all([loadUsers(), loadContractors(), loadOverview()]); }); }
   async function handleToggleContractorFlag(c, patch) { await withBusy(async () => { await adminAPI.updateContractor(c.id, patch); toast.success("Updated"); await Promise.all([loadContractors(), loadOverview()]); }); }
+  async function handleVerifyRequest(c, status) { await withBusy(async () => { await adminAPI.verifyContractor(c.id, { status }); toast.success(`Request ${status}`); await Promise.all([loadContractors(), loadOverview()]); }); }
   async function handleResolveReport(id, status) { await withBusy(async () => { await adminAPI.resolveReport(id, status); toast.success(`Report ${status}`); await Promise.all([loadOverview(), loadActivity()]); }); }
   async function handleDeleteReview(id) { if (!window.confirm("Delete this review?")) return; await withBusy(async () => { await adminAPI.deleteReview(id); toast.success("Review deleted"); await Promise.all([loadReviews(), loadOverview()]); }); }
   async function handleSaveSettings() { await withBusy(async () => { const res = await adminAPI.updateSettings(settings); setSettings(res.data.settings); toast.success("Settings saved"); }); }
+
+  // Service management actions
+  async function handleCreateSvcCategory(e) {
+    e.preventDefault();
+    await withBusy(async () => {
+      await adminAPI.createServiceCategory(svcCatForm);
+      setSvcCatForm({ name: "", name_hi: "", slug: "", type: "chhota", icon: "", description: "" });
+      toast.success("Category created");
+      await loadSvcCategories();
+    });
+  }
+  async function handleDeleteSvcCategory(id) { if (!window.confirm("Delete this category and all its services?")) return; await withBusy(async () => { await adminAPI.deleteServiceCategory(id); toast.success("Deleted"); await Promise.all([loadSvcCategories(), loadSvcServices()]); }); }
+  async function handleToggleSvcCategory(cat) { await withBusy(async () => { await adminAPI.updateServiceCategory(cat.id, { is_active: !cat.is_active }); toast.success("Updated"); await loadSvcCategories(); }); }
+  async function handleCreateSvcService(e) {
+    e.preventDefault();
+    await withBusy(async () => {
+      await adminAPI.createAdminService({ ...svcServiceForm, price_starts_at: parseInt(svcServiceForm.price_starts_at) || null });
+      setSvcServiceForm({ name: "", name_hi: "", slug: "", category_id: "", price_starts_at: "", icon: "", description: "" });
+      toast.success("Service created");
+      await loadSvcServices();
+    });
+  }
+  async function handleDeleteSvcService(id) { if (!window.confirm("Delete this service?")) return; await withBusy(async () => { await adminAPI.deleteAdminService(id); toast.success("Deleted"); await loadSvcServices(); }); }
+  async function handleToggleSvcService(svc) { await withBusy(async () => { await adminAPI.updateAdminService(svc.id, { is_active: !svc.is_active }); toast.success("Updated"); await loadSvcServices(); }); }
+  async function handleUpdateSvcRequest(id, status) { await withBusy(async () => { await adminAPI.updateServiceRequest(id, { status }); toast.success(`Status → ${status}`); await loadSvcRequests(); }); }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]"><LoadingSpinner size="lg" /></div>;
 
@@ -346,18 +396,24 @@ export default function AdminDashboardPage() {
 
                   <div className="grid md:grid-cols-2 gap-5">
                     <div className="glass-card rounded-2xl p-5 border border-white/10">
-                      <h3 className="font-semibold text-[var(--color-heading)] mb-4 flex items-center gap-2"><FiUserCheck size={16} className="text-amber-400" /> Pending Contractors</h3>
+                      <h3 className="font-semibold text-[var(--color-heading)] mb-4 flex items-center gap-2"><FiUserCheck size={16} className="text-amber-400" /> Verification Requests</h3>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {contractors.filter(c => !c.is_verified).slice(0, 8).map(c => (
-                          <div key={c.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
-                            <div>
-                              <p className="text-sm font-semibold text-[var(--color-heading)]">{c.business_name || c.user_name || "Contractor"}</p>
-                              <p className="text-xs text-[var(--color-muted)]">{c.phone || "No phone"}</p>
+                        {contractors.filter(c => c.verification_status === 'pending').slice(0, 8).map(c => (
+                          <div key={c.id} className="flex flex-col gap-2 p-3 rounded-xl bg-white/5 border border-white/5">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-[var(--color-heading)]">{c.business_name || c.user_name || "Contractor"}</p>
+                                <p className="text-xs text-[var(--color-muted)]">{c.phone || "No phone"}</p>
+                              </div>
+                              <BtnOutline onClick={() => showContractorDetail(c)}>View</BtnOutline>
                             </div>
-                            <BtnPrimary onClick={() => handleToggleContractorFlag(c, { is_verified: true })} disabled={busy}>Verify</BtnPrimary>
+                            <div className="flex gap-2">
+                              <button onClick={() => handleVerifyRequest(c, 'approved')} disabled={busy} className="flex-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 py-1.5 text-xs rounded-lg font-medium transition">Approve</button>
+                              <BtnDanger onClick={() => handleVerifyRequest(c, 'rejected')} disabled={busy} className="flex-1 !py-1.5 rounded-lg">Reject</BtnDanger>
+                            </div>
                           </div>
                         ))}
-                        {!contractors.some(c => !c.is_verified) && <p className="text-sm text-[var(--color-muted)] py-4 text-center">All contractors verified ✓</p>}
+                        {!contractors.some(c => c.verification_status === 'pending') && <p className="text-sm text-[var(--color-muted)] py-4 text-center">No pending requests ✓</p>}
                       </div>
                     </div>
 
@@ -491,15 +547,36 @@ export default function AdminDashboardPage() {
                             <p className="text-xs text-[var(--color-muted)] mt-0.5">{c.phone || "No phone"} · {c.email || "No email"}</p>
                             <p className="text-xs text-indigo-400 mt-1">{c.category || "No category"}</p>
                           </div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${c.is_verified ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
-                            {c.is_verified ? "✓ Verified" : "⏳ Pending"}
-                          </span>
+                          <div className={`text-[10px] flex flex-col items-end gap-1 font-bold`}>
+                            <span className={c.is_verified ? "bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full" : "bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded-full"}>
+                              {c.is_verified ? "✓ Verified" : "Unverified"}
+                            </span>
+                            {c.tier && c.tier !== 'standard' && (
+                              <span className="bg-white/10 text-[var(--color-body)] px-2 py-0.5 rounded-full capitalize border border-white/10">{c.tier}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 mt-4">
+                        <div className="flex flex-wrap gap-2 mt-4 items-center">
                           <BtnOutline disabled={busy} onClick={() => showContractorDetail(c)}><FiEye className="inline mr-1" />View</BtnOutline>
-                          <BtnOutline disabled={busy} onClick={() => handleToggleContractorFlag(c, { is_verified: !c.is_verified })}>{c.is_verified ? "Unverify" : "Verify"}</BtnOutline>
+                          {c.verification_status === 'pending' ? (
+                            <>
+                              <BtnOutline disabled={busy} onClick={() => handleVerifyRequest(c, 'approved')} className="!text-emerald-400 !border-emerald-400/30">Approve</BtnOutline>
+                              <BtnOutline disabled={busy} onClick={() => handleVerifyRequest(c, 'rejected')} className="!text-red-400 !border-red-400/30">Reject</BtnOutline>
+                            </>
+                          ) : (
+                            <BtnOutline disabled={busy} onClick={() => handleToggleContractorFlag(c, { is_verified: !c.is_verified })}>{c.is_verified ? "Unverify" : "Verify"}</BtnOutline>
+                          )}
                           <BtnOutline disabled={busy} onClick={() => handleToggleContractorFlag(c, { is_featured: !c.is_featured })}>{c.is_featured ? "★ Unfeat." : "☆ Feature"}</BtnOutline>
-                          <BtnOutline disabled={busy} onClick={() => handleToggleContractorFlag(c, { is_available: !c.is_available })}>{c.is_available ? "Set Busy" : "Set Avail."}</BtnOutline>
+
+                          <select className="px-2 py-1 rounded bg-white/5 border border-white/10 text-xs text-[var(--color-body)] outline-none"
+                            value={c.tier || 'standard'}
+                            onChange={(e) => handleToggleContractorFlag(c, { tier: e.target.value })} disabled={busy}>
+                            <option value="standard">Standard</option>
+                            <option value="silver">Silver</option>
+                            <option value="gold">Gold</option>
+                            <option value="platinum">Platinum</option>
+                          </select>
+
                           <BtnDanger disabled={busy} onClick={() => handleDeleteContractor(c.id)}><FiTrash2 className="inline" /></BtnDanger>
                         </div>
                       </motion.div>
@@ -728,6 +805,128 @@ export default function AdminDashboardPage() {
                       <span className="flex items-center gap-2">Save Settings</span>
                     </BtnPrimary>
                   </div>
+                </div>
+              )}
+
+              {/* ═══════ SERVICES ═══════ */}
+              {tab === "services" && (
+                <div className="space-y-6">
+                  {/* Sub-tabs */}
+                  <div className="flex gap-2">
+                    {["categories", "services", "requests"].map(st => (
+                      <button key={st} onClick={() => setSvcSubTab(st)}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition ${svcSubTab === st ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-white shadow" : "bg-white/5 text-[var(--color-muted)] border border-white/10 hover:bg-white/10"}`}>
+                        {st.charAt(0).toUpperCase() + st.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+
+                  {svcSubTab === "categories" && (
+                    <>
+                      <div className="glass-card rounded-2xl p-5 border border-white/10">
+                        <h3 className="font-semibold text-[var(--color-heading)] mb-4 flex items-center gap-2"><FiPlus size={16} /> Add Category</h3>
+                        <form className="grid md:grid-cols-3 gap-3" onSubmit={handleCreateSvcCategory}>
+                          <AdminInput placeholder="Name (EN)" value={svcCatForm.name} onChange={e => setSvcCatForm(f => ({ ...f, name: e.target.value }))} required />
+                          <AdminInput placeholder="Name (HI)" value={svcCatForm.name_hi} onChange={e => setSvcCatForm(f => ({ ...f, name_hi: e.target.value }))} />
+                          <AdminInput placeholder="Slug" value={svcCatForm.slug} onChange={e => setSvcCatForm(f => ({ ...f, slug: e.target.value }))} required />
+                          <AdminSelect value={svcCatForm.type} onChange={e => setSvcCatForm(f => ({ ...f, type: e.target.value }))}>
+                            <option value="chhota">Quick Services</option>
+                            <option value="bada">Macro Services</option>
+                          </AdminSelect>
+                          <AdminInput placeholder="Icon name" value={svcCatForm.icon} onChange={e => setSvcCatForm(f => ({ ...f, icon: e.target.value }))} />
+                          <AdminInput placeholder="Description" value={svcCatForm.description} onChange={e => setSvcCatForm(f => ({ ...f, description: e.target.value }))} />
+                          <div className="md:col-span-3"><BtnPrimary type="submit" disabled={busy}>Create Category</BtnPrimary></div>
+                        </form>
+                      </div>
+                      <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-white/5 text-[var(--color-muted)]">
+                            <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Hindi</th><th className="text-left p-3">Type</th><th className="text-left p-3">Active</th><th className="text-left p-3">Actions</th></tr>
+                          </thead>
+                          <tbody>
+                            {svcCategories.map(c => (
+                              <tr key={c.id} className="border-t border-white/5 hover:bg-white/[0.02]">
+                                <td className="p-3 text-[var(--color-heading)] font-medium">{c.name}</td>
+                                <td className="p-3 text-[var(--color-body)]">{c.name_hi || "-"}</td>
+                                <td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${c.type === "chhota" ? "bg-amber-500/15 text-amber-400" : "bg-cyan-500/15 text-cyan-400"}`}>{c.type === "chhota" ? "Quick" : "Big"}</span></td>
+                                <td className="p-3"><span className={c.is_active ? "text-green-400" : "text-red-400"}>{c.is_active ? "✓" : "✗"}</span></td>
+                                <td className="p-3"><div className="flex gap-1.5"><BtnOutline disabled={busy} onClick={() => handleToggleSvcCategory(c)}>{c.is_active ? "Disable" : "Enable"}</BtnOutline><BtnDanger disabled={busy} onClick={() => handleDeleteSvcCategory(c.id)}><FiTrash2 className="inline" /></BtnDanger></div></td>
+                              </tr>
+                            ))}
+                            {svcCategories.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-[var(--color-muted)]">No categories yet.</td></tr>}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+
+                  {svcSubTab === "services" && (
+                    <>
+                      <div className="glass-card rounded-2xl p-5 border border-white/10">
+                        <h3 className="font-semibold text-[var(--color-heading)] mb-4 flex items-center gap-2"><FiPlus size={16} /> Add Service</h3>
+                        <form className="grid md:grid-cols-3 gap-3" onSubmit={handleCreateSvcService}>
+                          <AdminInput placeholder="Name (EN)" value={svcServiceForm.name} onChange={e => setSvcServiceForm(f => ({ ...f, name: e.target.value }))} required />
+                          <AdminInput placeholder="Name (HI)" value={svcServiceForm.name_hi} onChange={e => setSvcServiceForm(f => ({ ...f, name_hi: e.target.value }))} />
+                          <AdminInput placeholder="Slug" value={svcServiceForm.slug} onChange={e => setSvcServiceForm(f => ({ ...f, slug: e.target.value }))} required />
+                          <AdminSelect value={svcServiceForm.category_id} onChange={e => setSvcServiceForm(f => ({ ...f, category_id: e.target.value }))} required>
+                            <option value="">Select Category</option>
+                            {svcCategories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type === "chhota" ? "Quick" : "Big"})</option>)}
+                          </AdminSelect>
+                          <AdminInput placeholder="Price ₹" type="number" value={svcServiceForm.price_starts_at} onChange={e => setSvcServiceForm(f => ({ ...f, price_starts_at: e.target.value }))} />
+                          <AdminInput placeholder="Icon" value={svcServiceForm.icon} onChange={e => setSvcServiceForm(f => ({ ...f, icon: e.target.value }))} />
+                          <AdminInput placeholder="Description" value={svcServiceForm.description} onChange={e => setSvcServiceForm(f => ({ ...f, description: e.target.value }))} className="md:col-span-2" />
+                          <div className="md:col-span-3"><BtnPrimary type="submit" disabled={busy}>Create Service</BtnPrimary></div>
+                        </form>
+                      </div>
+                      <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-white/5 text-[var(--color-muted)]">
+                            <tr><th className="text-left p-3">Name</th><th className="text-left p-3">Category</th><th className="text-left p-3">Price</th><th className="text-left p-3">Rating</th><th className="text-left p-3">Active</th><th className="text-left p-3">Actions</th></tr>
+                          </thead>
+                          <tbody>
+                            {svcServices.map(s => (
+                              <tr key={s.id} className="border-t border-white/5 hover:bg-white/[0.02]">
+                                <td className="p-3 text-[var(--color-heading)] font-medium">{s.name}</td>
+                                <td className="p-3 text-indigo-400 text-xs">{s.category_name || "-"}</td>
+                                <td className="p-3 text-[var(--color-body)]">{s.price_starts_at ? `₹${s.price_starts_at}` : "-"}</td>
+                                <td className="p-3 text-amber-400">{Number(s.rating).toFixed(1)}</td>
+                                <td className="p-3"><span className={s.is_active ? "text-green-400" : "text-red-400"}>{s.is_active ? "✓" : "✗"}</span></td>
+                                <td className="p-3"><div className="flex gap-1.5"><BtnOutline disabled={busy} onClick={() => handleToggleSvcService(s)}>{s.is_active ? "Disable" : "Enable"}</BtnOutline><BtnDanger disabled={busy} onClick={() => handleDeleteSvcService(s.id)}><FiTrash2 className="inline" /></BtnDanger></div></td>
+                              </tr>
+                            ))}
+                            {svcServices.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-[var(--color-muted)]">No services yet.</td></tr>}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+
+                  {svcSubTab === "requests" && (
+                    <div className="glass-card rounded-2xl border border-white/10 overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-white/5 text-[var(--color-muted)]">
+                          <tr><th className="text-left p-3">Customer</th><th className="text-left p-3">Phone</th><th className="text-left p-3">Service</th><th className="text-left p-3">Date</th><th className="text-left p-3">Status</th><th className="text-left p-3">Actions</th></tr>
+                        </thead>
+                        <tbody>
+                          {svcRequests.map(r => (
+                            <tr key={r.id} className="border-t border-white/5 hover:bg-white/[0.02]">
+                              <td className="p-3 text-[var(--color-heading)] font-medium">{r.customer_name}</td>
+                              <td className="p-3 text-[var(--color-body)]">{r.customer_phone}</td>
+                              <td className="p-3 text-indigo-400 text-xs">{r.service_name || r.category_name || "-"}</td>
+                              <td className="p-3 text-[var(--color-muted)] text-xs">{r.preferred_date || "-"}</td>
+                              <td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${r.status === "pending" ? "bg-amber-500/15 text-amber-400" : r.status === "confirmed" ? "bg-blue-500/15 text-blue-400" : r.status === "completed" ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>{r.status}</span></td>
+                              <td className="p-3"><div className="flex gap-1.5">
+                                {r.status === "pending" && <BtnOutline disabled={busy} onClick={() => handleUpdateSvcRequest(r.id, "confirmed")}>Confirm</BtnOutline>}
+                                {r.status === "confirmed" && <BtnOutline disabled={busy} onClick={() => handleUpdateSvcRequest(r.id, "completed")}>Complete</BtnOutline>}
+                                {r.status !== "cancelled" && r.status !== "completed" && <BtnDanger disabled={busy} onClick={() => handleUpdateSvcRequest(r.id, "cancelled")}>Cancel</BtnDanger>}
+                              </div></td>
+                            </tr>
+                          ))}
+                          {svcRequests.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-[var(--color-muted)]">No service requests yet.</td></tr>}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
 

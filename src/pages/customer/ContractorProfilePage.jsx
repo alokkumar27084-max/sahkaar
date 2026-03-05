@@ -9,12 +9,13 @@ import { WHATSAPP_URL } from "../../utils/constants";
 import { getImageUrl } from "../../utils/imageUtils";
 import StarRating from "../../components/common/StarRating";
 import Badge from "../../components/common/Badge";
+import Icon from "../../components/common/Icon";
 import toast from "react-hot-toast";
-import { FiArrowLeft, FiShare2, FiMessageCircle, FiMapPin } from "react-icons/fi";
+import { FiArrowLeft, FiShare2, FiMessageCircle, FiMapPin, FiBriefcase } from "react-icons/fi";
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }
+  hidden: { opacity: 0, y: 30, filter: "blur(4px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
 };
 
 export default function ContractorProfilePage() {
@@ -73,6 +74,7 @@ export default function ContractorProfilePage() {
   const name = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";
   const category = contractor?.category || contractor?.categories?.[0] || "general";
   const photo_url = contractor?.photo_url;
+  const portfolio_items = contractor?.portfolio_items || [];
   const portfolio_photos = contractor?.portfolio_photos || contractor?.portfolio_urls || [];
   const rating = Number(contractor?.rating || 0);
   const review_count = contractor?.review_count ?? contractor?.reviews_count ?? 0;
@@ -86,6 +88,7 @@ export default function ContractorProfilePage() {
   const daily_rate = contractor?.daily_rate;
   const experience_years = contractor?.experience_years;
   const team_size = contractor?.team_size;
+  const tier = contractor?.tier;
   const services = contractor?.services || [];
   const location_text = contractor?.location_text;
 
@@ -122,7 +125,7 @@ export default function ContractorProfilePage() {
             </div>
 
             <div className="flex-1">
-              <h1 className="font-display text-2xl md:text-3xl text-[var(--color-heading)] font-bold">{name}</h1>
+              <h1 className="font-display text-2xl md:text-3xl text-[var(--color-heading)] font-extrabold uppercase tracking-tight">{name}</h1>
               <p className="text-[var(--color-muted)] text-sm capitalize mt-0.5">{category?.replace("_", " ")}</p>
               <div className="flex items-center gap-2 mt-1.5">
                 <StarRating value={Math.round(rating)} readonly size="text-base" />
@@ -133,6 +136,7 @@ export default function ContractorProfilePage() {
                 {is_featured && <Badge type="featured" lang={lang} />}
                 {is_labour_group && <Badge type="labour_group" lang={lang} />}
                 {is_responsibility_model && <Badge type="responsibility" lang={lang} />}
+                {tier && tier !== 'standard' && <Badge type={`tier_${tier}`} lang={lang} />}
               </div>
             </div>
 
@@ -169,13 +173,25 @@ export default function ContractorProfilePage() {
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-3 mt-5">
+            <button
+              onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })}
+              className="btn-primary w-full sm:w-auto"
+            >
+              <FiBriefcase size={16} /> {lang === "hi" ? "अभी बुक करें" : "Book Now"}
+            </button>
+            <button
+              onClick={() => navigate("/chat", { state: { initChatWith: id } })}
+              className="btn-secondary w-full sm:w-auto"
+            >
+              <FiMessageCircle size={16} /> {lang === "hi" ? "इन-ऐप चैट" : "Message in App"}
+            </button>
             <a href={WHATSAPP_URL(phone, name)} target="_blank" rel="noopener noreferrer"
-              className="btn-primary btn-shimmer"
+              className="btn-outline-cyan w-full sm:w-auto text-center"
               onClick={async () => { try { await contractorAPI.recordLead(id); } catch { } trackEvent("whatsapp_tap", { contractor_id: id, source: "profile" }); }}>
               <FiMessageCircle size={16} /> {t("profile.contact_whatsapp")}
             </a>
             <button onClick={() => { if (navigator.share) navigator.share({ title: name, url: window.location.href }); }}
-              className="btn-secondary">
+              className="btn-secondary flex items-center gap-2">
               <FiShare2 size={16} /> {t("profile.share")}
             </button>
           </div>
@@ -216,16 +232,42 @@ export default function ContractorProfilePage() {
           )}
 
           {activeTab === "portfolio" && (
-            <div className="mt-5">
-              {portfolio_photos.length > 0 ? (
+            <div className="mt-5 space-y-6">
+              {portfolio_items.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {portfolio_items.map((item) => (
+                    <div key={item.id} className="glass-card p-3 rounded-2xl flex flex-col hover:border-[var(--color-primary)]/50 transition-colors bg-[var(--color-surface)] shadow-sm">
+                      <img src={getImageUrl(item.image_url)} alt={item.title || "Portfolio"}
+                        className="w-full h-40 object-cover rounded-xl" loading="lazy" />
+                      {(item.title || item.description) && (
+                        <div className="mt-3 px-1 pb-1">
+                          {item.title && <h4 className="font-semibold text-[var(--color-heading)] text-sm">{item.title}</h4>}
+                          {item.description && <p className="text-xs text-[var(--color-muted)] mt-1 line-clamp-2">{item.description}</p>}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {portfolio_items.length === 0 && portfolio_photos.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {portfolio_photos.map((url, i) => (
                     <img key={i} src={getImageUrl(url)} alt={`Work ${i + 1}`}
-                      className="w-full h-36 md:h-44 object-cover rounded-xl border border-[var(--color-border)]" loading="lazy" />
+                      className="w-full h-36 md:h-44 object-cover rounded-xl border border-[var(--color-border)] shadow-sm" loading="lazy" />
                   ))}
                 </div>
-              ) : (
-                <p className="text-center text-[var(--color-muted)] text-sm py-8">{lang === "hi" ? "अभी कोई फोटो नहीं" : "No photos yet"}</p>
+              )}
+
+              {portfolio_items.length === 0 && portfolio_photos.length === 0 && (
+                <div className="py-12 border-2 border-dashed border-[var(--color-border)] rounded-2xl flex flex-col items-center justify-center">
+                  <span className="w-12 h-12 rounded-full bg-[var(--color-bg)] flex items-center justify-center mb-3">
+                    <Icon name="image" className="w-5 h-5 text-[var(--color-muted)]" />
+                  </span>
+                  <p className="text-center text-[var(--color-muted)] font-medium text-sm">
+                    {lang === "hi" ? "अभी कोई पोर्टफोलियो उपलब्ध नहीं है" : "No portfolio items yet"}
+                  </p>
+                </div>
               )}
             </div>
           )}

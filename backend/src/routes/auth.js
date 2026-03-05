@@ -20,6 +20,14 @@ router.post('/verify-otp', controller.verifyOtp);
 router.post('/otp/email/request', controller.requestEmailOtp);
 router.post('/otp/email/verify', controller.verifyEmailOtp);
 
+// Public: password reset
+router.post('/forgot-password', controller.forgotPassword);
+router.post('/reset-password', controller.resetPassword);
+
+// Public: google auth
+const oauthController = require('../controllers/oauthController');
+router.post('/google', oauthController.googleLogin);
+
 // Auth helpers
 router.get('/me', controller.me);
 router.put('/location', requireAuth, controller.updateMyLocation);

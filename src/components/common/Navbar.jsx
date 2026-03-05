@@ -44,7 +44,8 @@ export default function Navbar() {
 
   const navLinks = useMemo(() => [
     { href: "/#home", label: "Home" },
-    { href: "/#services", label: "Services" },
+    { href: "/quick-services", label: "Quick Services" },
+    { href: "/macro-services", label: "Macro Services" },
     { href: "/#about", label: "About" },
     { href: "/#contact", label: "Contact" },
   ], []);
@@ -98,8 +99,8 @@ export default function Navbar() {
             {/* Logo + Brand */}
             <Link to="/" className="flex items-center gap-3 min-w-[56px] group">
               <ThekedaarLogo className="h-10 w-10 md:h-11 md:w-11 transition-transform group-hover:scale-105" />
-              <span className="hidden sm:block font-display text-xl font-bold text-[var(--color-heading)] tracking-tight">
-                Thekedaar
+              <span className="hidden sm:block font-display text-xl text-[var(--color-heading)] tracking-[-0.03em] font-extrabold uppercase">
+                THEKEDAAR
               </span>
             </Link>
 
@@ -116,8 +117,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-3">
               {user ? (
                 <>
-                  {/* After login: only theme toggle + hamburger, no dashboard button */}
-                  <ThemeToggleBtn />
+                  {/* After login: dark mode is in side panel only */}
                 </>
               ) : (
                 <>

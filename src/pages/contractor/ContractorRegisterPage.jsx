@@ -15,10 +15,10 @@ import { FiUser, FiPhone, FiLock, FiCheckCircle, FiCamera, FiUpload, FiMapPin, F
 const TOTAL_STEPS = 4;
 
 const stepAnim = {
-  initial: { opacity: 0, x: 30 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -30 },
-  transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] }
+  initial: { opacity: 0, x: 30, filter: "blur(4px)" },
+  animate: { opacity: 1, x: 0, filter: "blur(0px)" },
+  exit: { opacity: 0, x: -30, filter: "blur(4px)" },
+  transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] }
 };
 
 export default function ContractorRegisterPage() {
@@ -141,32 +141,26 @@ export default function ContractorRegisterPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden bg-gradient-to-br from-navy-dark via-navy to-primary-dark items-center justify-center p-12">
-        <motion.div
-          animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[20%] left-[20%] w-[250px] h-[250px] rounded-full bg-primary/20 blur-[80px]"
-        />
-        <motion.div
-          animate={{ x: [0, -15, 0], y: [0, 20, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[20%] right-[15%] w-[300px] h-[300px] rounded-full bg-accent/15 blur-[100px]"
-        />
+      <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden bg-[#030712] items-center justify-center p-12">
+        <div className="absolute top-[15%] left-[15%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-indigo-600/25 to-purple-600/10 blur-[80px] animate-[float_18s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[15%] right-[10%] w-[400px] h-[400px] rounded-full bg-gradient-to-bl from-cyan-500/15 to-blue-500/8 blur-[100px] animate-[float_22s_ease-in-out_infinite_reverse]" />
         <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
-          backgroundSize: "50px 50px"
+          backgroundImage: "linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px)",
+          backgroundSize: "80px 80px"
         }} />
         <div className="relative z-10 text-center">
-          <h1 className="font-display text-4xl text-white font-bold mb-3">
-            Join as a <span className="gradient-text">Partner</span>
+          <h1 className="font-display text-4xl text-white font-extrabold uppercase tracking-[-0.03em] mb-3">
+            JOIN AS <span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">PARTNER</span>
           </h1>
-          <p className="text-white/50 text-lg max-w-sm mx-auto">
+          <p className="text-white/40 text-base max-w-sm mx-auto">
             {lang === "hi" ? "अपनी डिजिटल पहचान बनाएं और हजारों ग्राहकों से जुड़ें" : "Build your digital identity and connect with thousands of customers"}
           </p>
-          <div className="mt-8 flex items-center justify-center gap-6 text-white/30 text-sm">
-            <span className="flex items-center gap-2"><FiShield size={14} /> Verified Pros</span>
-            <span className="w-1 h-1 rounded-full bg-white/20" />
+          <div className="mt-8 flex items-center justify-center gap-6 text-white/25 text-xs uppercase tracking-wider">
+            <span className="flex items-center gap-2"><FiShield size={13} /> Verified</span>
+            <span className="w-1 h-1 rounded-full bg-white/15" />
             <span>Free to Join</span>
+            <span className="w-1 h-1 rounded-full bg-white/15" />
+            <span>10k+ Projects</span>
           </div>
         </div>
       </div>
@@ -176,10 +170,10 @@ export default function ContractorRegisterPage() {
         <div className="max-w-lg mx-auto w-full">
           {/* Mobile header */}
           <div className="lg:hidden text-center mb-6">
-            <h1 className="font-display text-2xl font-bold text-[var(--color-heading)]">
-              Join as <span className="gradient-text">Partner</span>
+            <h1 className="font-display text-2xl font-extrabold text-[var(--color-heading)] uppercase tracking-tight">
+              JOIN AS <span className="gradient-text">PARTNER</span>
             </h1>
-            <p className="text-sm text-[var(--color-muted)] mt-1">
+            <p className="text-xs text-[var(--color-muted)] mt-1 uppercase tracking-wider">
               {lang === "hi" ? "अपनी डिजिटल पहचान बनाएं" : "Build your digital identity"}
             </p>
           </div>
@@ -211,7 +205,7 @@ export default function ContractorRegisterPage() {
               {/* STEP 1 */}
               {step === 1 && (
                 <motion.div key="s1" {...stepAnim} className="space-y-4">
-                  <h2 className="font-display text-lg font-bold text-[var(--color-heading)]">{t("creg.step1")}</h2>
+                  <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step1")}</h2>
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("auth.name")}</label>
                     <div className="relative">
@@ -277,7 +271,7 @@ export default function ContractorRegisterPage() {
               {/* STEP 2 */}
               {step === 2 && (
                 <motion.div key="s2" {...stepAnim} className="space-y-4">
-                  <h2 className="font-display text-lg font-bold text-[var(--color-heading)]">{t("creg.step2")}</h2>
+                  <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step2")}</h2>
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("creg.description")}</label>
                     <textarea value={form.description} onChange={update("description")}
@@ -318,7 +312,7 @@ export default function ContractorRegisterPage() {
               {/* STEP 3 */}
               {step === 3 && (
                 <motion.div key="s3" {...stepAnim} className="space-y-4">
-                  <h2 className="font-display text-lg font-bold text-[var(--color-heading)]">{t("creg.step3")}</h2>
+                  <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step3")}</h2>
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-body)] mb-2">
                       {lang === "hi" ? "प्रोफाइल फोटो" : "Profile Photo"}
@@ -382,7 +376,7 @@ export default function ContractorRegisterPage() {
               {step === 4 && (
                 <motion.div key="s4" {...stepAnim}>
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <h2 className="font-display text-lg font-bold text-[var(--color-heading)]">{t("creg.step4")}</h2>
+                    <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step4")}</h2>
                     <div>
                       <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("creg.location")}</label>
                       <div className="relative">

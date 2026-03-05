@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { GoogleLogin } from '@react-oauth/google';
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI } from "../../services/api";
@@ -144,6 +145,29 @@ export default function LoginPage() {
     finally { setLoading(false); }
   }
 
+  // ── Google Auth Handler ──
+  async function handleGoogleSuccess(credentialResponse) {
+    setLoading(true);
+    try {
+      const res = await authAPI.googleLogin({ credential: credentialResponse.credential });
+      login(res.data.user);
+      toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
+      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+    } catch (err) {
+      if (err.response?.data?.code === 'ACCOUNT_NOT_FOUND') {
+        const googleData = err.response.data.googleData;
+        const searchParams = new URLSearchParams({ email: googleData.email, name: googleData.name });
+        if (customerNext !== "/") searchParams.append("next", customerNext);
+        navigate(`/register?${searchParams.toString()}`);
+        toast.error(err.response.data.message);
+      } else {
+        toast.error(err.response?.data?.message || t("app.error"));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const MODES = [
     { id: "phone", icon: FiPhone, label: lang === "hi" ? "मोबाइल OTP" : "Mobile OTP" },
     { id: "emailOtp", icon: FiMail, label: lang === "hi" ? "ईमेल OTP" : "Email OTP" },
@@ -153,38 +177,32 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side — Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-navy-dark via-navy to-primary-dark items-center justify-center p-12">
-        <motion.div
-          animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[20%] left-[20%] w-[250px] h-[250px] rounded-full bg-primary/20 blur-[80px]"
-        />
-        <motion.div
-          animate={{ x: [0, -15, 0], y: [0, 20, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-[20%] right-[15%] w-[300px] h-[300px] rounded-full bg-accent/15 blur-[100px]"
-        />
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#030712] items-center justify-center p-12">
+        <div className="absolute top-[15%] left-[15%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-indigo-600/25 to-purple-600/10 blur-[80px] animate-[float_18s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[15%] right-[10%] w-[400px] h-[400px] rounded-full bg-gradient-to-bl from-cyan-500/15 to-blue-500/8 blur-[100px] animate-[float_22s_ease-in-out_infinite_reverse]" />
         <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
-          backgroundSize: "50px 50px"
+          backgroundImage: "linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px)",
+          backgroundSize: "80px 80px"
         }} />
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.8 }}
           className="relative z-10 text-center"
         >
-          <h1 className="font-display text-5xl text-white font-bold mb-4">
-            The<span className="gradient-text">kedaar</span>
+          <h1 className="font-display text-5xl text-white font-extrabold tracking-[-0.04em] uppercase mb-4">
+            THE<span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">KEDAAR</span>
           </h1>
-          <p className="text-white/50 text-lg max-w-sm mx-auto">
+          <p className="text-white/40 text-base max-w-sm mx-auto">
             {lang === "hi" ? "हर काम का एक ठेकेदार" : "India's Premium Contractor Network"}
           </p>
-          <div className="mt-8 flex items-center justify-center gap-6 text-white/30 text-sm">
-            <span className="flex items-center gap-2"><FiShield size={14} /> Verified Pros</span>
-            <span className="w-1 h-1 rounded-full bg-white/20" />
+          <div className="mt-8 flex items-center justify-center gap-6 text-white/25 text-xs uppercase tracking-wider">
+            <span className="flex items-center gap-2"><FiShield size={13} /> Verified</span>
+            <span className="w-1 h-1 rounded-full bg-white/15" />
             <span>10k+ Projects</span>
+            <span className="w-1 h-1 rounded-full bg-white/15" />
+            <span>Trusted</span>
           </div>
         </motion.div>
       </div>
@@ -199,10 +217,10 @@ export default function LoginPage() {
         >
           {/* Mobile branding */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="font-display text-3xl font-bold text-[var(--color-heading)]">
-              The<span className="gradient-text">kedaar</span>
+            <h1 className="font-display text-3xl font-extrabold text-[var(--color-heading)] uppercase tracking-[-0.03em]">
+              THE<span className="gradient-text">KEDAAR</span>
             </h1>
-            <p className="text-sm text-[var(--color-muted)] mt-1">{lang === "hi" ? "हर काम का एक ठेकेदार" : "Premium Contractor Network"}</p>
+            <p className="text-xs text-[var(--color-muted)] mt-1 uppercase tracking-wider">{lang === "hi" ? "हर काम का एक ठेकेदार" : "Premium Contractor Network"}</p>
           </div>
 
           {new URLSearchParams(window.location.search).get("admin") === "1" && (
@@ -212,8 +230,25 @@ export default function LoginPage() {
           )}
 
           <div className="glass-card p-7 md:p-8">
-            <h2 className="font-display text-2xl text-[var(--color-heading)] font-bold mb-1">{t("auth.login_title")}</h2>
+            <h2 className="font-display text-2xl text-[var(--color-heading)] font-extrabold uppercase tracking-tight mb-1">{t("auth.login_title")}</h2>
             <p className="text-[var(--color-muted)] text-sm mb-6">{t("auth.login_sub")}</p>
+
+            {/* Google Login */}
+            <div className="mb-6 flex justify-center">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => toast.error('Google Sign In Failed')}
+                text="continue_with"
+                shape="rectangular"
+                width="100%"
+              />
+            </div>
+
+            <div className="relative flex py-2 items-center mb-6">
+              <div className="flex-grow border-t border-[var(--color-border)]"></div>
+              <span className="flex-shrink-0 mx-4 text-[var(--color-muted)] text-xs uppercase tracking-wider">{lang === "hi" ? "या" : "Or login with"}</span>
+              <div className="flex-grow border-t border-[var(--color-border)]"></div>
+            </div>
 
             {/* Mode switcher — 3 tabs */}
             <div className="flex bg-[var(--color-border)] rounded-xl p-1 mb-6">
@@ -356,6 +391,9 @@ export default function LoginPage() {
                           className={`input-field !pl-10 ${errors.password ? "error" : ""}`} />
                       </div>
                       {errors.password && <p className="text-danger text-xs mt-1.5">{errors.password}</p>}
+                      <div className="text-right mt-2">
+                        <Link to="/forgot-password" className="text-xs text-[var(--color-primary)] hover:underline">{lang === "hi" ? "पासवर्ड भूल गए?" : "Forgot password?"}</Link>
+                      </div>
                     </div>
                     <button type="submit" disabled={loading} className="btn-primary w-full">
                       {loading ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>{t("auth.login_btn")} <FiArrowRight size={16} /></>}

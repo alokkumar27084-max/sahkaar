@@ -14,7 +14,7 @@ module.exports = {
         warning: { DEFAULT: "#F59E0B", light: "#FBBF24" },
       },
       fontFamily: {
-        display: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
+        display: ['"Syne"', 'system-ui', 'sans-serif'],
         body: ['"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },

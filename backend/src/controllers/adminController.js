@@ -37,12 +37,23 @@ exports.pendingContractors = async (req, res, next) => {
 
 exports.verifyContractor = async (req, res, next) => {
   try {
+    const { status } = req.body || {};
+    let is_verified = true;
+    let verification_status = 'approved';
+    let message = 'Your profile has been verified.';
+
+    if (status === 'rejected') {
+      is_verified = false;
+      verification_status = 'rejected';
+      message = 'Your profile verification has been rejected. Please update your details and try again.';
+    }
+
     const result = await db.query(
       `UPDATE contractors
-       SET is_verified = true, updated_at = now()
+       SET is_verified = $2, verification_status = $3, updated_at = now()
        WHERE id = $1
        RETURNING *`,
-      [req.params.id]
+      [req.params.id, is_verified, verification_status]
     );
     const contractor = result.rows[0];
     if (!contractor) return res.status(404).json({ ok: false, message: 'Contractor not found' });
@@ -50,7 +61,7 @@ exports.verifyContractor = async (req, res, next) => {
     await db.query(
       `INSERT INTO notifications (user_id, message, type)
        VALUES ($1, $2, $3)`,
-      [contractor.user_id, 'Your profile has been verified.', 'verification']
+      [contractor.user_id, message, 'verification']
     );
 
     return res.json({ ok: true, contractor });
@@ -959,3 +970,154 @@ exports.updateSettings = async (req, res, next) => {
   }
 };
 
+// ── Service Categories management ──────────────────────────────
+
+exports.listServiceCategories = async (req, res, next) => {
+  try {
+    const { type } = req.query;
+    let query = `SELECT * FROM service_categories`;
+    const params = [];
+    if (type) { params.push(type); query += ` WHERE type = $1`; }
+    query += ` ORDER BY type, display_order ASC`;
+    const { rows } = await db.query(query, params);
+    res.json({ ok: true, categories: rows });
+  } catch (err) { next(err); }
+};
+
+exports.createServiceCategory = async (req, res, next) => {
+  try {
+    const p = sanitizeObject(req.body || {});
+    if (!p.name || !p.slug) return res.status(400).json({ ok: false, message: 'name and slug required' });
+    const result = await db.query(
+      `INSERT INTO service_categories (name, name_hi, slug, description, description_hi, icon, type, display_order, is_active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [p.name, p.name_hi || null, p.slug, p.description || null, p.description_hi || null, p.icon || null, p.type || 'chhota', p.display_order || 0, p.is_active !== false]
+    );
+    res.status(201).json({ ok: true, category: result.rows[0] });
+  } catch (err) { next(err); }
+};
+
+exports.updateServiceCategory = async (req, res, next) => {
+  try {
+    const id = parseIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, message: 'invalid id' });
+    const p = sanitizeObject(req.body || {});
+    const result = await db.query(
+      `UPDATE service_categories SET
+        name = COALESCE($2, name), name_hi = COALESCE($3, name_hi), slug = COALESCE($4, slug),
+        description = COALESCE($5, description), description_hi = COALESCE($6, description_hi),
+        icon = COALESCE($7, icon), type = COALESCE($8, type),
+        display_order = COALESCE($9, display_order), is_active = COALESCE($10, is_active),
+        updated_at = now()
+       WHERE id = $1 RETURNING *`,
+      [id, p.name || null, p.name_hi || null, p.slug || null, p.description || null, p.description_hi || null, p.icon || null, p.type || null, p.display_order ?? null, toBool(p.is_active)]
+    );
+    if (!result.rows[0]) return res.status(404).json({ ok: false, message: 'Not found' });
+    res.json({ ok: true, category: result.rows[0] });
+  } catch (err) { next(err); }
+};
+
+exports.deleteServiceCategory = async (req, res, next) => {
+  try {
+    const id = parseIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, message: 'invalid id' });
+    await db.query(`DELETE FROM services WHERE category_id = $1`, [id]);
+    await db.query(`DELETE FROM service_categories WHERE id = $1`, [id]);
+    res.json({ ok: true, deleted: id });
+  } catch (err) { next(err); }
+};
+
+// ── Services management ────────────────────────────────────────
+
+exports.listAdminServices = async (req, res, next) => {
+  try {
+    const { category_id } = req.query;
+    let query = `SELECT s.*, sc.name as category_name, sc.type as category_type
+                 FROM services s JOIN service_categories sc ON s.category_id = sc.id`;
+    const params = [];
+    if (category_id) { params.push(category_id); query += ` WHERE s.category_id = $1`; }
+    query += ` ORDER BY sc.type, sc.display_order, s.display_order ASC`;
+    const { rows } = await db.query(query, params);
+    res.json({ ok: true, services: rows });
+  } catch (err) { next(err); }
+};
+
+exports.createAdminService = async (req, res, next) => {
+  try {
+    const p = sanitizeObject(req.body || {});
+    if (!p.name || !p.slug || !p.category_id) return res.status(400).json({ ok: false, message: 'name, slug, and category_id required' });
+    const result = await db.query(
+      `INSERT INTO services (category_id, name, name_hi, slug, description, description_hi, price_starts_at, price_label, image_url, icon, rating, is_active, display_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+      [p.category_id, p.name, p.name_hi || null, p.slug, p.description || null, p.description_hi || null, p.price_starts_at || null, p.price_label || 'Starting at', p.image_url || null, p.icon || null, p.rating || 4.5, p.is_active !== false, p.display_order || 0]
+    );
+    res.status(201).json({ ok: true, service: result.rows[0] });
+  } catch (err) { next(err); }
+};
+
+exports.updateAdminService = async (req, res, next) => {
+  try {
+    const id = parseIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, message: 'invalid id' });
+    const p = sanitizeObject(req.body || {});
+    const result = await db.query(
+      `UPDATE services SET
+        category_id = COALESCE($2, category_id), name = COALESCE($3, name), name_hi = COALESCE($4, name_hi),
+        slug = COALESCE($5, slug), description = COALESCE($6, description), description_hi = COALESCE($7, description_hi),
+        price_starts_at = COALESCE($8, price_starts_at), price_label = COALESCE($9, price_label),
+        image_url = COALESCE($10, image_url), icon = COALESCE($11, icon),
+        is_active = COALESCE($12, is_active), display_order = COALESCE($13, display_order),
+        updated_at = now()
+       WHERE id = $1 RETURNING *`,
+      [id, p.category_id || null, p.name || null, p.name_hi || null, p.slug || null, p.description || null, p.description_hi || null, p.price_starts_at ?? null, p.price_label || null, p.image_url || null, p.icon || null, toBool(p.is_active), p.display_order ?? null]
+    );
+    if (!result.rows[0]) return res.status(404).json({ ok: false, message: 'Not found' });
+    res.json({ ok: true, service: result.rows[0] });
+  } catch (err) { next(err); }
+};
+
+exports.deleteAdminService = async (req, res, next) => {
+  try {
+    const id = parseIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, message: 'invalid id' });
+    await db.query(`DELETE FROM services WHERE id = $1`, [id]);
+    res.json({ ok: true, deleted: id });
+  } catch (err) { next(err); }
+};
+
+// ── Service Requests management ────────────────────────────────
+
+exports.listServiceRequests = async (req, res, next) => {
+  try {
+    const { status, type } = req.query;
+    let query = `SELECT sr.*, s.name as service_name, sc.name as category_name
+                 FROM service_requests sr
+                 LEFT JOIN services s ON sr.service_id = s.id
+                 LEFT JOIN service_categories sc ON sr.category_id = sc.id`;
+    const params = [];
+    const where = [];
+    if (status) { params.push(status); where.push(`sr.status = $${params.length}`); }
+    if (type) { params.push(type); where.push(`sr.type = $${params.length}`); }
+    if (where.length) query += ` WHERE ` + where.join(' AND ');
+    query += ` ORDER BY sr.created_at DESC LIMIT 100`;
+    const { rows } = await db.query(query, params);
+    res.json({ ok: true, requests: rows });
+  } catch (err) { next(err); }
+};
+
+exports.updateServiceRequest = async (req, res, next) => {
+  try {
+    const id = parseIdParam(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, message: 'invalid id' });
+    const { status } = req.body;
+    if (!['pending', 'confirmed', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ ok: false, message: 'invalid status' });
+    }
+    const result = await db.query(
+      `UPDATE service_requests SET status = $2, updated_at = now() WHERE id = $1 RETURNING *`,
+      [id, status]
+    );
+    if (!result.rows[0]) return res.status(404).json({ ok: false, message: 'Not found' });
+    res.json({ ok: true, request: result.rows[0] });
+  } catch (err) { next(err); }
+};

@@ -12,18 +12,18 @@ import { FiTrendingUp, FiSearch, FiArrowRight, FiStar, FiUsers, FiCheckCircle, F
 
 /* ── Animation Variants ── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+  hidden: { opacity: 0, y: 40, filter: "blur(4px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } }
 };
 
 const stagger = {
   hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.08 } }
+  show: { opacity: 1, transition: { staggerChildren: 0.12 } }
 };
 
 const cardVariant = {
-  hidden: { opacity: 0, y: 20, scale: 0.98 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 120, damping: 20 } }
+  hidden: { opacity: 0, y: 30, scale: 0.96 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 18, duration: 0.6 } }
 };
 
 /* ── Animated Counter ── */
@@ -119,71 +119,106 @@ export default function HomePage() {
     <main id="main-content" className="overflow-hidden">
 
       {/* ═══════ HERO ═══════ */}
-      <section id="home" className="relative min-h-[85vh] md:min-h-screen flex items-center">
-        {/* Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-navy-dark via-navy to-navy-light" />
-          {/* Animated orbs */}
-          <motion.div
-            animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-[15%] left-[10%] w-[300px] h-[300px] rounded-full bg-primary/20 blur-[100px]"
-          />
-          <motion.div
-            animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] rounded-full bg-accent/15 blur-[120px]"
-          />
-          <motion.div
-            animate={{ x: [0, 15, 0], y: [0, 15, 0] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-[50%] left-[50%] w-[200px] h-[200px] rounded-full bg-primary/10 blur-[80px]"
-          />
-          {/* Grid overlay */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
-            backgroundSize: "60px 60px"
+      <section id="home" className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Background — Simple gradient + 2 CSS blobs (no framer-motion = no lag) */}
+        <div className="absolute inset-0 bg-[#030712]">
+          <div className="absolute top-[-10%] left-[5%] w-[500px] h-[500px] rounded-full bg-indigo-600/15 blur-[120px] animate-[float_20s_ease-in-out_infinite]" />
+          <div className="absolute bottom-[5%] right-[5%] w-[500px] h-[500px] rounded-full bg-violet-500/10 blur-[120px] animate-[float_25s_ease-in-out_infinite_reverse]" />
+          {/* Subtle grid */}
+          <div className="absolute inset-0 opacity-[0.025]" style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px)",
+            backgroundSize: "100px 100px"
           }} />
         </div>
 
-        <div className="relative z-30 max-w-[1400px] mx-auto px-4 md:px-6 pt-20 md:pt-28 pb-20 w-full">
+        {/* Hero Content — Centered like reference */}
+        <div className="relative z-30 max-w-[1200px] mx-auto px-4 md:px-8 pt-28 md:pt-36 pb-20 w-full">
           <motion.div
             initial="hidden"
             animate="show"
             variants={stagger}
-            className="max-w-3xl"
+            className="text-center"
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-accent-light text-sm font-medium mb-6 backdrop-blur">
-              <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              {lang === "hi" ? "Trust-first contractor network" : "Trust-first contractor network"}
+            {/* Badge */}
+            <motion.div
+              variants={fadeUp}
+              className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-white/[0.04] border border-white/[0.08] mb-14"
+            >
+              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+              <span className="text-white/50 text-[11px] font-semibold uppercase tracking-[0.25em]">
+                Premium Service Network
+              </span>
             </motion.div>
 
-            <motion.h1 variants={fadeUp} className="font-display text-hero text-white mb-6">
-              Find & Hire{" "}
-              <span className="bg-gradient-to-r from-primary-light to-accent bg-clip-text text-transparent">
-                Verified
-              </span>{" "}
-              Contractors
-            </motion.h1>
+            {/* Oversized centered heading — ELITE CONTRACTORS style */}
+            <div className="mb-12 space-y-1 md:space-y-0">
+              <motion.h1
+                initial={{ opacity: 0, x: -80, filter: "blur(10px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                transition={{ delay: 0.15, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
+              >
+                ELITE
+              </motion.h1>
+              <motion.h1
+                initial={{ opacity: 0, x: 80, filter: "blur(10px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                transition={{ delay: 0.25, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-indigo-400 via-indigo-300 to-indigo-500 bg-clip-text text-transparent"
+              >
+                CONTRACTORS
+              </motion.h1>
+              <motion.h1
+                initial={{ opacity: 0, x: -80, filter: "blur(10px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                transition={{ delay: 0.35, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 bg-clip-text text-transparent"
+              >
+                VERIFIED
+              </motion.h1>
+              <motion.h1
+                initial={{ opacity: 0, x: 80, filter: "blur(10px)" }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                transition={{ delay: 0.45, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
+              >
+                RESULTS
+              </motion.h1>
+            </div>
 
-            <motion.p variants={fadeUp} className="text-white/70 text-hero-sub max-w-2xl mb-8">
-              Connect with trusted professionals through powerful search, verified ratings, and transparent service profiles.
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.7 }}
+              className="text-white/35 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed"
+            >
+              Connect with trusted professionals through powerful search, verified profiles, and transparent ratings.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-3">
-              <button
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.7 }}
+              className="flex flex-wrap justify-center gap-4"
+            >
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: "0 0 60px rgba(99,102,241,0.4)" }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => navigate("/search")}
-                className="h-[52px] px-7 rounded-xl bg-gradient-to-r from-primary to-primary-dark text-white font-semibold shadow-btn btn-shimmer hover:shadow-btn-hover hover:-translate-y-0.5 transition-all"
+                className="h-14 px-10 rounded-full bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-sm font-bold uppercase tracking-[0.15em] shadow-[0_4px_30px_rgba(99,102,241,0.25)] transition-all animate-pulse-glow"
               >
                 Explore Services
-                <FiArrowRight className="inline ml-2" />
-              </button>
-              <button
+                <FiArrowRight className="inline ml-2 -mt-0.5" />
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => navigate("/register/contractor")}
-                className="h-[52px] px-7 rounded-xl border-2 border-white/20 text-white font-semibold hover:bg-white/10 transition-all backdrop-blur"
+                className="h-14 px-10 rounded-full border border-white/15 text-white/70 text-sm font-bold uppercase tracking-[0.15em] transition-all hover:border-white/30"
               >
-                Join as Partner
-              </button>
+                Become a Partner
+              </motion.button>
             </motion.div>
           </motion.div>
 
@@ -266,9 +301,8 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
-
       {/* ═══════ STATS ═══════ */}
-      <section className="relative -mt-16 z-20 max-w-[1200px] mx-auto px-4 md:px-6">
+      <section className="relative -mt-10 z-20 max-w-[1200px] mx-auto px-4 md:px-6">
         <motion.div
           initial="hidden"
           whileInView="show"
@@ -280,9 +314,10 @@ export default function HomePage() {
             <motion.div
               key={i}
               variants={cardVariant}
-              className="glass-card p-6 text-center group"
+              whileHover={{ y: -6, scale: 1.03 }}
+              className="glass-card p-6 text-center group cursor-default transition-shadow hover:shadow-card-hover"
             >
-              <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center text-lg group-hover:scale-110 transition-transform">
+              <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center text-lg group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
                 {stat.icon}
               </div>
               <p className="font-display text-3xl md:text-4xl font-bold text-[var(--color-heading)]">
@@ -291,6 +326,67 @@ export default function HomePage() {
               <p className="text-sm text-[var(--color-muted)] mt-1 font-medium">{stat.label}</p>
             </motion.div>
           ))}
+        </motion.div>
+      </section>
+
+
+      {/* ═══════ DUAL CTA — Service Paths ═══════ */}
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 pt-8 pb-6">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          variants={stagger}
+          className="grid md:grid-cols-2 gap-4"
+        >
+          {/* Quick Services CTA */}
+          <motion.div
+            variants={cardVariant}
+            whileHover={{ y: -4 }}
+            onClick={() => navigate("/quick-services")}
+            className="glass-card p-8 cursor-pointer group border-l-4 border-[var(--color-accent)]"
+          >
+            <div className="flex items-start gap-5">
+              <div className="w-14 h-14 rounded-xl bg-[var(--color-accent)]/10 text-[var(--color-accent)] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-display text-xl font-bold text-[var(--color-heading)] group-hover:text-[var(--color-accent)] transition-colors">Quick Services</h3>
+                <p className="text-[var(--color-muted)] text-sm mt-2 leading-relaxed">AC repair, plumbing, electrician — instant booking for everyday home needs.</p>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-accent)] mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Browse Services <FiArrowRight size={12} />
+                </span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Macro Services CTA */}
+          <motion.div
+            variants={cardVariant}
+            whileHover={{ y: -4 }}
+            onClick={() => navigate("/search")}
+            className="glass-card p-8 cursor-pointer group border-l-4 border-[var(--color-primary)]"
+          >
+            <div className="flex items-start gap-5">
+              <div className="w-14 h-14 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-display text-xl font-bold text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-colors">Macro Services</h3>
+                <p className="text-[var(--color-muted)] text-sm mt-2 leading-relaxed">Construction, renovation, interior design — hire verified contractors for big projects.</p>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Find Contractors <FiArrowRight size={12} />
+                </span>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -433,12 +529,14 @@ export default function HomePage() {
               <h3 className="font-display text-white text-3xl md:text-4xl font-bold">Ready to grow with us?</h3>
               <p className="text-white/60 mt-3 text-lg max-w-md">Join thousands of happy customers and trusted contractors on our platform.</p>
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05, y: -3 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/search")}
               className="h-[52px] px-8 rounded-xl bg-white text-navy font-semibold self-start md:self-auto btn-shimmer hover:-translate-y-1 transition-all shadow-lg"
             >
               Get Started <FiArrowRight className="inline ml-1" />
-            </button>
+            </motion.button>
           </div>
         </motion.div>
       </section>
@@ -499,6 +597,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-    </main>
+    </main >
   );
 }

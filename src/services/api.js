@@ -39,6 +39,9 @@ export const authAPI = {
   updateLocation: (data) => api.put("/auth/location", data),
   logout: () => api.post("/auth/logout"),
   me: () => api.get("/auth/me"),
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (email, token, newPassword) => api.post("/auth/reset-password", { email, token, newPassword }),
+  googleLogin: (credential) => api.post("/auth/google", credential),
 };
 
 export const contractorAPI = {
@@ -58,6 +61,9 @@ export const contractorAPI = {
   uploadPhoto: (id, formData) => api.post(`/contractors/${id}/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
   uploadWork: (id, formData) => api.post(`/contractors/${id}/portfolio`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
   uploadIdProof: (id, formData) => api.post(`/contractors/${id}/idproof`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  requestVerification: (id) => api.post(`/contractors/${id}/request-verification`),
+  addPortfolioItem: (id, formData) => api.post(`/contractors/${id}/portfolio-items`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
+  removePortfolioItem: (id, itemId) => api.delete(`/contractors/${id}/portfolio-items/${itemId}`),
   // Base64 uploads
   uploadPhotoBase64: (base64) => api.post("/contractors/photo/base64", { image: base64 }),
   uploadWorkBase64: (base64Array) => api.post("/contractors/portfolio/base64", { images: base64Array }),
@@ -85,7 +91,7 @@ export const adminAPI = {
   getPendingContractors: () => api.get("/admin/contractors/pending"),
   createContractor: (data) => api.post("/admin/contractors", data),
   updateContractor: (id, data) => api.patch(`/admin/contractors/${id}`, data),
-  verifyContractor: (id) => api.patch(`/admin/contractors/${id}/verify`),
+  verifyContractor: (id, data) => api.patch(`/admin/contractors/${id}/verify`, data),
   deleteContractor: (id) => api.delete(`/admin/contractors/${id}`),
 
   getReports: (status = "pending") => api.get("/admin/reports", { params: { status } }),
@@ -96,4 +102,38 @@ export const adminAPI = {
 
   getSettings: () => api.get("/admin/settings"),
   updateSettings: (data) => api.put("/admin/settings", data),
+
+  // Service management
+  getServiceCategories: (params) => api.get("/admin/service-categories", { params }),
+  createServiceCategory: (data) => api.post("/admin/service-categories", data),
+  updateServiceCategory: (id, data) => api.patch(`/admin/service-categories/${id}`, data),
+  deleteServiceCategory: (id) => api.delete(`/admin/service-categories/${id}`),
+  getAdminServices: (params) => api.get("/admin/services", { params }),
+  createAdminService: (data) => api.post("/admin/services", data),
+  updateAdminService: (id, data) => api.patch(`/admin/services/${id}`, data),
+  deleteAdminService: (id) => api.delete(`/admin/services/${id}`),
+  getServiceRequests: (params) => api.get("/admin/service-requests", { params }),
+  updateServiceRequest: (id, data) => api.patch(`/admin/service-requests/${id}`, data),
+};
+
+export const servicesAPI = {
+  getCategories: (type) => api.get("/services/categories", { params: { type } }),
+  getCategory: (slug) => api.get(`/services/categories/${slug}`),
+  getService: (slug) => api.get(`/services/${slug}`),
+  searchServices: (params) => api.get("/services/search", { params }),
+  submitRequest: (data) => api.post("/services/request", data),
+};
+
+export const chatAPI = {
+  getChats: () => api.get("/chat"),
+  initChat: (contractorId) => api.post("/chat/init", { contractorId }),
+  getMessages: (chatId) => api.get(`/chat/${chatId}/messages`),
+  sendMessage: (chatId, content) => api.post(`/chat/${chatId}/messages`, { content }),
+};
+
+export const bookingAPI = {
+  create: (data) => api.post("/bookings", data),
+  verify: (data) => api.post("/bookings/verify", data),
+  getMyBookings: () => api.get("/bookings/me"),
+  completeBooking: (bookingId) => api.put(`/bookings/${bookingId}/complete`),
 };

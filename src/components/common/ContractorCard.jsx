@@ -41,104 +41,109 @@ export default function ContractorCard({ contractor }) {
 
   return (
     <motion.article
-      whileHover={{ y: -6 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className={`glass-card p-5 group ${is_featured ? "ring-1 ring-[var(--color-accent)]" : ""}`}
+      whileHover={{ y: -8, scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      className={`glass-card overflow-hidden group ${is_featured ? "ring-1 ring-[var(--color-accent)]/40" : ""}`}
     >
-      <div className="flex gap-4">
-        {/* Avatar */}
-        <div className="relative flex-shrink-0">
-          <div className="relative">
-            <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] opacity-60 blur-sm group-hover:opacity-100 transition-opacity" />
+      {/* Top accent line */}
+      <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[var(--color-primary)]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+      <div className="p-5">
+        {/* Header: Avatar + Name + Price */}
+        <div className="flex items-start gap-4">
+          {/* Avatar with gradient ring */}
+          <div className="relative flex-shrink-0">
+            <div className="absolute -inset-[3px] rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] opacity-0 group-hover:opacity-70 blur-[4px] transition-opacity duration-500" />
             <img
               src={getImageUrl(photo_url)}
               alt={resolvedName}
-              className="relative w-[72px] h-[72px] rounded-full object-cover border-2 border-[var(--color-surface)]"
+              className="relative w-16 h-16 rounded-full object-cover border-2 border-[var(--color-surface)]"
               loading="lazy"
               onError={(e) => { e.target.src = "/default-contractor.png"; }}
             />
+            <span className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-[var(--color-surface)] ${is_available ? "bg-emerald-400" : "bg-amber-400"}`} />
           </div>
-          <span className={`absolute -bottom-0.5 -right-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full border border-[var(--color-surface)] ${is_available
-              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-              : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-            }`}>
-            {is_available ? "●" : "◐"}
-          </span>
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="font-display text-base md:text-lg text-[var(--color-heading)] font-semibold leading-tight truncate">
-                {resolvedName}
-              </h3>
-              <p className="text-xs text-[var(--color-muted)] capitalize mt-0.5 font-medium">
-                {resolvedCategory?.replace("_", " ")}
+          {/* Name + Category */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-display text-lg text-[var(--color-heading)] leading-tight truncate">
+              {resolvedName}
+            </h3>
+            <p className="text-xs text-[var(--color-muted)] capitalize mt-0.5 font-medium tracking-wide">
+              {resolvedCategory?.replace("_", " ")}
+            </p>
+            {/* Rating inline */}
+            <div className="flex items-center gap-2 mt-1.5">
+              <StarRating value={Math.round(Number(rating) || 0)} readonly size="text-sm" />
+              <span className="text-xs text-[var(--color-muted)] font-medium">
+                {(Number(rating) || 0).toFixed(1)} ({resolvedReviewCount})
+              </span>
+            </div>
+          </div>
+
+          {/* Price — Top Right */}
+          {daily_rate && (
+            <div className="text-right flex-shrink-0 pl-2">
+              <p className="font-display text-2xl text-[var(--color-primary)] leading-none">
+                ₹{Number(daily_rate || 0).toLocaleString("en-IN")}
+              </p>
+              <p className="text-[10px] text-[var(--color-muted)] uppercase tracking-wider mt-0.5 font-medium">
+                {t("profile.per_day")}
               </p>
             </div>
-            {daily_rate && (
-              <span className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/5 rounded-full px-2.5 py-1 whitespace-nowrap border border-[var(--color-primary)]/10">
-                ₹{Number(daily_rate || 0).toLocaleString("en-IN")}
-                <span className="text-[var(--color-muted)] font-normal">{t("profile.per_day")}</span>
-              </span>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Rating */}
-          <div className="flex items-center gap-2 mt-2">
-            <StarRating value={Math.round(Number(rating) || 0)} readonly size="text-sm" />
-            <span className="text-xs text-[var(--color-muted)] font-medium">
-              {(Number(rating) || 0).toFixed(1)} ({resolvedReviewCount})
+        {/* Info pills */}
+        <div className="flex flex-wrap gap-1.5 mt-4">
+          {distance_km != null && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-body)] bg-[var(--color-border)]/60 rounded-full px-2.5 py-1">
+              <Icon name="location" className="w-3 h-3 text-[var(--color-accent)]" />
+              {(Number(distance_km) || 0).toFixed(1)} {t("search.km_away")}
             </span>
-          </div>
+          )}
+          {experience_years > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-body)] bg-[var(--color-border)]/60 rounded-full px-2.5 py-1">
+              <Icon name="trophy" className="w-3 h-3 text-[var(--color-accent)]" />
+              {experience_years} {t("profile.years")}
+            </span>
+          )}
+          {is_labour_group && team_size > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--color-body)] bg-[var(--color-border)]/60 rounded-full px-2.5 py-1">
+              <Icon name="worker" className="w-3 h-3 text-[var(--color-accent)]" />
+              {team_size} {t("profile.workers")}
+            </span>
+          )}
+        </div>
 
-          {/* Info pills */}
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
-            {distance_km != null && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-body)] bg-[var(--color-border)] rounded-full px-2.5 py-1">
-                <Icon name="location" className="w-3 h-3 text-[var(--color-accent)]" />
-                {(Number(distance_km) || 0).toFixed(1)} {t("search.km_away")}
-              </span>
-            )}
-            {experience_years > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-body)] bg-[var(--color-border)] rounded-full px-2.5 py-1">
-                <Icon name="trophy" className="w-3 h-3 text-[var(--color-accent)]" />
-                {experience_years} {t("profile.years")}
-              </span>
-            )}
-            {is_labour_group && team_size > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-body)] bg-[var(--color-border)] rounded-full px-2.5 py-1">
-                <Icon name="worker" className="w-3 h-3 text-[var(--color-accent)]" />
-                {team_size} {t("profile.workers")}
-              </span>
-            )}
-          </div>
-
-          {/* Badges */}
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {is_verified && <Badge type="verified" lang={lang} />}
-            {is_featured && <Badge type="featured" lang={lang} />}
-            {is_labour_group && <Badge type="labour_group" lang={lang} />}
-            {is_responsibility_model && <Badge type="responsibility" lang={lang} />}
-          </div>
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5 mt-2.5">
+          {is_verified && <Badge type="verified" lang={lang} />}
+          {is_featured && <Badge type="featured" lang={lang} />}
+          {is_labour_group && <Badge type="labour_group" lang={lang} />}
+          {is_responsibility_model && <Badge type="responsibility" lang={lang} />}
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-[var(--color-border)]">
+      {/* Actions — Clean bottom bar */}
+      <div className="grid grid-cols-2 gap-px bg-[var(--color-border)]/50">
         <a
           href={WHATSAPP_URL(resolvedPhone, resolvedName)}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-outline-cyan text-sm !py-2.5 !min-h-0 text-center"
+          className="flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-[var(--color-accent)] bg-[var(--color-surface)] hover:bg-[var(--color-accent)]/5 transition-colors"
           onClick={handleWhatsAppTap}
         >
           <Icon name="message" className="w-4 h-4" />
           {t("search.contact")}
         </a>
-        <Link to={`/contractor/${id}`} className="btn-primary text-sm !py-2.5 !min-h-0 text-center btn-shimmer">
+        <Link
+          to={`/contractor/${id}`}
+          className="flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] transition-colors"
+        >
           {t("search.view_profile")}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
         </Link>
       </div>
     </motion.article>

@@ -98,6 +98,11 @@ router.put('/portfolio', requireAuth, async (req, res, next) => {
 router.post('/:id/portfolio', requireAuth, upload.array('photos', 5), controller.uploadPortfolio);
 router.put('/:id/portfolio', requireAuth, controller.setPortfolio);
 
+// New portfolio items table routes
+router.post('/:id/portfolio-items', requireAuth, upload.single('image'), controller.addPortfolioItem);
+router.delete('/:id/portfolio-items/:itemId', requireAuth, controller.removePortfolioItem);
+router.post('/:id/request-verification', requireAuth, controller.requestVerification);
+
 // Upload ID proof (id_proof)
 router.post('/:id/idproof', requireAuth, upload.single('id_proof'), controller.uploadIdProof);
 

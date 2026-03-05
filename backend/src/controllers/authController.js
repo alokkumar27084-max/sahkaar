@@ -366,3 +366,104 @@ exports.verifyEmailOtp = async (req, res, next) => {
     next(err);
   }
 };
+
+// ── Password Reset ─────────────────────────────────────────
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ ok: false, message: 'Email required' });
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const userResult = await db.query('SELECT id, name FROM users WHERE LOWER(email) = $1', [cleanEmail]);
+    if (!userResult.rows.length) {
+      // Silently return success to prevent email enumeration
+      return res.json({ ok: true, message: 'If an account with that email exists, a password reset link has been sent.' });
+    }
+
+    const user = userResult.rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Invalidate existing active tokens
+    await db.query('UPDATE password_resets SET used = true WHERE user_id = $1 AND used = false', [user.id]);
+
+    await db.query(
+      `INSERT INTO password_resets (user_id, token, expires_at)
+       VALUES ($1, $2, now() + interval '1 hour')`,
+      [user.id, hashedToken]
+    );
+
+    // Get the frontend origin from request headers
+    const origin = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${origin}/reset-password?token=${token}&email=${encodeURIComponent(cleanEmail)}`;
+
+    console.log(`[DEV ONLY] Password Reset URL: ${resetUrl}`);
+
+    try {
+      const { sendEmail } = require('../services/emailService');
+      const htmlContent = `
+        <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
+          <h2>Reset Your Password</h2>
+          <p>Hi ${user.name || 'User'},</p>
+          <p>You recently requested to reset your password. Click the button below to set a new password:</p>
+          <div style="margin: 30px 0;">
+            <a href="${resetUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Reset Password</a>
+          </div>
+          <p>This link will expire in 1 hour.</p>
+          <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+        </div>
+      `;
+      await sendEmail(cleanEmail, 'Password Reset Request', 'Click the link to reset your password.', htmlContent);
+    } catch (e) {
+      console.error("Failed to send reset email", e);
+    }
+
+    res.json({ ok: true, message: 'If an account with that email exists, a password reset link has been sent.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, token, newPassword } = req.body;
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ ok: false, message: 'Email, token, and new password are required' });
+    }
+
+    const { isValidPassword } = require('../utils/validators');
+    if (!isValidPassword(newPassword)) {
+      return res.status(400).json({ ok: false, message: 'Password must be at least 8 characters' });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    // Check token
+    const tokenResult = await db.query(
+      `SELECT pr.id, pr.user_id 
+       FROM password_resets pr
+       JOIN users u ON u.id = pr.user_id
+       WHERE u.email = $1 AND pr.token = $2 AND pr.used = false AND pr.expires_at > now()`,
+      [cleanEmail, hashedToken]
+    );
+
+    if (!tokenResult.rows.length) {
+      return res.status(400).json({ ok: false, message: 'Invalid or expired reset token' });
+    }
+
+    const resetRecord = tokenResult.rows[0];
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password and mark token used
+    await db.query('BEGIN');
+    await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, resetRecord.user_id]);
+    await db.query('UPDATE password_resets SET used = true WHERE id = $1', [resetRecord.id]);
+    await db.query('COMMIT');
+
+    res.json({ ok: true, message: 'Password successfully reset' });
+  } catch (err) {
+    await db.query('ROLLBACK').catch(() => { });
+    next(err);
+  }
+};
