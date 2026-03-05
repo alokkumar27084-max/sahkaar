@@ -7,13 +7,13 @@ const SplashScreen = ({ onComplete }) => {
 
     useEffect(() => {
         const timers = [
-            setTimeout(() => setPhase(1), 300),
-            setTimeout(() => setPhase(2), 1500),
-            setTimeout(() => setPhase(3), 2200),
+            setTimeout(() => setPhase(1), 400),
+            setTimeout(() => setPhase(2), 2200),
+            setTimeout(() => setPhase(3), 3600),
             setTimeout(() => {
                 setIsVisible(false);
                 setTimeout(onComplete, 900);
-            }, 2500),
+            }, 4000),
         ];
         return () => timers.forEach(clearTimeout);
     }, [onComplete]);
@@ -236,7 +236,7 @@ const SplashScreen = ({ onComplete }) => {
                                 }}
                                 initial={{ width: 0 }}
                                 animate={{ width: '100%' }}
-                                transition={{ duration: 3, ease: 'easeInOut' }}
+                                transition={{ duration: 4.5, ease: 'easeInOut' }}
                             />
                         </div>
                     </div>

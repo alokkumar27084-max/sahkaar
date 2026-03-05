@@ -156,7 +156,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: -80, filter: "blur(10px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.15, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
+                className="font-display text-[2.5rem] min-[420px]:text-[3.2rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
               >
                 ELITE
               </motion.h1>
@@ -164,7 +164,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: 80, filter: "blur(10px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.25, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-indigo-400 via-indigo-300 to-indigo-500 bg-clip-text text-transparent"
+                className="font-display text-[2.5rem] min-[420px]:text-[3.2rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-indigo-400 via-indigo-300 to-indigo-500 bg-clip-text text-transparent"
               >
                 CONTRACTORS
               </motion.h1>
@@ -172,7 +172,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: -80, filter: "blur(10px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.35, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 bg-clip-text text-transparent"
+                className="font-display text-[2.5rem] min-[420px]:text-[3.2rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 bg-clip-text text-transparent"
               >
                 VERIFIED
               </motion.h1>
@@ -180,7 +180,7 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: 80, filter: "blur(10px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.45, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display text-[3.5rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
+                className="font-display text-[2.5rem] min-[420px]:text-[3.2rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
               >
                 RESULTS
               </motion.h1>

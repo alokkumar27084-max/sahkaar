@@ -11,7 +11,7 @@ export function ThekedaarLogo({ className = "h-12 w-12" }) {
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          <linearGradient id="tkRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="tkBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#818CF8">
               <animate attributeName="stop-color" values="#818CF8;#06B6D4;#818CF8" dur="4s" repeatCount="indefinite" />
             </stop>
@@ -19,22 +19,16 @@ export function ThekedaarLogo({ className = "h-12 w-12" }) {
               <animate attributeName="stop-color" values="#06B6D4;#818CF8;#06B6D4" dur="4s" repeatCount="indefinite" />
             </stop>
           </linearGradient>
-          <linearGradient id="tkBgGrad" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id="tkBg" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#0F172A" />
             <stop offset="100%" stopColor="#1E293B" />
           </linearGradient>
-          <linearGradient id="tkIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#818CF8" />
-            <stop offset="100%" stopColor="#06B6D4" />
+          <linearGradient id="tkLetterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#C7D2FE" />
+            <stop offset="50%" stopColor="#F8FAFC" />
+            <stop offset="100%" stopColor="#A5F3FC" />
           </linearGradient>
-          <filter id="tkGlow">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id="tkInnerGlow">
+          <filter id="tkGlow2">
             <feGaussianBlur stdDeviation="1.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -43,85 +37,55 @@ export function ThekedaarLogo({ className = "h-12 w-12" }) {
           </filter>
         </defs>
 
-        {/* Background circle */}
-        <circle cx="50" cy="50" r="48" fill="url(#tkBgGrad)" />
+        {/* Rounded square background */}
+        <rect x="4" y="4" width="92" height="92" rx="22" fill="url(#tkBg)" />
 
-        {/* Animated gradient ring */}
-        <circle
-          cx="50" cy="50" r="46"
+        {/* Animated gradient border */}
+        <rect
+          x="4" y="4" width="92" height="92" rx="22"
           fill="none"
-          stroke="url(#tkRingGrad)"
-          strokeWidth="2"
-          filter="url(#tkGlow)"
+          stroke="url(#tkBorderGrad)"
+          strokeWidth="2.5"
         >
           <animateTransform
             attributeName="transform"
             type="rotate"
             from="0 50 50"
             to="360 50 50"
-            dur="20s"
+            dur="25s"
             repeatCount="indefinite"
           />
-        </circle>
+        </rect>
 
-        {/* Outer glow ring */}
-        <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(129,140,248,0.12)" strokeWidth="1" />
+        {/* Subtle inner glow ring */}
+        <rect x="4" y="4" width="92" height="92" rx="22" fill="none" stroke="rgba(129,140,248,0.08)" strokeWidth="1" />
 
-        {/* Hardhat / building / helmet shape (construction motif above T) */}
-        {/* Roof / beam — a horizontal bar with triangular top */}
-        <polygon
-          points="30,38 50,24 70,38"
-          fill="none"
-          stroke="url(#tkIconGrad)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          filter="url(#tkInnerGlow)"
-          opacity="0.9"
-        />
-
-        {/* Left pillar */}
-        <line x1="35" y1="38" x2="35" y2="52" stroke="url(#tkIconGrad)" strokeWidth="2.2" strokeLinecap="round" opacity="0.7" />
-        {/* Right pillar */}
-        <line x1="65" y1="38" x2="65" y2="52" stroke="url(#tkIconGrad)" strokeWidth="2.2" strokeLinecap="round" opacity="0.7" />
-
-        {/* "T" lettermark — bold, modern, centered below the building motif */}
+        {/* Bold "T" monogram — centered, large, clean */}
         <text
-          x="50" y="68"
+          x="50" y="58"
           textAnchor="middle"
           dominantBaseline="middle"
-          fontFamily="'Space Grotesk', 'Inter', sans-serif"
+          fontFamily="'Space Grotesk', 'Inter', system-ui, sans-serif"
           fontWeight="800"
-          fontSize="30"
-          fill="#F8FAFC"
-          letterSpacing="-0.5"
+          fontSize="52"
+          fill="url(#tkLetterGrad)"
+          filter="url(#tkGlow2)"
+          letterSpacing="-1"
         >
           T
         </text>
 
-        {/* Subtle "thekedaar" text under T */}
-        <text
-          x="50" y="82"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontFamily="'Space Grotesk', 'Inter', sans-serif"
-          fontWeight="600"
-          fontSize="6"
-          fill="#818CF8"
-          letterSpacing="2.5"
-          opacity="0.7"
-        >
-          THEKEDAAR
-        </text>
+        {/* Accent line under the T */}
+        <line x1="32" y1="78" x2="68" y2="78" stroke="url(#tkBorderGrad)" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
 
-        {/* Accent dot — top right, pulsing */}
-        <circle cx="70" cy="24" r="3" fill="#06B6D4" opacity="0.9">
-          <animate attributeName="opacity" values="0.9;0.3;0.9" dur="3s" repeatCount="indefinite" />
+        {/* Subtle corner accent — top right */}
+        <circle cx="82" cy="18" r="2.5" fill="#06B6D4" opacity="0.7">
+          <animate attributeName="opacity" values="0.7;0.25;0.7" dur="3s" repeatCount="indefinite" />
         </circle>
 
-        {/* Secondary accent dot — bottom left */}
-        <circle cx="30" cy="76" r="2" fill="#818CF8" opacity="0.5">
-          <animate attributeName="opacity" values="0.5;0.2;0.5" dur="4s" repeatCount="indefinite" />
+        {/* Subtle corner accent — bottom left */}
+        <circle cx="18" cy="82" r="2" fill="#818CF8" opacity="0.4">
+          <animate attributeName="opacity" values="0.4;0.15;0.4" dur="4s" repeatCount="indefinite" />
         </circle>
       </svg>
     </span>
