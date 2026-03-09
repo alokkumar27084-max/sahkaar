@@ -81,6 +81,9 @@ exports.sendMessage = async (req, res) => {
         if (!content) {
             return res.status(400).json({ message: 'Message content is required' });
         }
+        if (content.length > 5000) {
+            return res.status(400).json({ message: 'Message too long (max 5000 characters)' });
+        }
 
         // Verify chat exists and user belongs to it
         const chatRes = await db.query('SELECT * FROM chats WHERE id = $1', [chatId]);

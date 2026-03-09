@@ -425,14 +425,17 @@ exports.forgotPassword = async (req, res, next) => {
 };
 
 exports.resetPassword = async (req, res, next) => {
+  const client = await db.pool.connect();
   try {
     const { email, token, newPassword } = req.body;
     if (!email || !token || !newPassword) {
+      client.release();
       return res.status(400).json({ ok: false, message: 'Email, token, and new password are required' });
     }
 
     const { isValidPassword } = require('../utils/validators');
     if (!isValidPassword(newPassword)) {
+      client.release();
       return res.status(400).json({ ok: false, message: 'Password must be at least 8 characters' });
     }
 
@@ -440,7 +443,7 @@ exports.resetPassword = async (req, res, next) => {
     const cleanEmail = String(email).trim().toLowerCase();
 
     // Check token
-    const tokenResult = await db.query(
+    const tokenResult = await client.query(
       `SELECT pr.id, pr.user_id 
        FROM password_resets pr
        JOIN users u ON u.id = pr.user_id
@@ -449,6 +452,7 @@ exports.resetPassword = async (req, res, next) => {
     );
 
     if (!tokenResult.rows.length) {
+      client.release();
       return res.status(400).json({ ok: false, message: 'Invalid or expired reset token' });
     }
 
@@ -456,14 +460,16 @@ exports.resetPassword = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password and mark token used
-    await db.query('BEGIN');
-    await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, resetRecord.user_id]);
-    await db.query('UPDATE password_resets SET used = true WHERE id = $1', [resetRecord.id]);
-    await db.query('COMMIT');
+    await client.query('BEGIN');
+    await client.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashedPassword, resetRecord.user_id]);
+    await client.query('UPDATE password_resets SET used = true WHERE id = $1', [resetRecord.id]);
+    await client.query('COMMIT');
 
     res.json({ ok: true, message: 'Password successfully reset' });
   } catch (err) {
-    await db.query('ROLLBACK').catch(() => { });
+    await client.query('ROLLBACK').catch(() => { });
     next(err);
+  } finally {
+    client.release();
   }
 };

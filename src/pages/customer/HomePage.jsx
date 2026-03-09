@@ -151,13 +151,13 @@ export default function HomePage() {
             </motion.div>
 
             {/* Oversized centered heading — ELITE CONTRACTORS style */}
-            <div className="mb-12 space-y-1 md:space-y-0">
+            <div className="mb-12 space-y-1 md:space-y-0 w-full overflow-hidden">
               <motion.h1
                 initial={{ opacity: 0, x: -80, filter: "blur(10px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.15, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
                 className="font-display text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
-                style={{ fontSize: 'clamp(2rem, 10vw, 7rem)' }}
+                style={{ fontSize: 'clamp(2.2rem, 10vw, 7rem)' }}
               >
                 ELITE
               </motion.h1>
@@ -165,7 +165,8 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: 80, filter: "blur(10px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.25, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display text-[2.5rem] min-[420px]:text-[3.2rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-indigo-400 via-indigo-300 to-indigo-500 bg-clip-text text-transparent"
+                className="font-display font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-indigo-400 via-indigo-300 to-indigo-500 bg-clip-text text-transparent"
+                style={{ fontSize: 'clamp(1.75rem, 8.5vw, 7rem)' }}
               >
                 CONTRACTORS
               </motion.h1>
@@ -173,7 +174,8 @@ export default function HomePage() {
                 initial={{ opacity: 0, x: -80, filter: "blur(10px)" }}
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.35, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display text-[2.5rem] min-[420px]:text-[3.2rem] sm:text-[5rem] md:text-[6rem] lg:text-[7rem] font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 bg-clip-text text-transparent"
+                className="font-display font-extrabold italic leading-[0.9] tracking-[-0.04em] bg-gradient-to-r from-rose-400 via-pink-400 to-rose-500 bg-clip-text text-transparent"
+                style={{ fontSize: 'clamp(2rem, 9.5vw, 7rem)' }}
               >
                 VERIFIED
               </motion.h1>
@@ -182,7 +184,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
                 transition={{ delay: 0.45, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
                 className="font-display text-white font-extrabold italic leading-[0.9] tracking-[-0.04em]"
-                style={{ fontSize: 'clamp(2rem, 10vw, 7rem)' }}
+                style={{ fontSize: 'clamp(2.2rem, 10vw, 7rem)' }}
               >
                 RESULTS
               </motion.h1>

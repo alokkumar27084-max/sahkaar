@@ -349,10 +349,26 @@ exports.incrementLeads = async (id) => {
   const res = await db.query(
     `UPDATE contractors
      SET leads_count = COALESCE(leads_count, 0) + 1,
-         updated_at = now()
+    updated_at = now()
      WHERE id = $1
      RETURNING id, leads_count`,
     [id]
   );
   return res.rows[0];
+};
+
+exports.addPortfolioItem = async (contractorId, imageUrl, title, description) => {
+  const res = await db.query(
+    `INSERT INTO portfolio_items(contractor_id, image_url, title, description)
+     VALUES($1, $2, $3, $4) RETURNING * `,
+    [contractorId, imageUrl, title || null, description || null]
+  );
+  return res.rows[0];
+};
+
+exports.removePortfolioItem = async (itemId, contractorId) => {
+  await db.query(
+    `DELETE FROM portfolio_items WHERE id = $1 AND contractor_id = $2`,
+    [itemId, contractorId]
+  );
 };

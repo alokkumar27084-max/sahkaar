@@ -30,10 +30,11 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Requested-With'],
 }));
 
-// Limit requests to avoid basic abuse
-app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+// Stricter rate limits for OTP endpoints (must be before the general /api limiter)
 app.use('/api/auth/send-otp', rateLimit({ windowMs: 10 * 60 * 1000, max: 5 }));
 app.use('/api/auth/otp/request', rateLimit({ windowMs: 10 * 60 * 1000, max: 5 }));
+// General API rate limit to avoid basic abuse
+app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));

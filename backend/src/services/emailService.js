@@ -66,4 +66,22 @@ async function sendOtpEmail(email, otp) {
     });
 }
 
-module.exports = { sendOtpEmail };
+/**
+ * Send a generic email
+ * @param {string} to - recipient email
+ * @param {string} subject - email subject
+ * @param {string} text - plain text body
+ * @param {string} html - HTML body (optional)
+ */
+async function sendEmail(to, subject, text, html) {
+    const t = getTransporter();
+    await t.sendMail({
+        from: process.env.SMTP_FROM || `"Thekedaar" <noreply@thekedaar.com>`,
+        to,
+        subject,
+        text,
+        html: html || text,
+    });
+}
+
+module.exports = { sendOtpEmail, sendEmail };

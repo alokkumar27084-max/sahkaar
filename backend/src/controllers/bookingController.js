@@ -171,7 +171,7 @@ const bookingController = {
             let query;
             if (userRole === "customer") {
                 query = `
-          SELECT b.*, c.business_name as contractor_name, c.trade as contractor_trade
+          SELECT b.*, c.business_name as contractor_name, c.category as contractor_trade
           FROM bookings b
           JOIN contractors c ON b.contractor_id = c.id
           WHERE b.customer_id = $1
