@@ -370,7 +370,7 @@ export default function HomePage() {
           <motion.div
             variants={cardVariant}
             whileHover={{ y: -4 }}
-            onClick={() => navigate("/search")}
+            onClick={() => navigate("/macro-services")}
             className="glass-card p-8 cursor-pointer group border-l-4 border-[var(--color-primary)]"
           >
             <div className="flex items-start gap-5">

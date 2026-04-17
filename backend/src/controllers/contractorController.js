@@ -347,6 +347,36 @@ exports.addPortfolioItem = async (req, res, next) => {
   }
 };
 
+exports.reportContractor = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const reason = String(req.body?.reason || "").trim();
+    if (!reason) return res.status(400).json({ ok: false, message: 'reason is required' });
+
+    const contractor = await Contractor.findById(id);
+    if (!contractor) return res.status(404).json({ ok: false, message: 'Not found' });
+
+    const existing = await db.query(
+      `SELECT id FROM reports WHERE reporter_id = $1 AND contractor_id = $2 AND status = 'pending' LIMIT 1`,
+      [req.user.id, id]
+    );
+    if (existing.rows[0]) {
+      return res.status(409).json({ ok: false, message: 'You already have a pending report for this contractor' });
+    }
+
+    const result = await db.query(
+      `INSERT INTO reports (reporter_id, contractor_id, reason)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [req.user.id, id, reason.slice(0, 1000)]
+    );
+
+    return res.status(201).json({ ok: true, report: result.rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 exports.removePortfolioItem = async (req, res, next) => {
   try {
     const { id, itemId } = req.params;

@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { reverseGeocodeCoords } from "../utils/googleMaps";
 
 export function useGeolocation() {
   const [lat, setLat] = useState(null);
@@ -8,34 +9,15 @@ export function useGeolocation() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Reverse Geocoding using Google Maps API
-  const reverseGeocode = async (latitude, longitude) => {
-    // If no key is configured in env, we just return a simulated mockup 
-    // to allow development without keys breaking the app flow.
-    const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
-    if (!apiKey) {
-      console.warn("No REACT_APP_GOOGLE_MAPS_KEY found. Using mock address.");
-      return "Current GPS Location Area";
-    }
+  const applyLocation = useCallback(async (nextLat, nextLng, nextAccuracy = null, nextAddress = null) => {
+    setLat(nextLat);
+    setLng(nextLng);
+    setAccuracy(nextAccuracy);
 
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-      );
-      const data = await response.json();
-
-      if (data.status === "OK" && data.results && data.results.length > 0) {
-        // Return the most specific formatted address
-        return data.results[0].formatted_address;
-      } else {
-        console.error("Geocoding failed:", data.status);
-        return "Unknown Location";
-      }
-    } catch (err) {
-      console.error("Error fetching address:", err);
-      return "Unknown Location";
-    }
-  };
+    const formattedAddress = nextAddress || await reverseGeocodeCoords(nextLat, nextLng) || "Selected Location";
+    setAddress(formattedAddress);
+    return formattedAddress;
+  }, []);
 
   const request = useCallback((options = {}) => {
     if (!navigator.geolocation) {
@@ -50,15 +32,7 @@ export function useGeolocation() {
       async (position) => {
         const currentLat = position.coords.latitude;
         const currentLng = position.coords.longitude;
-
-        setLat(currentLat);
-        setLng(currentLng);
-        setAccuracy(position.coords.accuracy ?? null);
-
-        // Fetch readable address string
-        const formattedAddress = await reverseGeocode(currentLat, currentLng);
-        setAddress(formattedAddress);
-
+        await applyLocation(currentLat, currentLng, position.coords.accuracy ?? null);
         setLoading(false);
       },
       (err) => {
@@ -76,9 +50,9 @@ export function useGeolocation() {
         maximumAge: options.maximumAge ?? 0,
       }
     );
-  }, []);
+  }, [applyLocation]);
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { lat, lng, address, accuracy, error, loading, request, clearError };
+  return { lat, lng, address, accuracy, error, loading, request, applyLocation, clearError };
 }

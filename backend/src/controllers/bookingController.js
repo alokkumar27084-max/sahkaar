@@ -12,57 +12,190 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
     });
 }
 
+async function notifyUser(userId, message, type) {
+    if (!userId) return;
+    await pool.query(
+        "INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)",
+        [userId, message, type]
+    ).catch(() => { });
+}
+
+async function getContractorOwnerUserId(contractorId) {
+    const res = await pool.query("SELECT user_id, business_name, category FROM contractors WHERE id = $1", [contractorId]);
+    return res.rows[0] || null;
+}
+
+function toMoney(value, fallback = 0) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+    return Math.round(parsed * 100) / 100;
+}
+
+function buildPricingQuote({ serviceTier, estimatedProjectValue, contractorDailyRate }) {
+    const normalizedTier = serviceTier === "macro" ? "macro" : "quick";
+    const baseProjectValue = toMoney(
+        estimatedProjectValue,
+        normalizedTier === "macro" ? Math.max(toMoney(contractorDailyRate, 0), 5000) : Math.max(toMoney(contractorDailyRate, 0), 149)
+    );
+
+    if (normalizedTier === "macro") {
+        const escrowAmount = toMoney(baseProjectValue * 0.3, 0);
+        const midMilestone = toMoney(baseProjectValue * 0.4, 0);
+        const finalMilestone = toMoney(baseProjectValue - escrowAmount - midMilestone, 0);
+
+        return {
+            serviceTier: "macro",
+            paymentPlan: "milestone_30_40_30",
+            estimatedProjectValue: baseProjectValue,
+            amount: escrowAmount,
+            escrowAmount,
+            milestoneDetails: [
+                { title: "Booking Advance", percentage: 30, amount: escrowAmount, status: "due_now" },
+                { title: "Mid-project Milestone", percentage: 40, amount: midMilestone, status: "due_later" },
+                { title: "Final Completion", percentage: 30, amount: finalMilestone, status: "due_later" },
+            ],
+            customerCopy: "30% is secured now. Remaining milestones are released as work progresses.",
+        };
+    }
+
+    const quickAmount = toMoney(Math.max(baseProjectValue, 149), 149);
+    return {
+        serviceTier: "quick",
+        paymentPlan: "full_escrow",
+        estimatedProjectValue: quickAmount,
+        amount: quickAmount,
+        escrowAmount: quickAmount,
+        milestoneDetails: [
+            { title: "Service Escrow", percentage: 100, amount: quickAmount, status: "due_now" },
+        ],
+        customerCopy: "The full service amount stays protected in escrow until the job is completed.",
+    };
+}
+
 const bookingController = {
+
+    getPricingQuote: async (req, res) => {
+        const { contractorId, serviceTier, estimatedProjectValue } = req.body || {};
+
+        try {
+            let contractorDailyRate = 0;
+            if (contractorId) {
+                const contractorRes = await pool.query("SELECT daily_rate FROM contractors WHERE id = $1", [contractorId]);
+                contractorDailyRate = toMoney(contractorRes.rows[0]?.daily_rate, 0);
+            }
+
+            const pricing = buildPricingQuote({
+                serviceTier,
+                estimatedProjectValue,
+                contractorDailyRate,
+            });
+
+            return res.json({ status: "success", data: pricing });
+        } catch (error) {
+            console.error("Pricing Quote Error:", error);
+            return res.status(500).json({ status: "error", message: "Failed to calculate pricing quote" });
+        }
+    },
 
     // 1. Create a Booking (+ Razorpay Order Escrow Intent)
     createBooking: async (req, res) => {
         const customerId = req.user.id;
-        const { contractorId, serviceCategory, amount, notes, locationAddress, locationLat, locationLng } = req.body;
+        const {
+            contractorId,
+            serviceCategory,
+            serviceTier,
+            estimatedProjectValue,
+            notes,
+            locationAddress,
+            addressLabel,
+            locationLat,
+            locationLng,
+            scheduledFor,
+        } = req.body;
 
         try {
             // Begin Database Transaction
             await pool.query("BEGIN");
 
+            const contractorPricingRes = await pool.query(
+                "SELECT daily_rate FROM contractors WHERE id = $1 LIMIT 1",
+                [contractorId]
+            );
+
+            if (!contractorPricingRes.rows[0]) {
+                await pool.query("ROLLBACK");
+                return res.status(404).json({ status: "error", message: "Contractor not found" });
+            }
+
+            const pricing = buildPricingQuote({
+                serviceTier,
+                estimatedProjectValue,
+                contractorDailyRate: contractorPricingRes.rows[0].daily_rate,
+            });
+
             // Insert Booking Record
             const insertBookingQuery = `
         INSERT INTO bookings (
-          customer_id, contractor_id, service_category, amount, 
-          location_address, location_lat, location_lng, notes
-        ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+          customer_id, contractor_id, service_category, service_tier, payment_plan,
+          amount, estimated_project_value, escrow_amount, milestone_details, scheduled_for,
+          address_label, location_address, location_lat, location_lng, notes
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13, $14, $15)
         RETURNING *;
       `;
             const bookingResult = await pool.query(insertBookingQuery, [
-                customerId, contractorId, serviceCategory, amount,
-                locationAddress, locationLat, locationLng, notes || ""
+                customerId,
+                contractorId,
+                serviceCategory,
+                pricing.serviceTier,
+                pricing.paymentPlan,
+                pricing.amount,
+                pricing.estimatedProjectValue,
+                pricing.escrowAmount,
+                JSON.stringify(pricing.milestoneDetails || []),
+                scheduledFor || null,
+                addressLabel || null,
+                locationAddress,
+                locationLat,
+                locationLng,
+                notes || ""
             ]);
 
             const booking = bookingResult.rows[0];
+            const contractorMeta = await getContractorOwnerUserId(contractorId);
 
             // If Razorpay is missing (like during active dev right now), we fake the Escrow tracking
             if (!razorpayInstance) {
+                await notifyUser(customerId, `Your booking request for ${serviceCategory} has been created.`, 'booking');
+                await notifyUser(contractorMeta?.user_id, `You received a new booking request for ${serviceCategory}.`, 'booking');
                 await pool.query("COMMIT");
                 return res.status(201).json({
                     status: "success",
                     message: "Booking requested (Razorpay Escrow Skipped - Keys missing)",
-                    data: { booking }
+                    data: { booking, pricing }
                 });
             }
 
             // Generate actual Razorpay Order for Escrow hold
             const rzpOrderResponse = await razorpayInstance.orders.create({
-                amount: Math.round(amount * 100), // convert to paise
+                amount: Math.round(pricing.amount * 100),
                 currency: "INR",
                 receipt: `receipt_booking_${booking.id}`,
-                payment_capture: 1, // Auto-capture the escrow explicitly 
+                notes: {
+                    contractor_id: String(contractorId),
+                    customer_id: String(customerId),
+                    service_tier: pricing.serviceTier,
+                },
             });
 
             // Insert tracking record into Payments table
             await pool.query(
                 "INSERT INTO payments (booking_id, razorpay_order_id, amount) VALUES ($1, $2, $3)",
-                [booking.id, rzpOrderResponse.id, amount]
+                [booking.id, rzpOrderResponse.id, pricing.amount]
             );
 
+            await notifyUser(customerId, `Your booking request for ${serviceCategory} has been created.`, 'booking');
+            await notifyUser(contractorMeta?.user_id, `You received a new booking request for ${serviceCategory}.`, 'booking');
             await pool.query("COMMIT");
 
             return res.status(201).json({
@@ -70,6 +203,7 @@ const bookingController = {
                 message: "Escrow Intent generated",
                 data: {
                     booking,
+                    pricing,
                     razorpayOrderId: rzpOrderResponse.id,
                     razorpayKey: process.env.RAZORPAY_KEY_ID
                 }
@@ -93,6 +227,11 @@ const bookingController = {
                     "UPDATE bookings SET payment_status = $1, status = $2 WHERE id = $3",
                     ["IN_ESCROW", "IN_PROGRESS", booking_id]
                 );
+                const bookingRes = await pool.query("SELECT customer_id, contractor_id, service_category FROM bookings WHERE id = $1", [booking_id]);
+                const booking = bookingRes.rows[0];
+                const contractorMeta = booking ? await getContractorOwnerUserId(booking.contractor_id) : null;
+                await notifyUser(booking?.customer_id, `Payment secured for ${booking?.service_category || 'your booking'}. Work can now begin.`, 'payment');
+                await notifyUser(contractorMeta?.user_id, `Payment secured for ${booking?.service_category || 'a booking'}. You can start the job.`, 'payment');
                 return res.json({ status: "success", message: "MOCK: Escrow Confirmed" });
             }
 
@@ -118,6 +257,11 @@ const bookingController = {
                 "UPDATE bookings SET payment_status = $1, status = $2 WHERE id = $3",
                 ["IN_ESCROW", "IN_PROGRESS", booking_id]
             );
+            const bookingRes = await pool.query("SELECT customer_id, contractor_id, service_category FROM bookings WHERE id = $1", [booking_id]);
+            const booking = bookingRes.rows[0];
+            const contractorMeta = booking ? await getContractorOwnerUserId(booking.contractor_id) : null;
+            await notifyUser(booking?.customer_id, `Payment secured for ${booking?.service_category || 'your booking'}. Work can now begin.`, 'payment');
+            await notifyUser(contractorMeta?.user_id, `Payment secured for ${booking?.service_category || 'a booking'}. You can start the job.`, 'payment');
 
             res.json({ status: "success", message: "Payment safely held in Escrow. Work started!" });
         } catch (error) {
@@ -151,6 +295,9 @@ const bookingController = {
                 "UPDATE bookings SET status = $1, payment_status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3",
                 ["COMPLETED", "RELEASED", bookingId]
             );
+            const contractorMeta = await getContractorOwnerUserId(booking.contractor_id);
+            await notifyUser(booking.customer_id, `Your booking for ${booking.service_category} has been marked completed.`, 'booking');
+            await notifyUser(contractorMeta?.user_id, `A customer marked your ${booking.service_category} job as completed.`, 'booking');
 
             // If we had Razorpay Route we would trigger razorpayInstance.transfers(...) mathematically here,
             // For standard gateways we manually execute payouts weekly based on 'RELEASED' states internally.
@@ -181,8 +328,9 @@ const bookingController = {
                 query = `
           SELECT b.*, u.name as customer_name, u.phone as customer_phone
           FROM bookings b
+          JOIN contractors c ON b.contractor_id = c.id
           JOIN users u ON b.customer_id = u.id
-          WHERE b.contractor_id = $1
+          WHERE c.user_id = $1
           ORDER BY b.created_at DESC
         `;
             } else {

@@ -67,16 +67,34 @@ async function submitRequest(req, res, next) {
             return res.status(400).json({ ok: false, message: 'Name and phone are required' });
         }
         const result = await db.query(
-            `INSERT INTO service_requests (service_id, category_id, customer_name, customer_phone, customer_address, preferred_date, preferred_time, notes, type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `INSERT INTO service_requests (service_id, category_id, user_id, customer_name, customer_phone, customer_address, preferred_date, preferred_time, notes, type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
-            [service_id || null, category_id || null, customer_name, customer_phone, customer_address || null, preferred_date || null, preferred_time || null, notes || null, type || 'chhota']
+            [service_id || null, category_id || null, req.user?.id || null, customer_name, customer_phone, customer_address || null, preferred_date || null, preferred_time || null, notes || null, type || 'chhota']
         );
         // Increment bookings count if service_id provided
         if (service_id) {
             await db.query(`UPDATE services SET bookings_count = bookings_count + 1 WHERE id = $1`, [service_id]);
         }
         res.status(201).json({ ok: true, request: result.rows[0] });
+    } catch (err) { next(err); }
+}
+
+// ── Auth: Get current user's service requests ───────────────────────────────
+async function getMyRequests(req, res, next) {
+    try {
+        const values = [req.user.id, req.user.phone || ""];
+        const { rows } = await db.query(
+            `SELECT sr.*, s.name as service_name, s.name_hi as service_name_hi,
+                    sc.name as category_name, sc.name_hi as category_name_hi
+             FROM service_requests sr
+             LEFT JOIN services s ON sr.service_id = s.id
+             LEFT JOIN service_categories sc ON sr.category_id = sc.id
+             WHERE sr.user_id = $1 OR (sr.user_id IS NULL AND sr.customer_phone = $2)
+             ORDER BY sr.created_at DESC`,
+            values
+        );
+        res.json({ ok: true, requests: rows });
     } catch (err) { next(err); }
 }
 
@@ -102,4 +120,4 @@ async function searchServices(req, res, next) {
     } catch (err) { next(err); }
 }
 
-module.exports = { listCategories, getCategoryBySlug, getServiceBySlug, submitRequest, searchServices };
+module.exports = { listCategories, getCategoryBySlug, getServiceBySlug, submitRequest, searchServices, getMyRequests };

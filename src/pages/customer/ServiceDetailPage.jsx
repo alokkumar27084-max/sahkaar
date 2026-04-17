@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
+import { useAuth } from "../../context/AuthContext";
 import { servicesAPI } from "../../services/api";
 import toast from "react-hot-toast";
 import {
@@ -28,6 +29,7 @@ function getIcon(name) { return ICON_MAP[name] || FiGrid; }
 export default function ServiceDetailPage() {
     const { slug } = useParams();
     const { lang } = useLanguage();
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [service, setService] = useState(null);
     const [related, setRelated] = useState([]);
@@ -47,6 +49,15 @@ export default function ServiceDetailPage() {
             .catch(() => navigate("/quick-services"))
             .finally(() => setLoading(false));
     }, [slug, navigate]);
+
+    useEffect(() => {
+        if (!user) return;
+        setForm((prev) => ({
+            ...prev,
+            customer_name: prev.customer_name || user.name || "",
+            customer_phone: prev.customer_phone || user.phone || "",
+        }));
+    }, [user]);
 
     async function handleBook(e) {
         e.preventDefault();

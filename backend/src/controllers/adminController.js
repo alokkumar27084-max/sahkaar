@@ -1118,6 +1118,17 @@ exports.updateServiceRequest = async (req, res, next) => {
       [id, status]
     );
     if (!result.rows[0]) return res.status(404).json({ ok: false, message: 'Not found' });
+    if (result.rows[0].user_id) {
+      await db.query(
+        `INSERT INTO notifications (user_id, message, type)
+         VALUES ($1, $2, $3)`,
+        [
+          result.rows[0].user_id,
+          `Your service request has been marked ${status}.`,
+          'service_request',
+        ]
+      ).catch(() => { });
+    }
     res.json({ ok: true, request: result.rows[0] });
   } catch (err) { next(err); }
 };

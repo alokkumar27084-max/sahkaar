@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
-import { contractorAPI, bookingAPI } from "../../services/api";
+import { contractorAPI, bookingAPI, notificationAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Badge from "../../components/common/Badge";
 import StarRating from "../../components/common/StarRating";
 import Icon from "../../components/common/Icon";
 import { getImageUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
+import { FiBell } from "react-icons/fi";
 
 export default function ContractorDashboard() {
   const { t } = useLanguage();
@@ -23,6 +24,7 @@ export default function ContractorDashboard() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(true);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     loadProfile();
@@ -31,8 +33,11 @@ export default function ContractorDashboard() {
   }, [t]);
 
   function loadBookings() {
-    bookingAPI.getMyBookings()
-      .then((res) => setBookings(res.data.data.bookings || []))
+    Promise.all([bookingAPI.getMyBookings(), notificationAPI.getMine()])
+      .then(([bookingsRes, notificationsRes]) => {
+        setBookings(bookingsRes.data.data.bookings || []);
+        setNotifications(notificationsRes.data.notifications || []);
+      })
       .catch(() => { })
       .finally(() => setLoadingBookings(false));
   }
@@ -261,6 +266,53 @@ export default function ContractorDashboard() {
 
         {profile && (
           <div className="bg-white border border-slate-200 rounded-xl p-4 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FiBell className="text-[#1E3A8A]" />
+              <h2 className="font-semibold text-[#111827] text-sm">Recent Updates</h2>
+            </div>
+            {notifications.length > 0 ? (
+              <div className="space-y-3 mb-4">
+                {notifications.slice(0, 4).map((item) => (
+                  <div key={item.id} className={`rounded-xl border p-3 ${item.is_read ? "border-slate-200 bg-slate-50" : "border-[#1E3A8A]/20 bg-blue-50"}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-[#111827]">{item.message}</p>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-500 mt-1">{item.type || "update"} · {new Date(item.created_at).toLocaleString()}</p>
+                      </div>
+                      {!item.is_read && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await notificationAPI.markRead(item.id);
+                            setNotifications((prev) => prev.map((n) => n.id === item.id ? { ...n, is_read: true } : n));
+                          }}
+                          className="text-[10px] font-semibold text-[#1E3A8A]"
+                        >
+                          Mark read
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {notifications.some((n) => !n.is_read) && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await notificationAPI.markAllRead();
+                      setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true })));
+                    }}
+                    className="text-xs font-semibold text-[#1E3A8A] hover:underline"
+                  >
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-xl border border-slate-200 border-dashed mb-4">No notifications yet.</p>
+            )}
+
+            <div className="border-t border-slate-100 my-4"></div>
+
             <h2 className="font-semibold text-[#111827] text-sm mb-3">Incoming Jobs & Bookings</h2>
             {loadingBookings ? (
               <p className="text-sm text-slate-500 text-center py-4 bg-slate-50 rounded-xl border border-slate-200 border-dashed mb-4">Loading bookings...</p>
@@ -272,6 +324,9 @@ export default function ContractorDashboard() {
                       <p className="font-bold text-sm text-[#111827]">{b.service_category} - ₹{b.amount}</p>
                       <p className="text-xs text-slate-600 mt-1">Customer: {b.customer_name} ({b.customer_phone})</p>
                       <p className="text-xs text-slate-600 mt-0.5 max-w-xs truncate" title={b.location_address}>Location: {b.location_address}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mt-1">
+                        {b.service_tier === "macro" ? "Bada Kaam" : "Chhota Kaam"} · {String(b.payment_plan || "").replaceAll("_", " ")}
+                      </p>
                     </div>
                     <div className="text-right flex flex-col items-start sm:items-end">
                       <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${b.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>

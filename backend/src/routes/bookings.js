@@ -7,6 +7,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 router.use(authMiddleware.requireAuth);
 
 // Generate Escrow Order
+router.post("/quote", bookingController.getPricingQuote);
 router.post("/", bookingController.createBooking);
 
 // Verify Signature

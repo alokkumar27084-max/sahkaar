@@ -108,5 +108,6 @@ router.post('/:id/idproof', requireAuth, upload.single('id_proof'), controller.u
 
 // Reviews
 router.post('/:id/reviews', requireAuth, controller.addReview);
+router.post('/:id/report', requireAuth, controller.reportContractor);
 
 module.exports = router;

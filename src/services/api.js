@@ -71,6 +71,7 @@ export const contractorAPI = {
   uploadWorkBase64: (base64Array) => api.post("/contractors/portfolio/base64", { images: base64Array }),
   addReview: (id, data) => api.post(`/contractors/${id}/reviews`, data),
   recordLead: (id) => api.post(`/contractors/${id}/lead`),
+  report: (id, reason) => api.post(`/contractors/${id}/report`, { reason }),
 };
 
 export const reviewAPI = {
@@ -124,6 +125,7 @@ export const servicesAPI = {
   getService: (slug) => api.get(`/services/${slug}`),
   searchServices: (params) => api.get("/services/search", { params }),
   submitRequest: (data) => api.post("/services/request", data),
+  getMyRequests: () => api.get("/services/requests/me"),
 };
 
 export const chatAPI = {
@@ -134,8 +136,15 @@ export const chatAPI = {
 };
 
 export const bookingAPI = {
+  quote: (data) => api.post("/bookings/quote", data),
   create: (data) => api.post("/bookings", data),
   verify: (data) => api.post("/bookings/verify", data),
   getMyBookings: () => api.get("/bookings/me"),
   completeBooking: (bookingId) => api.put(`/bookings/${bookingId}/complete`),
+};
+
+export const notificationAPI = {
+  getMine: () => api.get("/notifications"),
+  markRead: (id) => api.patch(`/notifications/${id}/read`),
+  markAllRead: () => api.patch("/notifications/read-all"),
 };

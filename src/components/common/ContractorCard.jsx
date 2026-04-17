@@ -10,7 +10,7 @@ import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
 import { getImageUrl } from "../../utils/imageUtils";
 
-export default function ContractorCard({ contractor }) {
+export default function ContractorCard({ contractor, showCompare = false, isCompared = false, onCompare }) {
   const { t, lang } = useLanguage();
 
   const resolvedName = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";
@@ -39,17 +39,39 @@ export default function ContractorCard({ contractor }) {
     trackEvent("whatsapp_tap", { contractor_id: id, category: resolvedCategory, source: "card" });
   }
 
+  function handleCompareToggle(e) {
+    e.stopPropagation();
+    onCompare?.(contractor, !isCompared);
+  }
+
   return (
     <motion.article
       whileHover={{ y: -8, scale: 1.01 }}
       whileTap={{ scale: 0.99 }}
       transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className={`glass-card overflow-hidden group ${is_featured ? "ring-1 ring-[var(--color-accent)]/40" : ""}`}
+      className={`glass-card overflow-hidden group ${is_featured ? "ring-1 ring-[var(--color-accent)]/40" : ""} ${isCompared ? "ring-2 ring-[var(--color-primary)]/40" : ""}`}
     >
       {/* Top accent line */}
       <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[var(--color-primary)]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
       <div className="p-5">
+        {showCompare && (
+          <div className="flex justify-end mb-3">
+            <button
+              type="button"
+              onClick={handleCompareToggle}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide transition-colors ${
+                isCompared
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]/30 hover:text-[var(--color-primary)]"
+              }`}
+            >
+              <span className={`h-2.5 w-2.5 rounded-full ${isCompared ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"}`} />
+              {lang === "hi" ? "तुलना करें" : "Compare"}
+            </button>
+          </div>
+        )}
+
         {/* Header: Avatar + Name + Price */}
         <div className="flex items-start gap-4">
           {/* Avatar with gradient ring */}

@@ -28,6 +28,7 @@ const ContractorDashboard = lazy(() => import("./pages/contractor/ContractorDash
 const ContractorEditPage = lazy(() => import("./pages/contractor/ContractorEditPage"));
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
 const QuickServicesPage = lazy(() => import("./pages/customer/QuickServicesPage"));
+const MacroServicesPage = lazy(() => import("./pages/customer/MacroServicesPage"));
 const ServiceDetailPage = lazy(() => import("./pages/customer/ServiceDetailPage"));
 const ChatLayout = lazy(() => import("./pages/chat/ChatLayout"));
 const BookingCheckoutPage = lazy(() => import("./pages/customer/BookingCheckoutPage"));
@@ -86,6 +87,7 @@ function AnimatedRoutes() {
         <Route path="/forgot-password" element={<PageWrapper><ForgotPasswordPage /></PageWrapper>} />
         <Route path="/reset-password" element={<PageWrapper><ResetPasswordPage /></PageWrapper>} />
         <Route path="/quick-services" element={<PageWrapper><QuickServicesPage /></PageWrapper>} />
+        <Route path="/macro-services" element={<PageWrapper><MacroServicesPage /></PageWrapper>} />
         <Route path="/services/:slug" element={<PageWrapper><ServiceDetailPage /></PageWrapper>} />
         <Route
           path="/chat"

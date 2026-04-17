@@ -32,6 +32,9 @@ export default function ContractorProfilePage() {
   const [myRating, setMyRating] = useState(0);
   const [myComment, setMyComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showReportBox, setShowReportBox] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -60,6 +63,26 @@ export default function ContractorProfilePage() {
       setReviews(res.data.reviews || []);
     } catch (err) { toast.error(err.response?.data?.message || t("app.error")); }
     finally { setSubmitting(false); }
+  }
+
+  async function submitReport(e) {
+    e.preventDefault();
+    if (!user) { navigate("/login"); return; }
+    if (!reportReason.trim()) {
+      toast.error(lang === "hi" ? "कृपया रिपोर्ट का कारण लिखें" : "Please provide a reason for the report");
+      return;
+    }
+    setReporting(true);
+    try {
+      await contractorAPI.report(id, reportReason.trim());
+      toast.success(lang === "hi" ? "रिपोर्ट भेज दी गई है" : "Report submitted");
+      setReportReason("");
+      setShowReportBox(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || t("app.error"));
+    } finally {
+      setReporting(false);
+    }
   }
 
   if (loading) {
@@ -194,7 +217,47 @@ export default function ContractorProfilePage() {
               className="btn-secondary flex items-center gap-2">
               <FiShare2 size={16} /> {t("profile.share")}
             </button>
+            <button
+              onClick={() => {
+                if (!user) { navigate("/login"); return; }
+                setShowReportBox((prev) => !prev);
+              }}
+              className="btn-secondary flex items-center gap-2"
+            >
+              {lang === "hi" ? "रिपोर्ट करें" : "Report"}
+            </button>
           </div>
+
+          {showReportBox && (
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900/40 dark:bg-red-900/10">
+              <h3 className="font-semibold text-red-700 dark:text-red-300">
+                {lang === "hi" ? "इस प्रोफाइल को रिपोर्ट करें" : "Report this profile"}
+              </h3>
+              <p className="mt-1 text-sm text-red-600/90 dark:text-red-300/80">
+                {lang === "hi"
+                  ? "यदि आपको इस प्रोफाइल, व्यवहार, या काम की गुणवत्ता को लेकर चिंता है, तो हमें बताएं।"
+                  : "If you have concerns about this profile, behaviour, or work quality, let us know."}
+              </p>
+              <form onSubmit={submitReport} className="mt-3 space-y-3">
+                <textarea
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  rows={3}
+                  maxLength={1000}
+                  className="input-field resize-none"
+                  placeholder={lang === "hi" ? "रिपोर्ट का कारण लिखें..." : "Describe the issue..."}
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" disabled={reporting} className="btn-primary">
+                    {reporting ? (lang === "hi" ? "भेजा जा रहा है..." : "Submitting...") : (lang === "hi" ? "रिपोर्ट भेजें" : "Submit Report")}
+                  </button>
+                  <button type="button" onClick={() => setShowReportBox(false)} className="btn-secondary">
+                    {lang === "hi" ? "रद्द करें" : "Cancel"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-1 mt-6 p-1 bg-[var(--color-border)] rounded-xl">
