@@ -27,8 +27,9 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, [refreshUser]);
 
-  const login = useCallback((userData) => {
+  const login = useCallback((userData, token) => {
     setUser(userData);
+    if (token) localStorage.setItem("thekedaar_token", token);
   }, []);
 
   const logout = useCallback(async () => {
@@ -38,6 +39,7 @@ export function AuthProvider({ children }) {
       // Ignore network errors while logging out.
     }
     setUser(null);
+    localStorage.removeItem("thekedaar_token");
   }, []);
 
   const isContractor = user?.role === "contractor";

@@ -60,7 +60,7 @@ export default function RegisterPage() {
         role: "customer",
       };
       const res = await authAPI.register(payload);
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       toast.success(lang === "hi" ? "अकाउंट बन गया!" : "Account created!");
       navigate(customerNext);
     } catch (err) {
@@ -75,7 +75,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await authAPI.googleLogin({ credential: credentialResponse.credential });
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       toast.success(lang === "hi" ? "लॉगिन सफल!" : "Account created successfully!");
       navigate(customerNext);
     } catch (err) {
@@ -162,3 +162,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

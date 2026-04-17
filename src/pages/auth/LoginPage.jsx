@@ -84,7 +84,7 @@ export default function LoginPage() {
     setLoading(true); setErrors({});
     try {
       const res = await authAPI.verifyOTP(cleanPhone, cleanOTP);
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
       navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
     } catch (err) {
@@ -118,7 +118,7 @@ export default function LoginPage() {
     setLoading(true); setErrors({});
     try {
       const res = await authAPI.verifyEmailOTP(cleanEmail, cleanOTP);
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
       navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
     } catch (err) {
@@ -138,7 +138,7 @@ export default function LoginPage() {
     setLoading(true); setErrors({});
     try {
       const res = await authAPI.login({ email: cleanEmail, password });
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       toast.success("Logged in!");
       navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
     } catch (err) { toast.error(err.response?.data?.message || t("app.error")); }
@@ -150,7 +150,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await authAPI.googleLogin({ credential: credentialResponse.credential });
-      login(res.data.user);
+      login(res.data.user, res.data.token);
       toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
       navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
     } catch (err) {
@@ -416,3 +416,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
