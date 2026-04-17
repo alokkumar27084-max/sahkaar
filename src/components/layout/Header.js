@@ -90,15 +90,15 @@ export default function Header() {
                   </div>
                   <div className="dropdown-divider" />
                   <Link
-                    to={isContractor ? '/dashboard' : '/profile'}
+                    to={isContractor ? '/contractor/dashboard' : '/customer/dashboard'}
                     className="dropdown-item"
                     onClick={() => setMenuOpen(false)}
                   >
-                    {isContractor ? t('nav.dashboard') : t('nav.profile')}
+                    {t('nav.dashboard')}
                   </Link>
                   {isContractor && (
                     <Link
-                      to="/dashboard/edit-profile"
+                      to="/contractor/edit"
                       className="dropdown-item"
                       onClick={() => setMenuOpen(false)}
                     >

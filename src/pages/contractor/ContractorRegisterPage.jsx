@@ -1,4 +1,4 @@
-// ContractorRegisterPage.jsx — 4-step registration for contractors
+// ContractorRegisterPage.jsx — 5-step registration for contractors
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,9 +10,9 @@ import { isValidPhone, isValidPassword, isValidImageFile, sanitize, sanitizeForm
 import { CATEGORIES } from "../../utils/constants";
 import Icon from "../../components/common/Icon";
 import toast from "react-hot-toast";
-import { FiUser, FiPhone, FiLock, FiCheckCircle, FiCamera, FiUpload, FiMapPin, FiArrowRight, FiArrowLeft, FiShield } from "react-icons/fi";
+import { FiUser, FiPhone, FiLock, FiCheckCircle, FiCamera, FiUpload, FiMapPin, FiArrowRight, FiArrowLeft, FiShield, FiBriefcase, FiAperture } from "react-icons/fi";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 const stepAnim = {
   initial: { opacity: 0, x: 30, filter: "blur(4px)" },
@@ -31,6 +31,7 @@ export default function ContractorRegisterPage() {
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
+    contractor_type: "", // virtual field: 'quick' or 'macro'
     name: "", phone: "", password: "", category: "",
     is_labour_group: false, is_responsibility_model: false,
     description: "", daily_rate: "", experience_years: "", team_size: "",
@@ -42,7 +43,7 @@ export default function ContractorRegisterPage() {
   const { lat, lng, request: getLocation, error: geoError, loading: geoLoading } = useGeolocation();
 
   useEffect(() => {
-    if (step === 4 && (lat === null || lng === null)) {
+    if (step === 5 && (lat === null || lng === null)) {
       getLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     }
   }, [step, lat, lng, getLocation]);
@@ -56,16 +57,22 @@ export default function ContractorRegisterPage() {
   function validateStep(s) {
     const errs = {};
     if (s === 1) {
+      if (!form.contractor_type) errs.contractor_type = "Please select a contractor type";
+      if (!form.category) errs.category = t("err.required");
+      if (form.contractor_type === "macro" && !form.is_labour_group && !form.is_responsibility_model) {
+        errs.model = "Please select an operational model for Macro projects";
+      }
+    }
+    if (s === 2) {
       if (!form.name.trim()) errs.name = t("err.required");
       if (!isValidPhone(form.phone)) errs.phone = t("err.invalid_phone");
       if (!isValidPassword(form.password)) errs.password = t("err.weak_password");
-      if (!form.category) errs.category = t("err.required");
     }
-    if (s === 2) {
+    if (s === 3) {
       if (!form.description.trim()) errs.description = t("err.required");
       if (form.daily_rate && isNaN(form.daily_rate)) errs.daily_rate = "Enter a valid number";
     }
-    if (s === 4) {
+    if (s === 5) {
       if (!form.location_text.trim()) errs.location_text = t("err.required");
       if (lat === null || lng === null) errs.gps = lang === "hi" ? "GPS लोकेशन आवश्यक है" : "GPS location is required";
     }
@@ -88,7 +95,7 @@ export default function ContractorRegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const errs = validateStep(4);
+    const errs = validateStep(5);
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
@@ -132,16 +139,17 @@ export default function ContractorRegisterPage() {
   }
 
   const stepLabels = [
-    { label: t("creg.step1"), icon: <FiUser size={14} /> },
-    { label: t("creg.step2"), icon: <FiCheckCircle size={14} /> },
-    { label: t("creg.step3"), icon: <FiCamera size={14} /> },
-    { label: t("creg.step4"), icon: <FiShield size={14} /> },
+    { label: "Category", icon: <FiBriefcase size={12} /> },
+    { label: "Account", icon: <FiUser size={12} /> },
+    { label: "Details", icon: <FiCheckCircle size={12} /> },
+    { label: "Portfolio", icon: <FiCamera size={12} /> },
+    { label: "Verify", icon: <FiShield size={12} /> },
   ];
 
   return (
     <div className="min-h-screen flex">
       {/* Left branding panel */}
-      <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden bg-[#030712] items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-[38%] relative overflow-hidden bg-[#030712] items-center justify-center p-12">
         <div className="absolute top-[15%] left-[15%] w-[350px] h-[350px] rounded-full bg-gradient-to-br from-indigo-600/25 to-purple-600/10 blur-[80px] animate-[float_18s_ease-in-out_infinite]" />
         <div className="absolute bottom-[15%] right-[10%] w-[400px] h-[400px] rounded-full bg-gradient-to-bl from-cyan-500/15 to-blue-500/8 blur-[100px] animate-[float_22s_ease-in-out_infinite_reverse]" />
         <div className="absolute inset-0 opacity-[0.03]" style={{
@@ -167,7 +175,7 @@ export default function ContractorRegisterPage() {
 
       {/* Right form panel */}
       <div className="flex-1 flex flex-col justify-center px-4 py-8 md:py-12 bg-[var(--color-bg)]">
-        <div className="max-w-lg mx-auto w-full">
+        <div className="max-w-xl mx-auto w-full">
           {/* Mobile header */}
           <div className="lg:hidden text-center mb-6">
             <h1 className="font-display text-2xl font-extrabold text-[var(--color-heading)] uppercase tracking-tight">
@@ -179,20 +187,20 @@ export default function ContractorRegisterPage() {
           </div>
 
           {/* Step progress */}
-          <div className="flex items-center justify-between mb-6 px-2">
+          <div className="flex items-center justify-between mb-8 px-1">
             {stepLabels.map((s, i) => (
               <React.Fragment key={i}>
                 <div className="flex flex-col items-center">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i + 1 < step ? "bg-emerald-500 text-white shadow-sm"
+                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i + 1 < step ? "bg-emerald-500 text-white shadow-sm"
                     : i + 1 === step ? "bg-[var(--color-primary)] text-white shadow-btn"
                       : "bg-[var(--color-border)] text-[var(--color-muted)]"
                     }`}>
                     {i + 1 < step ? <FiCheckCircle size={16} /> : s.icon}
                   </div>
-                  <span className="text-[10px] text-[var(--color-muted)] mt-1.5 hidden sm:block text-center font-medium">{s.label}</span>
+                  <span className="text-[9px] md:text-[10px] text-[var(--color-muted)] mt-1.5 hidden sm:block text-center font-bold uppercase tracking-wider">{s.label}</span>
                 </div>
                 {i < TOTAL_STEPS - 1 && (
-                  <div className={`flex-1 h-0.5 mx-2 rounded-full transition-colors ${i + 1 < step ? "bg-emerald-500" : "bg-[var(--color-border)]"}`} />
+                  <div className={`flex-1 h-0.5 mx-1 md:mx-2 rounded-full transition-colors ${i + 1 < step ? "bg-emerald-500" : "bg-[var(--color-border)]"}`} />
                 )}
               </React.Fragment>
             ))}
@@ -202,10 +210,83 @@ export default function ContractorRegisterPage() {
           <div className="glass-card p-6 md:p-8">
             <AnimatePresence mode="wait">
 
-              {/* STEP 1 */}
+              {/* STEP 1: CATEGORY SELECTION */}
               {step === 1 && (
-                <motion.div key="s1" {...stepAnim} className="space-y-4">
-                  <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step1")}</h2>
+                <motion.div key="s1" {...stepAnim} className="space-y-6">
+                  <div>
+                    <h2 className="font-display text-2xl font-extrabold text-[var(--color-heading)] tracking-tight">Choose your category</h2>
+                    <p className="text-[var(--color-muted)] text-sm mt-1">Select the type of work you specialize in to proceed.</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, contractor_type: "quick", is_labour_group: false, is_responsibility_model: false }))}
+                      className={`text-left p-5 rounded-2xl border-2 transition-all ${form.contractor_type === "quick" ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5" : "border-[var(--color-border)] hover:border-[var(--color-primary)]/30"}`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${form.contractor_type === "quick" ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-surface)] text-[var(--color-muted)]"}`}>
+                        <FiAperture size={20} />
+                      </div>
+                      <h3 className="font-bold text-[var(--color-heading)] text-lg">Quick Service</h3>
+                      <p className="text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider mb-2">Chhota Kaam</p>
+                      <p className="text-sm text-[var(--color-muted)] leading-relaxed">I do quick repairs, plumbing, electrical, and minor maintenance work independently.</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, contractor_type: "macro" }))}
+                      className={`text-left p-5 rounded-2xl border-2 transition-all ${form.contractor_type === "macro" ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5" : "border-[var(--color-border)] hover:border-[var(--color-primary)]/30"}`}
+                    >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${form.contractor_type === "macro" ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-surface)] text-[var(--color-muted)]"}`}>
+                        <FiBriefcase size={20} />
+                      </div>
+                      <h3 className="font-bold text-[var(--color-heading)] text-lg">Macro Project</h3>
+                      <p className="text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider mb-2">Bada Kaam</p>
+                      <p className="text-sm text-[var(--color-muted)] leading-relaxed">I take large projects like full construction, roofing, and painting with teams or full responsibility.</p>
+                    </button>
+                  </div>
+                  {errors.contractor_type && <p className="text-danger text-xs text-center mt-1">{errors.contractor_type}</p>}
+
+                  {form.contractor_type === "macro" && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-3 pt-2">
+                       <h4 className="text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider">Select Macro Operational Model</h4>
+                      {[
+                        { field: "is_labour_group", title: t("creg.is_labour_group"), desc: lang === "hi" ? "आप 5-200 कामगारों की एक टीम के लीडर हैं" : "You lead a team of 5-200 workers" },
+                        { field: "is_responsibility_model", title: lang === "hi" ? "मैं पूरी जिम्मेदारी लेता हूं" : "Full Responsibility Model", desc: lang === "hi" ? "मटेरियल + लेबर + डिलीवरी — सब आप संभालते हैं" : "Materials + labor + delivery — you own it all" }
+                      ].map(item => (
+                        <label key={item.field} className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)]/30 transition-colors">
+                          <input type="checkbox" checked={form[item.field]} onChange={update(item.field)}
+                            className="mt-0.5 w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]/20" />
+                          <div>
+                            <p className="text-sm font-bold text-[var(--color-heading)]">{item.title}</p>
+                            <p className="text-xs text-[var(--color-muted)] mt-0.5">{item.desc}</p>
+                          </div>
+                        </label>
+                      ))}
+                      {errors.model && <p className="text-danger text-xs mt-1">{errors.model}</p>}
+                    </motion.div>
+                  )}
+
+                  {form.contractor_type && (
+                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                        <label className="block text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider mb-2">Select Primary Trade</label>
+                        <select value={form.category} onChange={update("category")}
+                          className={`input-field h-12 !rounded-xl ${errors.category ? "error" : ""}`}>
+                          <option value="">{lang === "hi" ? "श्रेणी चुनें" : "Select Trade / Category"}</option>
+                          {CATEGORIES.filter(c => form.contractor_type === "quick" ? c.isQuick : !c.isQuick).map(c => (
+                            <option key={c.id} value={c.id}>{t(c.key)}</option>
+                          ))}
+                        </select>
+                        {errors.category && <p className="text-danger text-xs mt-1">{errors.category}</p>}
+                     </motion.div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* STEP 2: ACCOUNT DETAILS */}
+              {step === 2 && (
+                <motion.div key="s2" {...stepAnim} className="space-y-4">
+                  <h2 className="font-display text-xl font-extrabold text-[var(--color-heading)] tracking-tight">Account Details</h2>
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("auth.name")}</label>
                     <div className="relative">
@@ -239,39 +320,13 @@ export default function ContractorRegisterPage() {
                     </div>
                     {errors.password && <p className="text-danger text-xs mt-1">{errors.password}</p>}
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("creg.category")}</label>
-                    <select value={form.category} onChange={update("category")}
-                      className={`input-field ${errors.category ? "error" : ""}`}>
-                      <option value="">{lang === "hi" ? "श्रेणी चुनें" : "Select category"}</option>
-                      {CATEGORIES.map(c => (
-                        <option key={c.id} value={c.id}>{t(c.key)}</option>
-                      ))}
-                    </select>
-                    {errors.category && <p className="text-danger text-xs mt-1">{errors.category}</p>}
-                  </div>
-                  <div className="space-y-3 pt-2">
-                    {[
-                      { field: "is_labour_group", title: t("creg.is_labour_group"), desc: lang === "hi" ? "आप 5-200 कामगारों की एक टीम के लीडर हैं" : "You lead a team of 5-200 workers" },
-                      { field: "is_responsibility_model", title: lang === "hi" ? "मैं पूरी जिम्मेदारी लेता हूं" : "Full Responsibility Model", desc: lang === "hi" ? "मटेरियल + लेबर + डिलीवरी — सब आप संभालते हैं" : "Materials + labour + delivery — you own it all" }
-                    ].map(item => (
-                      <label key={item.field} className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border border-[var(--color-border)] hover:border-[var(--color-primary)]/30 transition-colors">
-                        <input type="checkbox" checked={form[item.field]} onChange={update(item.field)}
-                          className="mt-0.5 w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]/20" />
-                        <div>
-                          <p className="text-sm font-medium text-[var(--color-heading)]">{item.title}</p>
-                          <p className="text-xs text-[var(--color-muted)] mt-0.5">{item.desc}</p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
                 </motion.div>
               )}
 
-              {/* STEP 2 */}
-              {step === 2 && (
-                <motion.div key="s2" {...stepAnim} className="space-y-4">
-                  <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step2")}</h2>
+              {/* STEP 3: PROFESSIONAL INFO */}
+              {step === 3 && (
+                <motion.div key="s3" {...stepAnim} className="space-y-4">
+                  <h2 className="font-display text-xl font-extrabold text-[var(--color-heading)] tracking-tight">Professional Details</h2>
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("creg.description")}</label>
                     <textarea value={form.description} onChange={update("description")}
@@ -309,10 +364,10 @@ export default function ContractorRegisterPage() {
                 </motion.div>
               )}
 
-              {/* STEP 3 */}
-              {step === 3 && (
-                <motion.div key="s3" {...stepAnim} className="space-y-4">
-                  <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step3")}</h2>
+              {/* STEP 4: PORTFOLIO */}
+              {step === 4 && (
+                <motion.div key="s4" {...stepAnim} className="space-y-4">
+                  <h2 className="font-display text-xl font-extrabold text-[var(--color-heading)] tracking-tight">Portfolio & Identity</h2>
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-body)] mb-2">
                       {lang === "hi" ? "प्रोफाइल फोटो" : "Profile Photo"}
@@ -372,11 +427,11 @@ export default function ContractorRegisterPage() {
                 </motion.div>
               )}
 
-              {/* STEP 4 */}
-              {step === 4 && (
-                <motion.div key="s4" {...stepAnim}>
+              {/* STEP 5: VERIFICATION */}
+              {step === 5 && (
+                <motion.div key="s5" {...stepAnim}>
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <h2 className="font-display text-lg font-extrabold text-[var(--color-heading)] uppercase tracking-tight">{t("creg.step4")}</h2>
+                    <h2 className="font-display text-xl font-extrabold text-[var(--color-heading)] tracking-tight">Location & Verification</h2>
                     <div>
                       <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("creg.location")}</label>
                       <div className="relative">
@@ -422,7 +477,7 @@ export default function ContractorRegisterPage() {
                         ? "आपकी ID की जानकारी केवल वेरिफिकेशन के लिए उपयोग होगी।"
                         : "Your ID is used only for verification. It will NOT be shown to customers."}
                     </div>
-                    <button type="submit" disabled={loading || geoLoading} className="btn-primary w-full btn-shimmer">
+                    <button type="submit" disabled={loading || geoLoading} className="btn-primary w-full h-14 mt-4 btn-shimmer">
                       {loading ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>{t("creg.submit")} <FiArrowRight size={16} /></>}
                     </button>
                   </form>
@@ -430,16 +485,16 @@ export default function ContractorRegisterPage() {
               )}
             </AnimatePresence>
 
-            {/* Navigation buttons (steps 1-3) */}
-            {step < 4 && (
-              <div className="flex gap-3 mt-6">
+            {/* Navigation buttons (steps 1-4) */}
+            {step < TOTAL_STEPS && (
+              <div className="flex gap-3 mt-8">
                 {step > 1 && (
-                  <button type="button" onClick={() => setStep(s => s - 1)} className="btn-ghost !border-[var(--color-border)] !border flex-1">
-                    <FiArrowLeft size={16} /> {t("app.back")}
+                  <button type="button" onClick={() => setStep(s => s - 1)} className="btn-ghost !border-[var(--color-border)] !border flex-[0.5] flex items-center justify-center h-12">
+                    <FiArrowLeft size={16} /> 
                   </button>
                 )}
-                <button type="button" onClick={nextStep} className="btn-primary flex-1 btn-shimmer">
-                  {t("app.next")} <FiArrowRight size={16} />
+                <button type="button" onClick={nextStep} className="btn-primary flex-[1.5] h-12 btn-shimmer flex items-center justify-center gap-2">
+                  {step === 1 ? "Continue" : t("app.next")} <FiArrowRight size={16} />
                 </button>
               </div>
             )}

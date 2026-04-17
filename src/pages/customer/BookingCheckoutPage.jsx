@@ -101,6 +101,29 @@ export default function BookingCheckoutPage() {
         navigate("/customer/dashboard");
         return;
       }
+
+      // Handle mock payment environment (when keys are missing locally)
+      if (orderData.razorpayKey === "mock_key_only_for_dev") {
+        toast.loading("Simulating Payment Gateway (Mock)...", { id: "mock_pay" });
+        setTimeout(async () => {
+          try {
+            await bookingAPI.verify({
+              razorpay_order_id: orderData.razorpayOrderId,
+              razorpay_payment_id: "mock_payment_" + Date.now(),
+              razorpay_signature: "mock_signature",
+              booking_id: orderData.booking.id,
+            });
+            toast.success("Payment secured in Escrow (Mock). Booking Confirmed!", { id: "mock_pay" });
+            navigate("/customer/dashboard");
+          } catch {
+            toast.error("Mock Payment Verification Failed.", { id: "mock_pay" });
+          } finally {
+            setLoading(false);
+          }
+        }, 1500);
+        return;
+      }
+
       const sdkLoaded = await loadRazorpayScript();
       if (!sdkLoaded) {
         toast.error("Failed to load Razorpay SDK.");

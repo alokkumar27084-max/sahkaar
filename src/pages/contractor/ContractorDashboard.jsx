@@ -363,9 +363,20 @@ export default function ContractorDashboard() {
                                         </div>
                                         <div className="text-left sm:text-right">
                                             <p className="text-xl font-black text-[var(--color-heading)]">₹{Number(book.amount).toLocaleString()}</p>
-                                            <span className={`inline-block px-2 py-0.5 mt-1 rounded text-[10px] font-bold uppercase tracking-wider ${book.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-indigo-500/10 text-indigo-600'}`}>
-                                                {book.status}
-                                            </span>
+                                            <div className="flex gap-2 justify-start sm:justify-end mt-1">
+                                                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${book.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-indigo-500/10 text-indigo-600'}`}>
+                                                    {book.status}
+                                                </span>
+                                                {book.payment_status && (
+                                                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                                        book.payment_status === 'IN_ESCROW' ? 'bg-amber-500/10 text-amber-600' :
+                                                        book.payment_status === 'RELEASED' ? 'bg-emerald-500/10 text-emerald-600' :
+                                                        'bg-slate-500/10 text-slate-600'
+                                                    }`}>
+                                                        {book.payment_status.replace('_', ' ')}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="p-5 bg-[var(--color-bg)]/50">

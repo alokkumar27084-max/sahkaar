@@ -171,8 +171,13 @@ const bookingController = {
                 await pool.query("COMMIT");
                 return res.status(201).json({
                     status: "success",
-                    message: "Booking requested (Razorpay Escrow Skipped - Keys missing)",
-                    data: { booking, pricing }
+                    message: "Escrow Intent generated (Mocked - Keys missing)",
+                    data: { 
+                        booking, 
+                        pricing,
+                        razorpayOrderId: "mock_order_" + booking.id, // Fallback for frontend
+                        razorpayKey: "mock_key_only_for_dev"
+                    }
                 });
             }
 
