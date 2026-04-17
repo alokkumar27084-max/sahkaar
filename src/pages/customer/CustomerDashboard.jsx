@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiBell, FiCheckCircle, FiClock, FiMapPin, FiBriefcase } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiBell, FiCheckCircle, FiClock, FiMapPin, FiBriefcase, FiArrowRight, FiSettings, FiStar } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { bookingAPI, notificationAPI, servicesAPI } from "../../services/api";
 import toast from "react-hot-toast";
+
+const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
+const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 
 export default function CustomerDashboard() {
     const { user } = useAuth();
@@ -45,215 +49,263 @@ export default function CustomerDashboard() {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case "COMPLETED": return <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-xs font-bold uppercase">Completed</span>;
-            case "IN_PROGRESS": return <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold uppercase">In Progress</span>;
-            case "CANCELLED": return <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-500 text-xs font-bold uppercase">Cancelled</span>;
-            default: return <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-xs font-bold uppercase">Pending</span>;
+            case "COMPLETED": return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>Completed</span>;
+            case "IN_PROGRESS": return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)] animate-pulse"></span>In Progress</span>;
+            case "CANCELLED": return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Cancelled</span>;
+            default: return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending</span>;
         }
     };
 
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+
     return (
-        <div className="bg-[var(--color-bg)] min-h-screen pt-20 pb-10 px-4 md:px-6">
-            <div className="max-w-[1200px] mx-auto">
-                <h1 className="font-display text-3xl font-extrabold text-[var(--color-heading)] uppercase tracking-tight mb-8">My Dashboard</h1>
-
-                <div className="grid md:grid-cols-4 gap-6">
-                    {/* Sidebar */}
-                    <div className="glass-card p-6 h-fit md:col-span-1">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white flex items-center justify-center text-xl font-bold mb-4">
-                            {user?.name?.[0]?.toUpperCase()}
-                        </div>
-                        <h2 className="font-semibold text-[var(--color-heading)]">{user?.name}</h2>
-                        <p className="text-sm text-[var(--color-muted)] mb-6">{user?.phone}</p>
-
-                        <nav className="space-y-2 border-t border-[var(--color-border)] pt-4">
-                            <span className="flex items-center gap-3 px-3 py-2 text-[var(--color-primary)] font-medium rounded-lg bg-[var(--color-primary)]/10">
-                                <FiBriefcase /> My Bookings
-                            </span>
-                        </nav>
+        <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-20 overflow-hidden">
+            <div className="max-w-[1300px] mx-auto px-4 md:px-8">
+                
+                {/* Premium Header Area */}
+                <motion.div initial="hidden" animate="show" variants={fadeUp} className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
+                    <div>
+                        <span className="text-[var(--color-primary)] font-bold tracking-[0.2em] uppercase text-xs mb-2 block">Dashboard Overview</span>
+                        <h1 className="font-display text-4xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight">
+                            Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-cyan-500">{user?.name?.split(' ')[0]}</span>
+                        </h1>
+                        <p className="text-[var(--color-muted)] mt-2 font-medium">Manage your bookings, requests, and notifications.</p>
                     </div>
+                </motion.div>
 
-                    {/* Main Content */}
-                    <div className="md:col-span-3 space-y-6">
-                        <div className="glass-card p-6 rounded-2xl">
-                            <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4 mb-4">
-                                <div className="flex items-center gap-3">
-                                    <FiBell className="text-[var(--color-primary)]" />
-                                    <div>
-                                        <h2 className="text-xl font-extrabold text-[var(--color-heading)] uppercase tracking-tight">Recent Updates</h2>
-                                        <p className="text-sm text-[var(--color-muted)] mt-1">Stay on top of booking, payment, and service activity.</p>
-                                    </div>
+                <div className="grid lg:grid-cols-[320px_1fr] gap-8 relative z-10">
+                    
+                    {/* LEFT COLUMN: Profile Sidebar & Notifications */}
+                    <div className="space-y-6">
+                        {/* Profile Identity Card */}
+                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 md:p-8 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/20 to-cyan-500/10 blur-[40px] -mr-10 -mt-10 rounded-full"></div>
+                            
+                            <div className="flex items-center gap-5 mb-8 relative z-10">
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white flex items-center justify-center text-2xl font-black shadow-glow">
+                                    {user?.name?.[0]?.toUpperCase()}
                                 </div>
-                                {notifications.some((item) => !item.is_read) && (
-                                    <button
-                                        type="button"
-                                        onClick={async () => {
-                                            await notificationAPI.markAllRead();
-                                            setNotifications((prev) => prev.map((item) => ({ ...item, is_read: true })));
-                                        }}
-                                        className="btn-secondary text-xs"
-                                    >
-                                        Mark all as read
+                                <div>
+                                    <h2 className="font-display font-bold text-xl text-[var(--color-heading)] leading-tight">{user?.name}</h2>
+                                    <p className="text-sm text-[var(--color-muted)] font-medium mt-1">{user?.phone}</p>
+                                </div>
+                            </div>
+
+                            <nav className="space-y-2 border-t border-[var(--color-border)] pt-6 relative z-10">
+                                <Link to="/search" className="flex items-center justify-between px-4 py-3 text-[var(--color-heading)] font-semibold rounded-xl hover:bg-[var(--color-border)] transition-colors group/link">
+                                    <span className="flex items-center gap-3"><FiStar className="text-amber-500" /> New Booking</span>
+                                    <FiArrowRight className="opacity-0 group-hover/link:opacity-100 transition-opacity text-[var(--color-muted)]" />
+                                </Link>
+                                <button className="w-full flex items-center justify-between px-4 py-3 text-[var(--color-primary)] font-semibold rounded-xl bg-[var(--color-primary)]/10 transition-colors">
+                                    <span className="flex items-center gap-3"><FiBriefcase /> Dashboard</span>
+                                </button>
+                                <button className="w-full flex items-center justify-between px-4 py-3 text-[var(--color-muted)] font-semibold rounded-xl hover:bg-[var(--color-border)] hover:text-[var(--color-heading)] transition-colors">
+                                    <span className="flex items-center gap-3"><FiSettings /> Account Settings</span>
+                                </button>
+                            </nav>
+                        </motion.div>
+
+                        {/* Notifications Module */}
+                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 md:p-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="font-display text-lg font-bold text-[var(--color-heading)] flex items-center gap-2">
+                                    <FiBell className="text-[var(--color-primary)]" /> Updates
+                                    {unreadCount > 0 && <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">{unreadCount}</span>}
+                                </h3>
+                                {unreadCount > 0 && (
+                                    <button onClick={async () => {
+                                        await notificationAPI.markAllRead();
+                                        setNotifications(prev => prev.map(item => ({ ...item, is_read: true })));
+                                    }} className="text-xs font-semibold text-[var(--color-primary)] hover:underline">
+                                        Mark Read
                                     </button>
                                 )}
                             </div>
 
                             {loading ? (
-                                <div className="p-4 text-sm text-[var(--color-muted)]">Loading updates...</div>
+                                <div className="space-y-3">
+                                    {[1, 2].map(i => <div key={i} className="skeleton h-16 w-full rounded-xl" />)}
+                                </div>
                             ) : notifications.length === 0 ? (
-                                <div className="rounded-xl border border-dashed border-[var(--color-border)] p-6 text-center">
-                                    <p className="text-[var(--color-body)]">No notifications yet.</p>
+                                <div className="py-8 text-center border border-dashed border-[var(--color-border)] rounded-xl bg-[var(--color-bg)]/50">
+                                    <p className="text-[var(--color-muted)] text-sm font-medium">No new updates.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {notifications.slice(0, 5).map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className={`rounded-xl border p-4 ${item.is_read ? "border-[var(--color-border)] bg-[var(--color-surface)]" : "border-[var(--color-primary)]/30 bg-[var(--color-primary)]/5"}`}
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div>
-                                                    <p className="text-sm font-medium text-[var(--color-heading)]">{item.message}</p>
-                                                    <p className="mt-1 text-xs uppercase tracking-wide text-[var(--color-muted)]">
-                                                        {item.type || "update"} · {new Date(item.created_at).toLocaleString()}
-                                                    </p>
-                                                </div>
-                                                {!item.is_read && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={async () => {
+                                    <AnimatePresence>
+                                        {notifications.slice(0, 4).map((item) => (
+                                            <motion.div key={item.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                                className={`p-3.5 rounded-xl border transition-colors ${item.is_read ? "border-[var(--color-border)] bg-[var(--color-surface)]/50" : "border-indigo-500/30 bg-indigo-500/5 shadow-sm"}`}
+                                            >
+                                                <p className="text-sm font-medium text-[var(--color-heading)] leading-snug">{item.message}</p>
+                                                <div className="flex items-center justify-between mt-2">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted)] opacity-70">
+                                                        {new Date(item.created_at).toLocaleDateString()}
+                                                    </span>
+                                                    {!item.is_read && (
+                                                        <button onClick={async () => {
                                                             await notificationAPI.markRead(item.id);
-                                                            setNotifications((prev) => prev.map((n) => n.id === item.id ? { ...n, is_read: true } : n));
-                                                        }}
-                                                        className="text-xs font-semibold text-[var(--color-primary)]"
-                                                    >
-                                                        Mark read
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
+                                                            setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, is_read: true } : n));
+                                                        }} className="text-[10px] font-bold text-[var(--color-primary)] uppercase">
+                                                            Acknowledge
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
                                 </div>
                             )}
-                        </div>
+                        </motion.div>
+                    </div>
 
-                        <div className="glass-card p-6 rounded-2xl">
-                            <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4 mb-4">
-                                <div>
-                                    <h2 className="text-xl font-extrabold text-[var(--color-heading)] uppercase tracking-tight">Quick Service Requests</h2>
-                                    <p className="text-sm text-[var(--color-muted)] mt-1">Track your Chhota Kaam requests and confirmations.</p>
-                                </div>
-                                <Link to="/quick-services" className="btn-secondary text-sm">
-                                    Explore Quick Services
+                    {/* RIGHT COLUMN: Bookings & Requests */}
+                    <div className="space-y-8">
+
+                        {/* Recent Service Requests (Small cards) */}
+                        <motion.section initial="hidden" animate="show" variants={stagger}>
+                            <div className="flex items-center justify-between mb-5">
+                                <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight">Rapid Requests</h2>
+                                <Link to="/quick-services" className="text-sm font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] flex items-center gap-1 transition-colors">
+                                    Book New <FiArrowRight size={14} />
                                 </Link>
                             </div>
 
                             {loading ? (
-                                <div className="p-4 text-sm text-[var(--color-muted)]">Loading requests...</div>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    {[1, 2].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}
+                                </div>
                             ) : requests.length === 0 ? (
-                                <div className="rounded-xl border border-dashed border-[var(--color-border)] p-6 text-center">
-                                    <p className="text-[var(--color-body)]">You have not submitted any quick service requests yet.</p>
+                                <div className="glass-card p-10 text-center flex flex-col items-center justify-center border-dashed">
+                                    <div className="w-12 h-12 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-4"><FiClock className="text-[var(--color-muted)]" size={20} /></div>
+                                    <p className="text-[var(--color-heading)] font-semibold mb-1">No rapid requests</p>
+                                    <p className="text-[var(--color-muted)] text-sm mb-4">Request instant services like AC repair or plumbing.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
-                                    {requests.slice(0, 5).map((request) => (
-                                        <div key={request.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                                <div>
-                                                    <h3 className="font-semibold text-[var(--color-heading)]">
-                                                        {request.service_name || request.category_name || "Service Request"}
-                                                    </h3>
-                                                    <p className="mt-1 text-sm text-[var(--color-muted)]">
-                                                        {request.customer_address || "Address not added"}
-                                                    </p>
-                                                    {(request.preferred_date || request.preferred_time) && (
-                                                        <p className="mt-2 text-xs text-[var(--color-muted)]">
-                                                            Preferred: {request.preferred_date || "Flexible"} {request.preferred_time ? `· ${request.preferred_time}` : ""}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                                                    request.status === "completed"
-                                                        ? "bg-emerald-500/10 text-emerald-500"
-                                                        : request.status === "confirmed"
-                                                            ? "bg-blue-500/10 text-blue-500"
-                                                            : request.status === "cancelled"
-                                                                ? "bg-red-500/10 text-red-500"
-                                                                : "bg-amber-500/10 text-amber-500"
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    {requests.slice(0, 4).map((request) => (
+                                        <div key={request.id} className="glass-card p-5 group hover:border-[var(--color-primary)]/40 transition-colors">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <h3 className="font-bold text-[var(--color-heading)] text-base">{request.service_name || request.category_name || "Service"}</h3>
+                                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${
+                                                    request.status === "completed" ? "bg-emerald-500/10 text-emerald-600"
+                                                    : request.status === "confirmed" ? "bg-indigo-500/10 text-indigo-600"
+                                                    : request.status === "cancelled" ? "bg-rose-500/10 text-rose-600"
+                                                    : "bg-amber-500/10 text-amber-600"
                                                 }`}>
                                                     {request.status}
                                                 </span>
+                                            </div>
+                                            <p className="text-xs text-[var(--color-muted)] flex items-start gap-1.5 line-clamp-1 mb-2">
+                                                <FiMapPin className="shrink-0 mt-0.5" /> {request.customer_address || "No address"}
+                                            </p>
+                                            <div className="text-xs font-medium text-[var(--color-body)] bg-[var(--color-bg)] inline-flex px-2 py-1 rounded border border-[var(--color-border)]">
+                                                By: {request.preferred_date || "Anytime"}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                        </div>
+                        </motion.section>
 
-                        <h2 className="text-xl font-extrabold text-[var(--color-heading)] uppercase tracking-tight mb-4">Active & Past Bookings</h2>
-
-                        {loading ? (
-                            <div className="p-10 text-center text-[var(--color-muted)]">Loading bookings...</div>
-                        ) : bookings.length === 0 ? (
-                            <div className="glass-card p-10 text-center">
-                                <FiBriefcase className="mx-auto w-12 h-12 text-[var(--color-muted)] mb-4" />
-                                <h3 className="text-lg font-semibold text-[var(--color-heading)] mb-2">No bookings yet</h3>
-                                <p className="text-[var(--color-body)] mb-6">Find a trusted contractor and book them securely.</p>
-                                <Link to="/search" className="btn-primary inline-flex">Explore Services</Link>
-                            </div>
-                        ) : (
-                            bookings.map((booking) => (
-                                <div key={booking.id} className="glass-card p-6 rounded-2xl">
-                                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-[var(--color-border)] pb-4 mb-4">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-[var(--color-heading)]">{booking.contractor_name}</h3>
-                                            <p className="text-sm text-[var(--color-primary)] font-medium">{booking.service_category}</p>
-                                            <p className="mt-1 text-xs uppercase tracking-wide text-[var(--color-muted)]">
-                                                {booking.service_tier === "macro" ? "Bada Kaam" : "Chhota Kaam"} · {String(booking.payment_plan || "").replaceAll("_", " ")}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            {getStatusBadge(booking.status)}
-                                            <p className="text-xl font-bold text-[var(--color-heading)] mt-2">₹{booking.amount}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid sm:grid-cols-2 gap-4 text-sm text-[var(--color-body)]">
-                                        <div>
-                                            <p className="flex items-center gap-2 mb-2">
-                                                <FiMapPin className="text-[var(--color-muted)] shrink-0" /> <span className="truncate">{booking.location_address || "No address"}</span>
-                                            </p>
-                                            <p className="flex items-center gap-2 text-[var(--color-muted)]">
-                                                <FiClock className="text-[var(--color-muted)] shrink-0" /> {new Date(booking.created_at).toLocaleDateString()}
-                                            </p>
-                                        </div>
-
-                                        <div className="text-right flex flex-col items-end justify-between">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-navy/5 rounded-full text-xs font-medium text-slate-500">
-                                                Payment: {booking.payment_status}
-                                            </span>
-                                            {Array.isArray(booking.milestone_details) && booking.milestone_details.length > 1 && (
-                                                <span className="mt-2 text-[11px] text-[var(--color-muted)]">
-                                                    {booking.milestone_details.length} milestones protected
-                                                </span>
-                                            )}
-
-                                            {booking.status === "IN_PROGRESS" && (
-                                                <button
-                                                    onClick={() => handleMarkComplete(booking.id)}
-                                                    className="btn-primary py-2 px-4 mt-3 text-xs"
-                                                >
-                                                    <FiCheckCircle size={14} className="mr-1" /> Mark Job Complete
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
+                        {/* Major Bookings */}
+                        <motion.section initial="hidden" animate="show" variants={stagger}>
+                            <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight mb-5">Contractor Bookings</h2>
+                            
+                            {loading ? (
+                                <div className="space-y-4">
+                                    {[1, 2].map(i => <div key={i} className="skeleton h-48 rounded-2xl" />)}
                                 </div>
-                            ))
-                        )}
+                            ) : bookings.length === 0 ? (
+                                <div className="glass-card p-12 text-center flex flex-col items-center justify-center border-dashed">
+                                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/10 to-cyan-500/10 flex items-center justify-center mb-5"><FiBriefcase className="text-[var(--color-primary)]" size={28} /></div>
+                                    <h3 className="text-xl font-display font-bold text-[var(--color-heading)] mb-2">No active bookings</h3>
+                                    <p className="text-[var(--color-muted)] text-base max-w-sm mb-6">Connect with premium verified contractors and book them securely through Escrow.</p>
+                                    <Link to="/search" className="btn-primary px-8">Find Contractors</Link>
+                                </div>
+                            ) : (
+                                <div className="space-y-5">
+                                    {bookings.map((booking) => (
+                                        <motion.div key={booking.id} variants={fadeUp} className="glass-card p-0 overflow-hidden group">
+                                            {/* Header */}
+                                            <div className="bg-gradient-to-r from-[var(--color-surface)] to-[var(--color-bg)] p-6 border-b border-[var(--color-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div>
+                                                    <div className="flex items-center gap-2 mb-1.5">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded">
+                                                            {booking.service_tier === "macro" ? "BADA KAAM" : "CHHOTA KAAM"}
+                                                        </span>
+                                                        <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider">
+                                                            ID: #{booking.id.slice(0,8)}
+                                                        </span>
+                                                    </div>
+                                                    <h3 className="text-xl font-display font-bold text-[var(--color-heading)]">{booking.contractor_name}</h3>
+                                                    <p className="text-sm text-[var(--color-muted)] font-medium mt-0.5">{booking.service_category?.replace('_', ' ')}</p>
+                                                </div>
+                                                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
+                                                    <p className="text-2xl font-black text-[var(--color-heading)]">₹{Number(booking.amount).toLocaleString('en-IN')}</p>
+                                                    {getStatusBadge(booking.status)}
+                                                </div>
+                                            </div>
+
+                                            {/* Body */}
+                                            <div className="p-6">
+                                                <div className="grid sm:grid-cols-2 gap-6 mb-6">
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-start gap-2.5">
+                                                            <div className="w-8 h-8 rounded-full bg-[var(--color-bg)] flex items-center justify-center shrink-0 border border-[var(--color-border)]">
+                                                                <FiMapPin className="text-[var(--color-muted)]" size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-0.5">Location</p>
+                                                                <p className="text-sm font-medium text-[var(--color-body)]">{booking.location_address || "Not specified"}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-start gap-2.5">
+                                                            <div className="w-8 h-8 rounded-full bg-[var(--color-bg)] flex items-center justify-center shrink-0 border border-[var(--color-border)]">
+                                                                <FiClock className="text-[var(--color-muted)]" size={14} />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-0.5">Date Created</p>
+                                                                <p className="text-sm font-medium text-[var(--color-body)]">{new Date(booking.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="bg-[var(--color-bg)] rounded-xl p-4 border border-[var(--color-border)]">
+                                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3">Payment details</p>
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="text-sm text-[var(--color-body)] font-medium">Plan</span>
+                                                            <span className="text-sm text-[var(--color-heading)] font-semibold capitalize">{String(booking.payment_plan || "").replace(/_/g, " ")}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-sm text-[var(--color-body)] font-medium">Status</span>
+                                                            <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                                                booking.payment_status === "CAPTURED" || booking.payment_status === "RELEASED" 
+                                                                    ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                                                            }`}>
+                                                                {booking.payment_status}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {booking.status === "IN_PROGRESS" && (
+                                                    <div className="flex justify-end pt-4 border-t border-[var(--color-border)]">
+                                                        <button onClick={() => handleMarkComplete(booking.id)} className="btn-primary shadow-glow hover:scale-105 transition-transform">
+                                                            <FiCheckCircle size={16} /> Mark Project Complete
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+                        </motion.section>
+
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     );
 }

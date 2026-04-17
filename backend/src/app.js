@@ -15,6 +15,7 @@ const app = express();
 // Basic security headers — allow cross-origin resource loading for uploaded images
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
 }));
 
 // CORS - restrict to configured frontend URL(s)

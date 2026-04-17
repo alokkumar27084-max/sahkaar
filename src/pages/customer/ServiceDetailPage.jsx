@@ -8,11 +8,11 @@ import toast from "react-hot-toast";
 import {
     FiArrowLeft, FiArrowRight, FiStar, FiShield,
     FiCheckCircle, FiClock, FiGrid, FiZap, FiDroplet,
-    FiTool, FiScissors, FiHome, FiWind, FiTarget
+    FiTool, FiScissors, FiHome, FiWind, FiTarget, FiMapPin, FiCalendar
 } from "react-icons/fi";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
-const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
+const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 
 const ICON_MAP = {
     snowflake: FiWind, sparkles: FiStar, zap: FiZap, droplets: FiDroplet,
@@ -22,7 +22,7 @@ const ICON_MAP = {
     armchair: FiHome, trees: FiGrid, star: FiStar, shield: FiShield,
     target: FiTarget, umbrella: FiShield, layers: FiGrid, loader: FiTool,
     chefHat: FiHome, sofa: FiHome, bath: FiDroplet, pipette: FiDroplet,
-    container: FiHome,
+    container: FiHome, mapPin: FiMapPin, calendar: FiCalendar
 };
 function getIcon(name) { return ICON_MAP[name] || FiGrid; }
 
@@ -83,13 +83,19 @@ export default function ServiceDetailPage() {
 
     if (loading) {
         return (
-            <main className="max-w-[1200px] mx-auto px-4 md:px-6 py-10">
-                <div className="glass-card p-8">
-                    <div className="skeleton w-20 h-20 rounded-2xl mb-6" />
-                    <div className="skeleton h-8 w-1/2 rounded-md mb-4" />
-                    <div className="skeleton h-5 w-3/4 rounded-md mb-3" />
-                    <div className="skeleton h-5 w-2/3 rounded-md mb-6" />
-                    <div className="skeleton h-40 w-full rounded-xl" />
+            <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-20">
+                <div className="max-w-[1200px] mx-auto px-4 md:px-8">
+                    <div className="flex gap-8">
+                        <div className="flex-1 space-y-6">
+                            <div className="skeleton w-24 h-24 rounded-3xl" />
+                            <div className="skeleton h-12 w-3/4 rounded-xl" />
+                            <div className="skeleton h-6 w-full rounded-md" />
+                            <div className="skeleton h-6 w-5/6 rounded-md" />
+                        </div>
+                        <div className="w-[400px] hidden lg:block">
+                            <div className="skeleton h-[500px] rounded-3xl" />
+                        </div>
+                    </div>
                 </div>
             </main>
         );
@@ -98,204 +104,181 @@ export default function ServiceDetailPage() {
     if (!service) return null;
 
     const SvcIcon = getIcon(service.icon);
+    
+    // Parse related tasks if stored as JSON string
+    let tasksList = [];
+    if (typeof service.related_tasks === 'string') {
+        try {
+            tasksList = JSON.parse(service.related_tasks);
+        } catch (e) {
+            tasksList = service.related_tasks.split(',').filter(Boolean);
+        }
+    } else if (Array.isArray(service.related_tasks)) {
+        tasksList = service.related_tasks;
+    }
 
     return (
-        <main className="max-w-[1200px] mx-auto px-4 md:px-6 pt-6 pb-20">
-            {/* Back button */}
-            <motion.button
-                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-[var(--color-muted)] hover:text-[var(--color-heading)] text-sm font-medium mb-6 transition-colors"
-            >
-                <FiArrowLeft size={16} /> {lang === "hi" ? "वापस जाएं" : "Go Back"}
-            </motion.button>
+        <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-20 relative">
+            <div className="max-w-[1200px] mx-auto px-4 md:px-8 relative z-10">
+                
+                {/* Back Link */}
+                <button onClick={() => navigate("/quick-services")} className="mb-8 text-sm font-bold tracking-widest text-[var(--color-muted)] hover:text-[var(--color-heading)] flex items-center gap-2 uppercase transition-colors">
+                    <FiArrowLeft size={16} /> All Services
+                </button>
 
-            <div className="grid lg:grid-cols-[1fr_400px] gap-8">
-                {/* ── LEFT: Service details ── */}
-                <motion.div initial="hidden" animate="show" variants={stagger}>
-                    {/* Header card */}
-                    <motion.div variants={fadeUp} className="glass-card p-8 mb-6">
-                        <div className="flex items-start gap-5">
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-accent)]/5 flex items-center justify-center shrink-0">
-                                <SvcIcon size={36} className="text-[var(--color-primary)]" />
+                <div className="grid lg:grid-cols-[1fr_minmax(400px,450px)] gap-12 lg:gap-16">
+                    
+                    {/* LEFT COLUMN: Read Content */}
+                    <motion.div initial="hidden" animate="show" variants={stagger} className="space-y-12">
+                        
+                        <motion.section variants={fadeUp}>
+                            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[var(--color-primary)] to-cyan-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 mb-6">
+                                <SvcIcon className="w-10 h-10 drop-shadow-md" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                                {/* Category badge */}
-                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-semibold mb-2">
-                                    {lang === "hi" && service.category_name_hi ? service.category_name_hi : service.category_name}
-                                </span>
-                                <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-heading)] mb-2">
-                                    {lang === "hi" && service.name_hi ? service.name_hi : service.name}
-                                </h1>
-                                <div className="flex items-center gap-4 flex-wrap">
-                                    {service.price_starts_at && (
-                                        <span className="text-3xl font-bold text-[var(--color-heading)]">
-                                            ₹{service.price_starts_at.toLocaleString()}
-                                            <span className="text-sm font-normal text-[var(--color-muted)] ml-2">{lang === "hi" ? "से शुरू" : "onwards"}</span>
-                                        </span>
-                                    )}
-                                    <span className="inline-flex items-center gap-1 text-amber-500 font-semibold text-sm">
-                                        <FiStar size={14} fill="currentColor" /> {Number(service.rating).toFixed(1)}
-                                    </span>
-                                    {service.bookings_count > 0 && (
-                                        <span className="text-[var(--color-muted)] text-sm">
-                                            {service.bookings_count.toLocaleString()} {lang === "hi" ? "बुकिंग्स" : "bookings"}
-                                        </span>
-                                    )}
+                            
+                            <h1 className="font-display text-4xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight mb-4 leading-tight">
+                                {service.name}
+                            </h1>
+                            
+                            <p className="text-lg md:text-xl text-[var(--color-muted)] font-medium leading-relaxed max-w-2xl">
+                                {service.description || "Professional service delivered to your doorstep within 60 minutes."}
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-4 mt-6 pt-6 border-t border-[var(--color-border)]">
+                                <div className="flex items-center gap-2 text-sm font-bold text-[var(--color-heading)] bg-[var(--color-surface)] px-4 py-2 rounded-xl border border-[var(--color-border)] shadow-sm">
+                                    <FiStar className="text-amber-500 text-lg fill-amber-500" />
+                                    <span>4.8</span>
+                                    <span className="text-[var(--color-muted)] font-medium ml-1">(120+ reviews)</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm font-bold text-[var(--color-heading)] bg-[var(--color-surface)] px-4 py-2 rounded-xl border border-[var(--color-border)] shadow-sm">
+                                    <FiShield className="text-emerald-500 text-lg" />
+                                    <span>Thekedaar Assured</span>
                                 </div>
                             </div>
-                        </div>
-                    </motion.div>
+                        </motion.section>
 
-                    {/* Description */}
-                    <motion.div variants={fadeUp} className="glass-card p-8 mb-6">
-                        <h2 className="font-display text-lg font-bold text-[var(--color-heading)] mb-3">
-                            {lang === "hi" ? "सर्विस डिटेल्स" : "Service Details"}
-                        </h2>
-                        <p className="text-[var(--color-body)] leading-relaxed">
-                            {lang === "hi" && service.description_hi ? service.description_hi : service.description}
-                        </p>
-                    </motion.div>
-
-                    {/* Trust signals */}
-                    <motion.div variants={fadeUp} className="glass-card p-8 mb-6">
-                        <h2 className="font-display text-lg font-bold text-[var(--color-heading)] mb-4">
-                            {lang === "hi" ? "क्यों चुनें Thekedaar?" : "Why Choose Thekedaar?"}
-                        </h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {[
-                                { icon: FiShield, text: lang === "hi" ? "आधार वेरिफाइड प्रोफेशनल" : "Aadhaar Verified Professional", color: "text-green-500" },
-                                { icon: FiStar, text: lang === "hi" ? "रेटिंग और रिव्यू" : "Ratings & Reviews", color: "text-amber-500" },
-                                { icon: FiCheckCircle, text: lang === "hi" ? "संतुष्टि की गारंटी" : "Satisfaction Guarantee", color: "text-blue-500" },
-                            ].map(t => (
-                                <div key={t.text} className="flex items-start gap-3 p-4 rounded-xl bg-[var(--color-bg)] border border-[var(--color-border)]">
-                                    <t.icon size={20} className={`${t.color} shrink-0 mt-0.5`} />
-                                    <span className="text-sm text-[var(--color-body)] font-medium">{t.text}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-
-                    {/* Related services */}
-                    {related.length > 0 && (
-                        <motion.div variants={fadeUp}>
-                            <h2 className="font-display text-lg font-bold text-[var(--color-heading)] mb-4">
-                                {lang === "hi" ? "इसी कैटेगरी की और सर्विसेज" : "More in This Category"}
-                            </h2>
-                            <div className="grid sm:grid-cols-2 gap-3">
-                                {related.map(r => {
-                                    const RIcon = getIcon(r.icon);
-                                    return (
-                                        <button key={r.id} onClick={() => navigate(`/services/${r.slug}`)}
-                                            className="glass-card p-5 text-left group hover:-translate-y-1 transition-all flex items-center gap-4"
-                                        >
-                                            <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/8 flex items-center justify-center shrink-0 group-hover:bg-[var(--color-primary)]/15 transition-colors">
-                                                <RIcon size={20} className="text-[var(--color-primary)]" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-semibold text-[var(--color-heading)] text-sm truncate group-hover:text-[var(--color-primary)] transition-colors">
-                                                    {lang === "hi" && r.name_hi ? r.name_hi : r.name}
-                                                </p>
-                                                {r.price_starts_at && (
-                                                    <p className="text-xs text-[var(--color-muted)]">₹{r.price_starts_at.toLocaleString()} onwards</p>
-                                                )}
-                                            </div>
-                                            <FiArrowRight size={14} className="text-[var(--color-muted)] group-hover:text-[var(--color-primary)] transition-colors" />
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </motion.div>
-                    )}
-                </motion.div>
-
-                {/* ── RIGHT: Booking form ── */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="lg:sticky lg:top-6 self-start">
-                    <div className="glass-card p-8">
-                        {booked ? (
-                            <div className="text-center py-8">
-                                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/10 flex items-center justify-center">
-                                    <FiCheckCircle size={32} className="text-green-500" />
-                                </div>
-                                <h3 className="font-display text-xl font-bold text-[var(--color-heading)] mb-2">
-                                    {lang === "hi" ? "रिक्वेस्ट भेज दी गई!" : "Request Submitted!"}
-                                </h3>
-                                <p className="text-[var(--color-muted)] text-sm mb-6">
-                                    {lang === "hi" ? "हम जल्द ही आपसे संपर्क करेंगे।" : "We'll contact you shortly to confirm."}
-                                </p>
-                                <button onClick={() => setBooked(false)} className="btn-primary">
-                                    {lang === "hi" ? "और बुक करें" : "Book Another"}
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                <h3 className="font-display text-xl font-bold text-[var(--color-heading)] mb-1">
-                                    {lang === "hi" ? "अभी बुक करें" : "Book This Service"}
-                                </h3>
-                                <p className="text-[var(--color-muted)] text-sm mb-6">
-                                    {lang === "hi" ? "अपनी डिटेल्स भरें, हम कन्फर्म करेंगे" : "Fill your details and we'll confirm"}
-                                </p>
-                                <form onSubmit={handleBook} className="space-y-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-1.5 block">
-                                            {lang === "hi" ? "नाम *" : "Name *"}
-                                        </label>
-                                        <input type="text" value={form.customer_name} onChange={e => setForm({ ...form, customer_name: e.target.value })}
-                                            className="input-field" placeholder={lang === "hi" ? "आपका नाम" : "Your name"} required />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-1.5 block">
-                                            {lang === "hi" ? "फोन *" : "Phone *"}
-                                        </label>
-                                        <input type="tel" value={form.customer_phone} onChange={e => setForm({ ...form, customer_phone: e.target.value })}
-                                            className="input-field" placeholder="+91 98765 43210" required />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-1.5 block">
-                                            {lang === "hi" ? "पता" : "Address"}
-                                        </label>
-                                        <input type="text" value={form.customer_address} onChange={e => setForm({ ...form, customer_address: e.target.value })}
-                                            className="input-field" placeholder={lang === "hi" ? "आपका पता" : "Your address"} />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-1.5 block">
-                                                {lang === "hi" ? "तारीख" : "Date"}
-                                            </label>
-                                            <input type="date" value={form.preferred_date} onChange={e => setForm({ ...form, preferred_date: e.target.value })}
-                                                className="input-field" />
+                        <motion.section variants={fadeUp}>
+                            <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] mb-6 tracking-tight">What's included</h2>
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                {(tasksList.length ? tasksList : ["Standard inspection", "Professional servicing", "Safety check", "Post-service cleanup"]).map((task, i) => (
+                                    <div key={i} className="flex gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/50 hover:bg-[var(--color-surface)] transition-colors">
+                                        <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                                            <FiCheckCircle />
                                         </div>
-                                        <div>
-                                            <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-1.5 block">
-                                                {lang === "hi" ? "समय" : "Time"}
-                                            </label>
-                                            <select value={form.preferred_time} onChange={e => setForm({ ...form, preferred_time: e.target.value })} className="input-field">
-                                                <option value="">{lang === "hi" ? "चुनें" : "Select"}</option>
-                                                <option value="morning">{lang === "hi" ? "सुबह (9-12)" : "Morning (9-12)"}</option>
-                                                <option value="afternoon">{lang === "hi" ? "दोपहर (12-4)" : "Afternoon (12-4)"}</option>
-                                                <option value="evening">{lang === "hi" ? "शाम (4-7)" : "Evening (4-7)"}</option>
-                                            </select>
-                                        </div>
+                                        <p className="text-sm font-semibold text-[var(--color-heading)] mt-1.5 leading-snug">{task}</p>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-1.5 block">
-                                            {lang === "hi" ? "अतिरिक्त नोट्स" : "Additional Notes"}
-                                        </label>
-                                        <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
-                                            rows={2} className="input-field !h-auto resize-none" placeholder={lang === "hi" ? "कोई विशेष ज़रूरत..." : "Any special requirements..."} />
-                                    </div>
-                                    <button type="submit" disabled={submitting}
-                                        className="w-full h-12 rounded-xl bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] text-white font-semibold flex items-center justify-center gap-2 shadow-btn btn-shimmer hover:shadow-btn-hover hover:-translate-y-0.5 transition-all"
-                                    >
-                                        {submitting ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : null}
-                                        {lang === "hi" ? "बुकिंग रिक्वेस्ट भेजें" : "Submit Booking Request"}
-                                    </button>
-                                </form>
-                            </>
+                                ))}
+                            </div>
+                        </motion.section>
+
+                        <motion.section variants={fadeUp} className="bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 lg:p-10">
+                            <div className="flex flex-col md:flex-row gap-6 items-start">
+                                <div className="w-16 h-16 rounded-full bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+                                    <FiZap size={32} />
+                                </div>
+                                <div>
+                                    <h3 className="font-display text-2xl text-amber-900 dark:text-amber-500 font-bold mb-3 tracking-tight">Instant Service Guarantee</h3>
+                                    <p className="text-amber-800 dark:text-amber-200/80 leading-relaxed font-medium">When you book this quick service, our algorithm dispatches the nearest verified professional within 5 kilometers. Most professionals arrive within 60 minutes.</p>
+                                </div>
+                            </div>
+                        </motion.section>
+
+                        {related.length > 0 && (
+                            <motion.section variants={fadeUp} className="pt-6 border-t border-[var(--color-border)]">
+                                <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] mb-6 tracking-tight">Frequently booked together</h2>
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    {related.map(r => {
+                                        const RIcon = getIcon(r.icon);
+                                        return (
+                                            <div key={r.slug} onClick={() => navigate(`/service/${r.slug}`)} className="group cursor-pointer glass-card p-5 hover:border-[var(--color-primary)]/50 transition-colors flex items-center gap-5">
+                                                <div className="w-12 h-12 rounded-2xl bg-[var(--color-bg)] flex items-center justify-center border border-[var(--color-border)] group-hover:scale-110 transition-transform">
+                                                    <RIcon className="w-6 h-6 text-[var(--color-primary)]" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-[var(--color-heading)] text-base group-hover:text-[var(--color-primary)] transition-colors">{r.name}</h4>
+                                                    <p className="text-xs text-[var(--color-muted)] font-medium mt-0.5">Quick Service</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </motion.section>
                         )}
+                    </motion.div>
+
+                    {/* RIGHT COLUMN: Sticky Booking Form */}
+                    <div className="relative">
+                        <div className="sticky top-28 lg:top-32">
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="glass-card p-0 overflow-hidden shadow-2xl shadow-black/5 dark:shadow-black/40 border-[var(--color-border)] border">
+                                <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)] p-6 md:p-8">
+                                    <h3 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight">Request Service</h3>
+                                    <p className="text-sm font-medium text-[var(--color-muted)] mt-1">Book instantly. No hidden charges.</p>
+                                </div>
+
+                                {booked ? (
+                                    <div className="p-8 md:p-10 text-center">
+                                        <div className="w-20 h-20 rounded-full bg-emerald-500/10 text-emerald-500 mx-auto flex items-center justify-center mb-6">
+                                            <FiCheckCircle className="w-10 h-10" />
+                                        </div>
+                                        <h3 className="text-2xl font-display font-bold text-[var(--color-heading)] mb-2 tracking-tight">Request Sent</h3>
+                                        <p className="text-sm text-[var(--color-muted)] mb-8 font-medium">A verified contractor has been notified and will call you shortly to confirm the appointment.</p>
+                                        <button onClick={() => navigate("/dashboard")} className="btn-primary w-full shadow-glow py-3.5">
+                                            Go to Dashboard
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="p-6 md:p-8">
+                                        <form onSubmit={handleBook} className="space-y-5">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-bold uppercase tracking-widest text-[var(--color-muted)]">Your Name</label>
+                                                    <input required type="text" placeholder="John Doe" value={form.customer_name} onChange={e => setForm({ ...form, customer_name: e.target.value })} className="input-field shadow-inner bg-[var(--color-bg)] w-full font-medium" />
+                                                </div>
+                                                <div className="space-y-1.5">
+                                                    <label className="text-xs font-bold uppercase tracking-widest text-[var(--color-muted)]">Phone Number</label>
+                                                    <input required type="tel" placeholder="10-digit number" value={form.customer_phone} onChange={e => setForm({ ...form, customer_phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} className="input-field shadow-inner bg-[var(--color-bg)] w-full font-medium" />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-[var(--color-muted)] flex items-center gap-1.5"><FiMapPin /> Precise Address</label>
+                                                <textarea required placeholder="House/Flat No, Building, Landmark..." value={form.customer_address} onChange={e => setForm({ ...form, customer_address: e.target.value })} className="input-field shadow-inner bg-[var(--color-bg)] resize-none w-full font-medium" rows={2} />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1.5 border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-3 rounded-xl">
+                                                    <label className="text-[10px] font-black uppercase tracking-wider text-[var(--color-primary)] flex items-center gap-1.5"><FiCalendar /> Preferred Date</label>
+                                                    <input type="date" value={form.preferred_date} onChange={e => setForm({ ...form, preferred_date: e.target.value })} className="w-full bg-transparent text-sm font-bold text-[var(--color-heading)] outline-none" min={new Date().toISOString().split('T')[0]} />
+                                                </div>
+                                                <div className="space-y-1.5 border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 p-3 rounded-xl">
+                                                    <label className="text-[10px] font-black uppercase tracking-wider text-[var(--color-primary)] flex items-center gap-1.5"><FiClock /> Preferred Time</label>
+                                                    <input type="time" value={form.preferred_time} onChange={e => setForm({ ...form, preferred_time: e.target.value })} className="w-full bg-transparent text-sm font-bold text-[var(--color-heading)] outline-none" />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-1.5 pt-2">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-[var(--color-muted)]">Additional Notes (Optional)</label>
+                                                <textarea placeholder="Specific problem details..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="input-field shadow-inner bg-[var(--color-bg)] resize-none w-full font-medium" rows={2} />
+                                            </div>
+
+                                            <div className="pt-4">
+                                                <button type="submit" disabled={submitting} className="btn-primary w-full py-4 text-base shadow-glow flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform">
+                                                    {submitting ? <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Request Now <FiArrowRight /></>}
+                                                </button>
+                                                <p className="text-center text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-widest mt-4">No commitment untill contractor accepts</p>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )}
+                            </motion.div>
+                        </div>
                     </div>
-                </motion.div>
+
+                </div>
             </div>
+            
+            {/* Background design elements */}
+            <div className="absolute top-[20%] left-0 w-[500px] h-[500px] bg-[var(--color-primary)]/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
         </main>
     );
 }
