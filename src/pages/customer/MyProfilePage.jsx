@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiUser, FiEdit3, FiCamera, FiMapPin, FiCalendar, FiCheck, FiSave } from "react-icons/fi";
+import { motion } from "framer-motion";
+import { FiEdit3, FiCamera, FiMapPin, FiCalendar, FiSave } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
@@ -37,6 +37,7 @@ export default function MyProfilePage() {
 
   useEffect(() => {
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchProfile() {
