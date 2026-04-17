@@ -10,7 +10,7 @@ import StarRating from "../../components/common/StarRating";
 import Icon from "../../components/common/Icon";
 import { getImageUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
-import { FiBell, FiSettings, FiCheckCircle, FiBriefcase, FiMapPin, FiClock, FiLink } from "react-icons/fi";
+import { FiBell, FiSettings, FiCheckCircle, FiBriefcase, FiLink } from "react-icons/fi";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
 const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };

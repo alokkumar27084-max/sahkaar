@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiFilter, FiMapPin, FiSearch, FiSliders } from "react-icons/fi";
+import { FiMapPin, FiSearch, FiSliders } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI, contractorAPI } from "../../services/api";
