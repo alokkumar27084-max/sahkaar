@@ -5,7 +5,7 @@ import { AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "./context/AuthContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import Navbar from "./components/common/Navbar";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import LoadingSpinner from "./components/common/LoadingSpinner";
@@ -18,7 +18,6 @@ import CustomCursor from "./components/common/CustomCursor";
 import usePageTracking from "./hooks/usePageTracking";
 
 const HomePage = lazy(() => import("./pages/customer/HomePage"));
-// ... other lazy imports stay same ...
 const SearchPage = lazy(() => import("./pages/customer/SearchPage"));
 const ContractorProfilePage = lazy(() => import("./pages/customer/ContractorProfilePage"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
@@ -35,6 +34,8 @@ const BookingCheckoutPage = lazy(() => import("./pages/customer/BookingCheckoutP
 const CustomerDashboard = lazy(() => import("./pages/customer/CustomerDashboard"));
 const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
+const LocalDirectoryPage = lazy(() => import("./pages/customer/LocalDirectoryPage"));
+const MyProfilePage = lazy(() => import("./pages/customer/MyProfilePage"));
 
 function PageFallback() {
   return (
@@ -47,6 +48,62 @@ function PageFallback() {
 function PageTracker() {
   usePageTracking();
   return null;
+}
+
+/* ── Initialize Lenis Smooth Scroll — smooth but NOT slow ── */
+function useLenisScroll() {
+  useEffect(() => {
+    if (!window.Lenis || !window.gsap) return;
+
+    const lenis = new window.Lenis({
+      lerp: 0.12,         // Higher = faster response (was 0.08, now 0.12)
+      duration: 1.0,      // Shorter scroll duration
+      smoothWheel: true,
+      wheelMultiplier: 1.2, // Slightly amplified wheel
+    });
+
+    // Sync with GSAP ScrollTrigger
+    lenis.on('scroll', window.ScrollTrigger?.update);
+
+    window.gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+    });
+
+    window.gsap.ticker.lagSmoothing(0);
+    window.__lenis = lenis;
+
+    return () => {
+      lenis.destroy();
+      window.__lenis = null;
+    };
+  }, []);
+}
+
+/* ── Toaster theme-aware wrapper ── */
+function ThemedToaster() {
+  const { isDark } = useTheme();
+  return (
+    <Toaster
+      position="top-center"
+      toastOptions={{
+        duration: 3000,
+        style: {
+          borderRadius: "14px",
+          color: isDark ? "#ECEEF6" : "#0C0F1D",
+          background: isDark ? "#1A1C28" : "#FFFFFF",
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#E8EAF2'}`,
+          fontSize: "14px",
+          fontFamily: "'Inter', sans-serif",
+          boxShadow: isDark
+            ? "0 8px 32px rgba(0,0,0,0.3)"
+            : "0 4px 24px rgba(0,0,0,0.06)",
+        },
+        success: {
+          iconTheme: { primary: "#6366F1", secondary: isDark ? "#1A1C28" : "#FFFFFF" },
+        },
+      }}
+    />
+  );
 }
 
 function AnimatedRoutes() {
@@ -89,6 +146,15 @@ function AnimatedRoutes() {
         <Route path="/quick-services" element={<PageWrapper><QuickServicesPage /></PageWrapper>} />
         <Route path="/macro-services" element={<PageWrapper><MacroServicesPage /></PageWrapper>} />
         <Route path="/services/:slug" element={<PageWrapper><ServiceDetailPage /></PageWrapper>} />
+        <Route path="/directory" element={<PageWrapper><LocalDirectoryPage /></PageWrapper>} />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><MyProfilePage /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/chat"
           element={
@@ -128,12 +194,12 @@ function AnimatedRoutes() {
           element={
             <PageWrapper>
               <div className="min-h-[68vh] flex items-center justify-center px-4">
-                <div className="bg-white border border-slate-200 rounded-2xl p-10 max-w-lg text-center shadow-sm">
-                  <div className="mb-4 flex justify-center text-[#4F46E5]">
+                <div className="glass-card p-10 md:p-14 max-w-lg text-center">
+                  <div className="mb-5 flex justify-center text-indigo-400">
                     <Icon name="compass" className="w-14 h-14" />
                   </div>
-                  <h2 className="font-display text-3xl text-[#111827] font-semibold mb-2">Page Not Found</h2>
-                  <p className="text-slate-500 mb-6">This page does not exist or was moved.</p>
+                  <h2 className="font-display text-3xl text-[var(--color-heading)] font-bold mb-2">Page Not Found</h2>
+                  <p className="text-[var(--color-muted)] mb-6">This page does not exist or was moved.</p>
                   <Link to="/" className="btn-primary">
                     Return Home
                   </Link>
@@ -151,8 +217,10 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "1091767343100-cdkm19c3r5fn3m6ha6nfqk38g16lj5cg.apps.googleusercontent.com";
 
+  // Initialize Lenis — smooth but fast
+  useLenisScroll();
+
   useEffect(() => {
-    // Check if splash has been shown in this session
     const hasShownSplash = sessionStorage.getItem('hasShownSplash');
     if (hasShownSplash) {
       setShowSplash(false);
@@ -171,21 +239,7 @@ export default function App() {
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
-              <Toaster
-                position="top-center"
-                toastOptions={{
-                  duration: 3200,
-                  style: {
-                    borderRadius: "14px",
-                    color: "#0F172A",
-                    background: "#ffffff",
-                    border: "1px solid #E2E8F0",
-                    fontSize: "14px",
-                    fontFamily: "Outfit, sans-serif"
-                  },
-                  success: { iconTheme: { primary: "#4F46E5", secondary: "#ffffff" } },
-                }}
-              />
+              <ThemedToaster />
 
               <AnimatePresence>
                 {showSplash && <SplashScreen onComplete={handleSplashComplete} />}

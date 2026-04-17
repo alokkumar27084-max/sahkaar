@@ -60,7 +60,7 @@ export default function CustomerDashboard() {
 
     return (
         <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-20 overflow-hidden">
-            <div className="max-w-[1300px] mx-auto px-4 md:px-8">
+            <div className="max-w-[1200px] mx-auto px-4 md:px-8">
                 
                 {/* Premium Header Area */}
                 <motion.div initial="hidden" animate="show" variants={fadeUp} className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
@@ -72,6 +72,25 @@ export default function CustomerDashboard() {
                         <p className="text-[var(--color-muted)] mt-2 font-medium">Manage your bookings, requests, and notifications.</p>
                     </div>
                 </motion.div>
+
+                {/* Summary Stats */}
+                {!loading && (
+                    <motion.div initial="hidden" animate="show" variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                        {[
+                            { label: "Total Bookings", value: bookings.length, color: "indigo" },
+                            { label: "Active", value: bookings.filter(b => b.status === "IN_PROGRESS").length, color: "cyan" },
+                            { label: "Completed", value: bookings.filter(b => b.status === "COMPLETED").length, color: "emerald" },
+                            { label: "Pending", value: bookings.filter(b => !['COMPLETED', 'IN_PROGRESS', 'CANCELLED'].includes(b.status)).length, color: "amber" },
+                        ].map((stat, i) => (
+                            <motion.div key={stat.label} variants={fadeUp}
+                                className="glass-card p-4 md:p-5 text-center"
+                            >
+                                <p className={`font-display text-2xl font-bold text-${stat.color}-500 leading-none`}>{stat.value}</p>
+                                <p className="text-[11px] text-[var(--color-muted)] mt-1.5 font-semibold uppercase tracking-wider">{stat.label}</p>
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                )}
 
                 <div className="grid lg:grid-cols-[320px_1fr] gap-8 relative z-10">
                     

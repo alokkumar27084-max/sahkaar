@@ -161,7 +161,7 @@ export default function SearchPage() {
   }
 
   return (
-    <main id="main-content" className="max-w-[1400px] mx-auto px-4 md:px-8 pb-20 pt-24 min-h-screen bg-[var(--color-bg)]">
+    <main id="main-content" className="max-w-[1200px] mx-auto px-4 md:px-8 pb-20 pt-24 min-h-screen bg-[var(--color-bg)]">
       
       {!hasSearchLocation && (
         <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-3xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-8 shadow-inner shadow-amber-500/5">
@@ -181,27 +181,27 @@ export default function SearchPage() {
       )}
 
       {/* Premium Filter Bank */}
-      <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 md:p-8 mb-8 z-20 relative shadow-xl shadow-black/5">
-        <div className="grid lg:grid-cols-[1fr_auto_minmax(300px,350px)] gap-4 items-center">
+      <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 md:p-6 mb-8 z-20 relative">
+        <div className="grid lg:grid-cols-[1fr_auto_minmax(280px,350px)] gap-3 items-center">
           
           <div className="relative">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-primary)] w-5 h-5" />
-            <input type="search" defaultValue={query} placeholder={t("home.search_placeholder")} className="input-field !pl-12 !py-3.5 !text-base shadow-inner bg-[var(--color-bg)] w-full" onKeyDown={(e) => { if (e.key === "Enter") updateParam("q", e.target.value); }} />
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
+            <input type="search" defaultValue={query} placeholder={t("home.search_placeholder")} className="input-field !pl-11 !h-12 !text-sm bg-[var(--color-bg)] w-full" onKeyDown={(e) => { if (e.key === "Enter") updateParam("q", e.target.value); }} />
           </div>
           
-          <button onClick={() => setShowFilters((s) => !s)} className={`px-6 py-3.5 rounded-xl font-bold border transition-all flex items-center justify-center gap-2 ${showFilters ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-glow" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-heading)] hover:border-[var(--color-primary)]"}`}>
-              <FiSliders size={18} /> {t("search.filter")}
+          <button onClick={() => setShowFilters((s) => !s)} className={`h-12 px-5 rounded-xl font-bold border transition-all inline-flex items-center justify-center gap-2 text-sm shrink-0 ${showFilters ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-heading)] hover:border-[var(--color-primary)]"}`}>
+              <FiSliders size={15} className="shrink-0" /> {t("search.filter")}
           </button>
           
           <div className="w-full relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[var(--color-bg)] border border-[var(--color-border)] flex items-center justify-center z-10 text-[var(--color-primary)]"><FiMapPin size={14}/></div>
-              <LocationSearchInput value={manualLocationInput} onChange={setManualLocationInput} onSelect={handleManualLocationSelect} placeholder="Change location..." disabled={savingLocation} className="!pl-14" />
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-[var(--color-primary-muted)] flex items-center justify-center z-10 text-[var(--color-primary)]"><FiMapPin size={13}/></div>
+              <LocationSearchInput value={manualLocationInput} onChange={setManualLocationInput} onSelect={handleManualLocationSelect} placeholder="Change location..." disabled={savingLocation} className="!pl-12" />
           </div>
         </div>
 
         <AnimatePresence>
           {showFilters && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
+            <motion.div initial={{ height: 0, opacity: 0, filter: "blur(4px)" }} animate={{ height: "auto", opacity: 1, filter: "blur(0px)" }} exit={{ height: 0, opacity: 0, filter: "blur(4px)" }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
               <div className="mt-6 pt-6 border-t border-[var(--color-border)] grid md:grid-cols-3 gap-8">
                 
                 <div className="space-y-4">
@@ -260,16 +260,22 @@ export default function SearchPage() {
       </motion.section>
 
       <section className="mt-8">
-        {hasSearchLocation && <div className="mb-8 rounded-3xl overflow-hidden glass-card p-0 shadow-lg border-2 border-[var(--color-primary)]/20"><ContractorMapPanel center={{ lat: Number(effectiveLat), lng: Number(effectiveLng) }} currentLocationLabel={searchLocationLabel} contractors={contractors} /></div>}
+        {hasSearchLocation && <div className="mb-8 rounded-2xl overflow-hidden glass-card p-0 shadow-lg"><ContractorMapPanel center={{ lat: Number(effectiveLat), lng: Number(effectiveLng) }} currentLocationLabel={searchLocationLabel} contractors={contractors} /></div>}
         
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-display text-3xl text-[var(--color-heading)] font-extrabold tracking-tight">
+          <div>
+            <p className="text-[var(--color-primary)] text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Results</p>
+            <h2 className="font-display text-2xl text-[var(--color-heading)] font-extrabold tracking-tight">
               {loading ? (
-                  <span className="w-1/4 h-8 bg-slate-200 dark:bg-slate-800 rounded animate-pulse inline-block"></span>
+                  <span className="w-32 h-7 skeleton inline-block rounded-lg"></span>
+              ) : contractors.length > 0 ? (
+                  `${contractors.length} ${t("search.title")}`
               ) : (
-                  `${contractors.length > 0 ? "Showing" : ""} ${contractors.length} ${t("search.title")}`
+                  t("search.title")
               )}
-          </h2>
+            </h2>
+          </div>
+          {searchLocationLabel && <p className="text-xs text-[var(--color-muted)] font-medium flex items-center gap-1.5"><FiMapPin size={11} className="text-[var(--color-primary)]" /> {searchLocationLabel}</p>}
         </div>
 
         {loading && (

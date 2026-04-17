@@ -15,5 +15,7 @@ router.use('/services', servicesRoutes);
 router.use('/chat', require('./chat'));
 router.use('/bookings', require('./bookings'));
 router.use('/notifications', require('./notifications'));
+router.use('/directory', require('./directory'));
+router.use('/profiles', require('./profiles'));
 
 module.exports = router;

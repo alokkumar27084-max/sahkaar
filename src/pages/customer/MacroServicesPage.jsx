@@ -96,16 +96,9 @@ export default function MacroServicesPage() {
                         transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
                         className="absolute bottom-[5%] right-[5%] w-[600px] h-[600px] bg-gradient-to-bl from-indigo-500/10 to-violet-500/6 blur-[120px]"
                     />
-                    <div className="absolute inset-0 opacity-[0.015]" style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
-                    }} />
-                    <div className="absolute inset-0 opacity-[0.03]" style={{
-                        backgroundImage: "linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px)",
-                        backgroundSize: "100px 100px"
-                    }} />
                 </div>
 
-                <div className="relative z-10 max-w-[1400px] mx-auto px-4 md:px-8 pt-28 pb-16 w-full">
+                <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 pt-16 md:pt-20 pb-12 w-full">
                     <motion.div initial="hidden" animate="show" variants={stagger} className="max-w-3xl">
                         <motion.div variants={fadeUp} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.06] mb-10">
                             <FiLayers size={14} className="text-amber-400" />
@@ -121,9 +114,12 @@ export default function MacroServicesPage() {
                                     initial={{ opacity: 0, y: 60, filter: "blur(10px)" }}
                                     animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                                     transition={{ delay: 0.2 + i * 0.12, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                                    className={`font-display text-6xl md:text-8xl lg:text-[7rem] leading-[0.92] tracking-[-0.04em] font-extrabold block ${i === 1
+                                    className={`font-display font-extrabold uppercase leading-[0.92] tracking-[-0.04em] block ${i === 1
                                         ? "bg-gradient-to-r from-amber-400 via-orange-300 to-amber-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-[gradient_3s_ease_infinite]"
                                         : "text-white"}`}
+                                    style={{
+                                        fontSize: 'clamp(2.5rem, 10vw, 8rem)',
+                                    }}
                                 >
                                     {word}
                                 </motion.span>
@@ -152,7 +148,7 @@ export default function MacroServicesPage() {
             </section>
 
             {/* ═══════ CATEGORY + SERVICES ═══════ */}
-            <section className="max-w-[1400px] mx-auto px-4 md:px-6 -mt-8 relative z-20">
+            <section className="max-w-[1200px] mx-auto px-4 md:px-6 -mt-8 relative z-20">
                 {/* Search bar */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                     className="glass-card !rounded-full p-2 mb-12 shadow-premium border-white/10"
@@ -295,7 +291,7 @@ export default function MacroServicesPage() {
 
             {/* ═══════ HOW IT WORKS ═══════ */}
             <section className="bg-slate-50 dark:bg-[#020617] border-t border-[var(--color-border)] py-24">
-                <div className="max-w-[1400px] mx-auto px-4 md:px-6">
+                <div className="max-w-[1200px] mx-auto px-4 md:px-6">
                     <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={stagger} className="text-center mb-16">
                         <span className="text-amber-500 font-bold tracking-[0.3em] uppercase text-xs mb-4 block">Process</span>
                         <motion.h2 variants={fadeUp} className="font-display text-4xl md:text-5xl font-black text-[var(--color-heading)] uppercase tracking-tighter">

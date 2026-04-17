@@ -1,73 +1,105 @@
-import React, { useEffect, useState } from 'react';
-import { motion, useSpring, useMotionValue } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
 
 const CustomCursor = () => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    const cursorX = useMotionValue(-100);
-    const cursorY = useMotionValue(-100);
-
-    const springConfig = { damping: 25, stiffness: 150 };
-    const sx = useSpring(cursorX, springConfig);
-    const sy = useSpring(cursorY, springConfig);
+    const dotRef = useRef(null);
+    const followerRef = useRef(null);
+    const glowRef = useRef(null);
 
     useEffect(() => {
-        const moveCursor = (e) => {
-            cursorX.set(e.clientX);
-            cursorY.set(e.clientY);
+        if (typeof window === 'undefined' || window.innerWidth < 768) return;
+        if (!window.gsap) return;
+
+        const dot = dotRef.current;
+        const follower = followerRef.current;
+        const glow = glowRef.current;
+        if (!dot || !follower || !glow) return;
+
+        // GSAP quickTo for buttery smooth following
+        const xDot = window.gsap.quickTo(dot, "x", { duration: 0.1, ease: "power2.out" });
+        const yDot = window.gsap.quickTo(dot, "y", { duration: 0.1, ease: "power2.out" });
+        const xFollower = window.gsap.quickTo(follower, "x", { duration: 0.45, ease: "power3" });
+        const yFollower = window.gsap.quickTo(follower, "y", { duration: 0.45, ease: "power3" });
+        const xGlow = window.gsap.quickTo(glow, "x", { duration: 0.8, ease: "power3.out" });
+        const yGlow = window.gsap.quickTo(glow, "y", { duration: 0.8, ease: "power3.out" });
+
+        const onMouseMove = (e) => {
+            xDot(e.clientX - 3);
+            yDot(e.clientY - 3);
+            xFollower(e.clientX - 16);
+            yFollower(e.clientY - 16);
+            xGlow(e.clientX - 200);
+            yGlow(e.clientY - 200);
         };
 
-        const handleHover = (e) => {
+        let isHovered = false;
+
+        const onMouseOver = (e) => {
             const target = e.target;
-            if (
+            const interactive =
                 target.tagName === 'BUTTON' ||
                 target.tagName === 'A' ||
                 target.closest('button') ||
                 target.closest('a') ||
-                target.classList.contains('interactive')
-            ) {
-                setIsHovered(true);
-            } else {
-                setIsHovered(false);
+                target.classList.contains('interactive') ||
+                target.closest('.interactive');
+
+            if (interactive && !isHovered) {
+                isHovered = true;
+                window.gsap.to(follower, {
+                    scale: 2.5,
+                    borderColor: 'rgba(6, 182, 212, 0.5)',
+                    backgroundColor: 'rgba(6, 182, 212, 0.04)',
+                    duration: 0.4,
+                    ease: 'power2.out'
+                });
+                window.gsap.to(dot, {
+                    scale: 0.5,
+                    backgroundColor: '#22D3EE',
+                    duration: 0.3
+                });
+                window.gsap.to(glow, {
+                    scale: 1.5,
+                    opacity: 0.8,
+                    duration: 0.5
+                });
+            } else if (!interactive && isHovered) {
+                isHovered = false;
+                window.gsap.to(follower, {
+                    scale: 1,
+                    borderColor: 'rgba(99, 102, 241, 0.4)',
+                    backgroundColor: 'transparent',
+                    duration: 0.4,
+                    ease: 'power2.out'
+                });
+                window.gsap.to(dot, {
+                    scale: 1,
+                    backgroundColor: '#6366F1',
+                    duration: 0.3
+                });
+                window.gsap.to(glow, {
+                    scale: 1,
+                    opacity: 0.4,
+                    duration: 0.5
+                });
             }
         };
 
-        window.addEventListener('mousemove', moveCursor);
-        window.addEventListener('mouseover', handleHover);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseover', onMouseOver);
 
         return () => {
-            window.removeEventListener('mousemove', moveCursor);
-            window.removeEventListener('mouseover', handleHover);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseover', onMouseOver);
         };
-    }, [cursorX, cursorY]);
+    }, []);
+
+    if (typeof window !== 'undefined' && window.innerWidth < 768) return null;
 
     return (
         <>
-            {/* Main trailing ring */}
-            <motion.div
-                className="fixed top-0 left-0 w-8 h-8 rounded-full border border-indigo-500/50 pointer-events-none z-[10000] hidden md:block"
-                style={{
-                    x: sx,
-                    y: sy,
-                    translateX: '-50%',
-                    translateY: '-50%',
-                    scale: isHovered ? 2.5 : 1,
-                    backgroundColor: isHovered ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
-                    borderWidth: isHovered ? '0.5px' : '1px'
-                }}
-                transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-            />
-
-            {/* Center dot */}
-            <motion.div
-                className="fixed top-0 left-0 w-1.5 h-1.5 bg-indigo-500 rounded-full pointer-events-none z-[10001] hidden md:block"
-                style={{
-                    x: cursorX,
-                    y: cursorY,
-                    translateX: '-50%',
-                    translateY: '-50%'
-                }}
-            />
+            <div ref={glowRef} className="hidden md:block pointer-events-none fixed z-[90] mix-blend-screen w-[400px] h-[400px] rounded-full top-0 left-0 opacity-40 transition-opacity" style={{ background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 60%)' }} />
+            <div ref={dotRef} className="cursor-dot hidden md:block" />
+            <div ref={followerRef} className="cursor-follower hidden md:block" />
         </>
     );
 };

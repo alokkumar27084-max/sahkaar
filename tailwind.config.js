@@ -17,6 +17,7 @@ module.exports = {
         display: ['"Syne"', 'system-ui', 'sans-serif'],
         body: ['"Inter"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
+        script: ['"Caveat"', 'cursive'],
       },
       fontSize: {
         'hero': ['clamp(3rem, 5vw + 1rem, 5.5rem)', { lineHeight: '1.05', letterSpacing: '-0.03em', fontWeight: '700' }],
@@ -35,6 +36,7 @@ module.exports = {
         'shimmer': 'shimmer 2s linear infinite',
         'counter': 'counter 2s ease-out',
         'glow-ring': 'glowRing 3s ease-in-out infinite',
+        'marquee': 'marquee 25s linear infinite',
       },
       keyframes: {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -46,6 +48,7 @@ module.exports = {
         float: { '0%, 100%': { transform: 'translateY(0) rotate(0deg)' }, '50%': { transform: 'translateY(-20px) rotate(3deg)' } },
         shimmer: { '0%': { backgroundPosition: '200% 0' }, '100%': { backgroundPosition: '-200% 0' } },
         glowRing: { '0%, 100%': { opacity: '0.5', transform: 'scale(1)' }, '50%': { opacity: '1', transform: 'scale(1.05)' } },
+        marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
       },
       boxShadow: {
         'glass': '0 8px 32px rgba(0, 0, 0, 0.08)',

@@ -157,7 +157,7 @@ export default function ContractorDashboard() {
 
   return (
     <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-20 overflow-hidden">
-      <div className="max-w-[1300px] mx-auto px-4 md:px-8">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-8">
         
         {/* Premium Header Area */}
         <motion.div initial="hidden" animate="show" variants={fadeUp} className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">

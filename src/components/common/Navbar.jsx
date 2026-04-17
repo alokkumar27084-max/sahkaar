@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiSettings, FiUser, FiX, FiMoon, FiSun } from "react-icons/fi";
+import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiUser, FiX, FiMoon, FiSun, FiMap, FiBriefcase, FiMessageCircle } from "react-icons/fi";
 import { ThekedaarLogo } from "./ThekedaarLogo";
 import toast from "react-hot-toast";
 
@@ -38,16 +38,39 @@ export default function Navbar() {
   }, [panelVisible]);
 
   useEffect(() => {
-    document.body.style.overflow = panelVisible ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (panelVisible) {
+      document.body.style.overflow = "hidden";
+      if (window.lenis) window.lenis.stop();
+    } else {
+      document.body.style.overflow = "";
+      if (window.lenis) window.lenis.start();
+    }
+    return () => { 
+      document.body.style.overflow = ""; 
+      if (window.lenis) window.lenis.start();
+    };
   }, [panelVisible]);
+
+  /* ── Magnetic CTA button ── */
+  const ctaRef = useRef(null);
+  const handleCtaMove = useCallback((e) => {
+    if (!ctaRef.current || !window.gsap) return;
+    const rect = ctaRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) * 0.3;
+    const y = (e.clientY - rect.top - rect.height / 2) * 0.3;
+    window.gsap.to(ctaRef.current, { x, y, duration: 0.4, ease: "power2.out" });
+  }, []);
+  const handleCtaLeave = useCallback(() => {
+    if (!ctaRef.current || !window.gsap) return;
+    window.gsap.to(ctaRef.current, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.5)" });
+  }, []);
 
   const navLinks = useMemo(() => [
     { href: "/#home", label: "Home" },
     { href: "/quick-services", label: "Quick Services" },
     { href: "/macro-services", label: "Macro Services" },
+    { href: "/directory", label: "Directory" },
     { href: "/#about", label: "About" },
-    { href: "/#contact", label: "Contact" },
   ], []);
 
   async function handleLogout() {
@@ -67,14 +90,13 @@ export default function Navbar() {
     if (panelState === "closed") openPanel();
   }
 
-  const dashboardPath = isAdmin ? "/admin/dashboard" : isContractor ? "/contractor/dashboard" : "/";
-  const showDashboardLink = isAdmin || isContractor;
+  const dashboardPath = isAdmin ? "/admin/dashboard" : isContractor ? "/contractor/dashboard" : "/customer/dashboard";
 
   /* Reusable theme toggle button */
-  const ThemeToggleBtn = ({ size = 18, className = "" }) => (
+  const ThemeToggleBtn = ({ size = 17, className = "" }) => (
     <button
       onClick={toggleTheme}
-      className={`relative w-10 h-10 rounded-full flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-border)] transition-all ${className}`}
+      className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-primary-muted)] transition-all ${className}`}
       aria-label="Toggle theme"
     >
       <motion.div
@@ -94,35 +116,41 @@ export default function Navbar() {
       <a href="#main-content" className="skip-link">Skip to main content</a>
 
       <header className={`sticky top-0 z-50 px-3 md:px-5 py-2 navbar-shell ${hideNav ? "nav-hidden" : ""}`}>
-        <nav className={`glass-nav mx-auto max-w-[1400px] px-4 md:px-6 py-3 ${scrolled ? "shadow-glass-lg" : ""}`}>
+        <nav className={`glass-nav mx-auto max-w-[1400px] px-4 md:px-6 py-2.5 ${scrolled ? "shadow-glass-lg" : ""}`}>
           <div className="flex items-center justify-between gap-4">
             {/* Logo + Brand */}
-            <Link to="/" className="flex items-center gap-3 min-w-[56px] group">
-              <ThekedaarLogo className="h-10 w-10 md:h-11 md:w-11 transition-transform group-hover:scale-105" />
-              <span className="hidden sm:block font-display text-xl text-[var(--color-heading)] tracking-[-0.03em] font-extrabold uppercase">
+            <Link to="/" className="flex items-center gap-2.5 min-w-[56px] group">
+              <ThekedaarLogo className="h-9 w-9 md:h-10 md:w-10 transition-transform group-hover:scale-105" />
+              <span className="hidden sm:block font-display text-lg text-[var(--color-heading)] tracking-[-0.03em] font-extrabold uppercase">
                 THEKEDAAR
               </span>
             </Link>
 
             {/* Desktop Nav Links */}
-            <div className="hidden lg:flex items-center gap-8">
+            <div className="hidden lg:flex items-center gap-7">
               {navLinks.map((item) => (
-                <a key={item.href} href={item.href} className="nav-link text-[15px]">
+                <a key={item.href} href={item.href} className="nav-link text-[14px]">
                   {item.label}
                 </a>
               ))}
             </div>
 
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2">
               {user ? (
                 <>
-                  {/* After login: dark mode is in side panel only */}
+                  <ThemeToggleBtn />
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="btn-ghost text-sm">{t("nav.login")}</Link>
-                  <Link to="/register/contractor" className="btn-primary text-sm btn-shimmer">
+                  <Link to="/login" className="btn-ghost text-sm px-4 py-2">{t("nav.login")}</Link>
+                  <Link
+                    to="/register/contractor"
+                    ref={ctaRef}
+                    onMouseMove={handleCtaMove}
+                    onMouseLeave={handleCtaLeave}
+                    className="btn-primary text-sm btn-shimmer px-5 py-2.5"
+                  >
                     {t("nav.register")}
                   </Link>
                   <ThemeToggleBtn />
@@ -130,27 +158,14 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Mobile: only hamburger (dark mode moved to side panel) */}
-            <div className="flex items-center gap-2 md:hidden">
-              <button
-                className="w-10 h-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-body)] flex items-center justify-center"
-                onClick={togglePanel}
-                aria-label="Toggle menu"
-              >
-                {panelVisible ? <FiX size={18} /> : <FiMenu size={18} />}
-              </button>
-            </div>
-
-            {/* Desktop hamburger for logged-in users */}
-            {user && (
-              <button
-                className="hidden md:flex w-10 h-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-body)] items-center justify-center"
-                onClick={togglePanel}
-                aria-label="Toggle menu"
-              >
-                {panelVisible ? <FiX size={18} /> : <FiMenu size={18} />}
-              </button>
-            )}
+            {/* Hamburger — always visible for menu access */}
+            <button
+              className={`w-9 h-9 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-body)] flex items-center justify-center transition-colors hover:border-[var(--color-primary)]/30 ${!user ? 'md:hidden' : ''}`}
+              onClick={togglePanel}
+              aria-label="Toggle menu"
+            >
+              {panelVisible ? <FiX size={17} /> : <FiMenu size={17} />}
+            </button>
           </div>
         </nav>
       </header>
@@ -162,7 +177,7 @@ export default function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.25 }}
             className="panel-overlay"
             onClick={closePanel}
           />
@@ -179,35 +194,65 @@ export default function Navbar() {
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="side-panel"
           >
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-display text-xs uppercase tracking-[0.15em] text-[var(--color-muted)] font-bold">Menu</p>
-              <button className="panel-action !w-auto !px-3 !py-2 !min-h-0" onClick={closePanel} aria-label="Close">
+            {/* Panel Header */}
+            <div className="flex items-center justify-between mb-4">
+              {user ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white flex items-center justify-center text-sm font-bold">
+                    {user?.name?.[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-[var(--color-heading)] leading-tight">{user?.name}</p>
+                    <p className="text-[10px] text-[var(--color-muted)] font-medium">{user?.email || user?.phone}</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="font-display text-xs uppercase tracking-[0.15em] text-[var(--color-muted)] font-bold">Menu</p>
+              )}
+              <button className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-border)] transition-colors" onClick={closePanel} aria-label="Close">
                 <FiX size={16} />
               </button>
             </div>
 
+            {/* Navigation */}
             <p className="panel-section-title">Discover</p>
             <a href="/#home" className="panel-link" onClick={closePanel}>
-              <FiHome size={16} /> Home <FiChevronRight className="ml-auto opacity-40" />
+              <FiHome size={15} /> Home <FiChevronRight className="ml-auto opacity-30" />
             </a>
             <Link to="/search" className="panel-link" onClick={closePanel}>
-              <FiSearch size={16} /> {t("nav.search") || "Search"} <FiChevronRight className="ml-auto opacity-40" />
+              <FiSearch size={15} /> {t("nav.search") || "Search"} <FiChevronRight className="ml-auto opacity-30" />
             </Link>
-            {showDashboardLink && (
-              <Link to={dashboardPath} className="panel-link" onClick={closePanel}>
-                <FiUser size={16} /> {t("nav.dashboard") || "Dashboard"} <FiChevronRight className="ml-auto opacity-40" />
-              </Link>
+            <Link to="/directory" className="panel-link" onClick={closePanel}>
+              <FiMap size={15} /> Local Directory <FiChevronRight className="ml-auto opacity-30" />
+            </Link>
+
+            {/* Dashboard — available to ALL logged-in users */}
+            {user && (
+              <>
+                <p className="panel-section-title">Your Space</p>
+                <Link to={dashboardPath} className="panel-link" onClick={closePanel}>
+                  <FiBriefcase size={15} /> {t("nav.dashboard") || "Dashboard"} <FiChevronRight className="ml-auto opacity-30" />
+                </Link>
+                <Link to="/profile" className="panel-link" onClick={closePanel}>
+                  <FiUser size={15} /> My Profile <FiChevronRight className="ml-auto opacity-30" />
+                </Link>
+                <Link to="/chat" className="panel-link" onClick={closePanel}>
+                  <FiMessageCircle size={15} /> Messages <FiChevronRight className="ml-auto opacity-30" />
+                </Link>
+              </>
             )}
 
+            {/* Appearance */}
             <p className="panel-section-title">Appearance</p>
             <button onClick={toggleTheme} className="panel-link w-full">
-              {isDark ? <FiSun size={16} /> : <FiMoon size={16} />}
+              {isDark ? <FiSun size={15} /> : <FiMoon size={15} />}
               {isDark ? "Light Mode" : "Dark Mode"}
-              <span className="ml-auto text-xs text-[var(--color-muted)]">{isDark ? "☀️" : "🌙"}</span>
+              <span className="ml-auto text-[11px] text-[var(--color-muted)]">{isDark ? "☀️" : "🌙"}</span>
             </button>
 
+            {/* Language */}
             <p className="panel-section-title">Language</p>
-            <div className="flex items-center rounded-full bg-[var(--color-border)] p-1 w-fit">
+            <div className="flex items-center rounded-xl bg-[var(--color-border)] p-1 w-fit">
               {["en", "hi"].map((l) => (
                 <button
                   key={l}
@@ -219,18 +264,19 @@ export default function Navbar() {
               ))}
             </div>
 
+            {/* Account */}
             <p className="panel-section-title">Account</p>
             {user ? (
-              <button onClick={() => { closePanel(); handleLogout(); }} className="panel-action">
-                <FiLogIn size={16} /> {t("nav.logout")}
+              <button onClick={() => { closePanel(); handleLogout(); }} className="panel-action text-rose-500 border-rose-500/20 hover:bg-rose-500/5 hover:border-rose-500/30 hover:text-rose-500">
+                <FiLogIn size={15} /> {t("nav.logout")}
               </button>
             ) : (
               <>
                 <Link to="/login" className="panel-link" onClick={closePanel}>
-                  <FiLogIn size={16} /> {t("nav.login")}
+                  <FiLogIn size={15} /> {t("nav.login")}
                 </Link>
                 <Link to="/register/contractor" className="panel-link" onClick={closePanel}>
-                  <FiSettings size={16} /> {t("nav.register")}
+                  <FiUser size={15} /> {t("nav.register")}
                 </Link>
               </>
             )}

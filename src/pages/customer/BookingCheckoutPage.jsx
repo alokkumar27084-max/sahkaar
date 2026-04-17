@@ -169,10 +169,12 @@ export default function BookingCheckoutPage() {
   if (!contractor) return <div className="p-10 text-center">Loading...</div>;
   const payableNow = pricing?.amount || 0;
   return (
-    <div className="bg-[var(--color-bg)] min-h-screen pt-20 pb-10 px-4 md:px-0">
+    <div className="bg-[var(--color-bg)] min-h-screen pt-24 pb-10 px-4 md:px-0">
       <div className="max-w-2xl mx-auto">
-        <button onClick={() => navigate(-1)} className="flex items-center text-[var(--color-muted)] hover:text-[var(--color-heading)] mb-6 transition-colors"><FiChevronLeft className="mr-1" size={20} /> Back</button>
-        <h1 className="font-display text-3xl font-bold text-[var(--color-heading)] mb-6">Booking Checkout</h1>
+        <button onClick={() => navigate(-1)} className="flex items-center text-[var(--color-muted)] hover:text-[var(--color-heading)] mb-6 transition-colors text-sm font-medium"><FiChevronLeft className="mr-1" size={18} /> Back</button>
+        <p className="text-[var(--color-primary)] text-[11px] font-bold uppercase tracking-[0.2em] mb-2">Secure Checkout</p>
+        <h1 className="font-display text-3xl font-extrabold text-[var(--color-heading)] mb-2 tracking-tight">Booking Checkout</h1>
+        <p className="text-[var(--color-muted)] text-sm mb-8">Complete your booking with escrow-protected payment.</p>
         <div className="glass-card p-6 md:p-8 rounded-2xl space-y-8">
           <div>
             <h2 className="text-sm font-semibold text-[var(--color-muted)] uppercase tracking-wider mb-4">You are booking</h2>
