@@ -24,7 +24,7 @@ function useTilt(maxTilt = 6) {
     if (window.gsap) {
       window.gsap.to(ref.current, {
         rotateX, rotateY, scale: 1.02,
-        duration: 0.3, ease: "power2.out",
+        duration: 0.2, ease: "power2.out",
         transformPerspective: 800,
       });
     } else {
@@ -39,7 +39,7 @@ function useTilt(maxTilt = 6) {
     if (window.gsap) {
       window.gsap.to(ref.current, {
         rotateX: 0, rotateY: 0, scale: 1,
-        duration: 0.7, ease: "elastic.out(1, 0.5)",
+        duration: 0.4, ease: "elastic.out(1, 0.5)",
         transformPerspective: 800,
       });
     } else {

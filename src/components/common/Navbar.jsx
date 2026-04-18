@@ -58,11 +58,11 @@ export default function Navbar() {
     const rect = ctaRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left - rect.width / 2) * 0.3;
     const y = (e.clientY - rect.top - rect.height / 2) * 0.3;
-    window.gsap.to(ctaRef.current, { x, y, duration: 0.4, ease: "power2.out" });
+    window.gsap.to(ctaRef.current, { x, y, duration: 0.2, ease: "power2.out" });
   }, []);
   const handleCtaLeave = useCallback(() => {
     if (!ctaRef.current || !window.gsap) return;
-    window.gsap.to(ctaRef.current, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.5)" });
+    window.gsap.to(ctaRef.current, { x: 0, y: 0, duration: 0.4, ease: "elastic.out(1, 0.5)" });
   }, []);
 
   const navLinks = useMemo(() => [
