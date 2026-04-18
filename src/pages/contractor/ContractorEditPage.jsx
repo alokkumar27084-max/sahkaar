@@ -56,9 +56,14 @@ export default function ContractorEditPage() {
           is_responsibility_model: !!p.is_responsibility_model,
         });
       })
-      .catch(() => {
-        toast.error(t("app.error"));
-        navigate("/contractor/dashboard");
+      .catch((err) => {
+        // If 404, we stay on the page to allow the user to CREATE the profile
+        if (err.response?.status === 404) {
+          setProfile(null);
+        } else {
+          toast.error(t("app.error"));
+          navigate("/contractor/dashboard");
+        }
       })
       .finally(() => setLoading(false));
   }, [navigate, t]);
@@ -92,9 +97,19 @@ export default function ContractorEditPage() {
         is_labour_group: form.is_labour_group,
         is_responsibility_model: form.is_responsibility_model,
       });
-      const res = await contractorAPI.updateMe(payload);
+
+      let res;
+      if (profile) {
+        // Mode: Update existing
+        res = await contractorAPI.updateMe(payload);
+        toast.success(lang === "hi" ? "Profile saved" : "Profile updated");
+      } else {
+        // Mode: Create for first time (fixes "half-registered" user state)
+        res = await contractorAPI.create(payload);
+        toast.success(lang === "hi" ? "Profile created" : "Profile created successfully!");
+      }
+      
       setProfile(res.data.contractor || profile);
-      toast.success(lang === "hi" ? "Profile saved" : "Profile updated");
     } catch (err) {
       toast.error(err.response?.data?.message || t("app.error"));
     } finally {

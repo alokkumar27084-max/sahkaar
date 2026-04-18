@@ -50,7 +50,14 @@ export default function ContractorDashboard() {
     contractorAPI
       .getMyProfile()
       .then((res) => setProfile(res.data.contractor))
-      .catch(() => toast.error(t("app.error")))
+      .catch((err) => {
+        // If profile is not found, it's not an error — just means setup is incomplete
+        if (err.response?.status === 404) {
+          setProfile(null);
+        } else {
+          toast.error(t("app.error"));
+        }
+      })
       .finally(() => setLoading(false));
   }
 
