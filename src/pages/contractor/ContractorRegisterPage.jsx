@@ -107,7 +107,7 @@ export default function ContractorRegisterPage() {
         password: form.password, 
         role: "contractor",
       });
-      login(regRes.data.user);
+      login(regRes.data.user, regRes.data.token);
       const profileData = sanitizeForm({
         category: form.category, description: form.description,
         daily_rate: form.daily_rate ? Number(form.daily_rate) : null,
