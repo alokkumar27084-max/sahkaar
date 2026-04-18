@@ -9,6 +9,7 @@ import { useGeolocation } from "../../hooks/useGeolocation";
 import { isValidPhone, isValidEmail, isValidPassword, isValidImageFile, sanitize, sanitizeForm } from "../../utils/validators";
 import { CATEGORIES } from "../../utils/constants";
 import Icon from "../../components/common/Icon";
+import toast from "react-hot-toast";
 import { FiUser, FiMail, FiPhone, FiLock, FiCheckCircle, FiCamera, FiUpload, FiMapPin, FiArrowRight, FiArrowLeft, FiShield, FiBriefcase, FiAperture } from "react-icons/fi";
 
 const TOTAL_STEPS = 5;
