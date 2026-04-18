@@ -5,6 +5,7 @@ import { io } from "socket.io-client";
 import { FiSend, FiUser, FiInfo, FiArrowLeft } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { getImageUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
 
 const SOCKET_URL = process.env.REACT_APP_API_URL
@@ -145,7 +146,7 @@ export default function ChatLayout() {
             const updated = [...prev];
             const idx = updated.findIndex(c => c.id === chatId);
             if (idx !== -1) {
-                const chat = updated[idx];
+                const chat = { ...updated[idx] };
                 chat.last_message = content;
                 chat.last_message_at = new Date().toISOString();
                 if (isUnread && activeChatId !== chatId) {
@@ -232,7 +233,11 @@ export default function ChatLayout() {
                                             className={`w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-white/5 transition flex items-start gap-4 ${activeChatId === chat.id ? 'bg-indigo-50/50 dark:bg-indigo-500/10' : ''}`}
                                         >
                                             <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-                                                <FiUser className="text-slate-400" size={20} />
+                                                {chat.other_party_photo ? (
+                                                    <img src={getImageUrl(chat.other_party_photo)} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <FiUser className="text-slate-400" size={20} />
+                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-baseline mb-1">
@@ -274,8 +279,12 @@ export default function ChatLayout() {
                                             <FiArrowLeft size={20} />
                                         </button>
                                     )}
-                                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
-                                        <FiUser className="text-slate-400" size={18} />
+                                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                                        {activeChatData?.other_party_photo ? (
+                                            <img src={getImageUrl(activeChatData.other_party_photo)} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <FiUser className="text-slate-400" size={18} />
+                                        )}
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-slate-800 dark:text-white">{activeChatData?.other_party_name || "Conversation"}</h3>

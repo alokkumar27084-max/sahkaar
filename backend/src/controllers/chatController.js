@@ -20,7 +20,8 @@ exports.getUserChats = async (req, res) => {
 
             query = `
         SELECT c.*, 
-               u.name as other_party_name, 
+               u.name as other_party_name,
+               NULL as other_party_photo,
                (SELECT content FROM messages m WHERE m.chat_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message,
                (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id AND m.is_read = false AND m.sender_id != $1) as unread_count
         FROM chats c
@@ -32,11 +33,13 @@ exports.getUserChats = async (req, res) => {
         } else {
             query = `
         SELECT c.*, 
-               cont.business_name as other_party_name,
+               COALESCE(cont.business_name, u.name, 'User') as other_party_name,
+               COALESCE(cont.image_url, cont.photo_url) as other_party_photo,
                (SELECT content FROM messages m WHERE m.chat_id = c.id ORDER BY m.created_at DESC LIMIT 1) as last_message,
                (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id AND m.is_read = false AND m.sender_id != $1) as unread_count
         FROM chats c
         JOIN contractors cont ON c.contractor_id = cont.id
+        JOIN users u ON cont.user_id = u.id
         WHERE c.customer_id = $1
         ORDER BY c.last_message_at DESC
       `;

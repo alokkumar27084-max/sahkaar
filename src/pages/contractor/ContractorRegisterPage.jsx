@@ -6,11 +6,10 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI, contractorAPI } from "../../services/api";
 import { useGeolocation } from "../../hooks/useGeolocation";
-import { isValidPhone, isValidPassword, isValidImageFile, sanitize, sanitizeForm } from "../../utils/validators";
+import { isValidPhone, isValidEmail, isValidPassword, isValidImageFile, sanitize, sanitizeForm } from "../../utils/validators";
 import { CATEGORIES } from "../../utils/constants";
 import Icon from "../../components/common/Icon";
-import toast from "react-hot-toast";
-import { FiUser, FiPhone, FiLock, FiCheckCircle, FiCamera, FiUpload, FiMapPin, FiArrowRight, FiArrowLeft, FiShield, FiBriefcase, FiAperture } from "react-icons/fi";
+import { FiUser, FiMail, FiPhone, FiLock, FiCheckCircle, FiCamera, FiUpload, FiMapPin, FiArrowRight, FiArrowLeft, FiShield, FiBriefcase, FiAperture } from "react-icons/fi";
 
 const TOTAL_STEPS = 5;
 
@@ -32,7 +31,7 @@ export default function ContractorRegisterPage() {
 
   const [form, setForm] = useState({
     contractor_type: "", // virtual field: 'quick' or 'macro'
-    name: "", phone: "", password: "", category: "",
+    name: "", email: "", phone: "", password: "", category: "",
     is_labour_group: false, is_responsibility_model: false,
     description: "", daily_rate: "", experience_years: "", team_size: "",
     services: "",
@@ -65,6 +64,7 @@ export default function ContractorRegisterPage() {
     }
     if (s === 2) {
       if (!form.name.trim()) errs.name = t("err.required");
+      if (!isValidEmail(form.email)) errs.email = lang === "hi" ? "मान्य ईमेल दर्ज करें" : "Please enter a valid email";
       if (!isValidPhone(form.phone)) errs.phone = t("err.invalid_phone");
       if (!isValidPassword(form.password)) errs.password = t("err.weak_password");
     }
@@ -100,8 +100,11 @@ export default function ContractorRegisterPage() {
     setLoading(true);
     try {
       const regRes = await authAPI.register({
-        name: sanitize(form.name), phone: sanitize(form.phone),
-        password: form.password, role: "contractor",
+        name: sanitize(form.name), 
+        email: sanitize(form.email),
+        phone: sanitize(form.phone),
+        password: form.password, 
+        role: "contractor",
       });
       login(regRes.data.user);
       const profileData = sanitizeForm({
@@ -296,6 +299,16 @@ export default function ContractorRegisterPage() {
                         className={`input-field !pl-10 ${errors.name ? "error" : ""}`} />
                     </div>
                     {errors.name && <p className="text-danger text-xs mt-1">{errors.name}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">Email Address</label>
+                    <div className="relative">
+                      <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
+                      <input type="email" value={form.email} onChange={update("email")}
+                        placeholder="your@email.com"
+                        className={`input-field !pl-10 ${errors.email ? "error" : ""}`} />
+                    </div>
+                    {errors.email && <p className="text-danger text-xs mt-1">{errors.email}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("auth.phone")}</label>
