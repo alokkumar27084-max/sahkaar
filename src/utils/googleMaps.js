@@ -52,6 +52,54 @@ export function loadGoogleMaps(libraries = ["places"]) {
   return googleMapsLoaderPromise;
 }
 
+/**
+ * Google Maps Geocoder is callback-based; awaiting it returns undefined, so we wrap it.
+ */
+function geocodeLatLngGoogle(geocoder, lat, lng) {
+  return new Promise((resolve) => {
+    const g = typeof window !== "undefined" ? window.google : null;
+    if (!g?.maps) {
+      resolve(null);
+      return;
+    }
+    const location = { lat: Number(lat), lng: Number(lng) };
+    geocoder.geocode({ location }, (results, status) => {
+      if (status === g.maps.GeocoderStatus.OK && results?.[0]?.formatted_address) {
+        resolve(results[0].formatted_address);
+        return;
+      }
+      resolve(null);
+    });
+  });
+}
+
+/**
+ * Free reverse geocoding when Google is unavailable or fails.
+ * Nominatim policy: identify the app; use modest request rate.
+ */
+async function reverseGeocodeNominatim(lat, lng) {
+  const latitude = Number(lat);
+  const longitude = Number(lng);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&format=json`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "Accept-Language": "en,hi",
+        // Required by Nominatim usage policy — must identify the application
+        "User-Agent": "ThekedaarWebApp/1.0 (https://thekedaar.com)",
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.display_name || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function reverseGeocodeCoords(lat, lng) {
   const latitude = Number(lat);
   const longitude = Number(lng);
@@ -60,25 +108,66 @@ export async function reverseGeocodeCoords(lat, lng) {
     return null;
   }
 
-  try {
-    const google = await loadGoogleMaps(["places"]);
-    const geocoder = new google.maps.Geocoder();
-    const result = await geocoder.geocode({ location: { lat: latitude, lng: longitude } });
-    return result.results?.[0]?.formatted_address || null;
-  } catch {
-    const key = getGoogleMapsKey();
-    if (!key) return null;
-
+  const key = getGoogleMapsKey();
+  if (key) {
     try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${key}`
-      );
-      const data = await response.json();
-      return data.results?.[0]?.formatted_address || null;
+      const google = await loadGoogleMaps(["places"]);
+      const geocoder = new google.maps.Geocoder();
+      const googleAddress = await geocodeLatLngGoogle(geocoder, latitude, longitude);
+      if (googleAddress) return googleAddress;
     } catch {
-      return null;
+      // fall through to Nominatim
     }
   }
+
+  const osm = await reverseGeocodeNominatim(latitude, longitude);
+  if (osm) return osm;
+
+  return null;
+}
+
+function geocodePlaceIdPromise(geocoder, placeId) {
+  return new Promise((resolve) => {
+    const g = typeof window !== "undefined" ? window.google?.maps : null;
+    if (!g) {
+      resolve(null);
+      return;
+    }
+    geocoder.geocode({ placeId }, (results, status) => {
+      if (status !== g.GeocoderStatus.OK || !results?.[0]) {
+        resolve(null);
+        return;
+      }
+      const first = results[0];
+      resolve({
+        address: first.formatted_address,
+        lat: first.geometry?.location?.lat?.() ?? null,
+        lng: first.geometry?.location?.lng?.() ?? null,
+      });
+    });
+  });
+}
+
+function geocodeAddressPromise(geocoder, address) {
+  return new Promise((resolve) => {
+    const g = typeof window !== "undefined" ? window.google?.maps : null;
+    if (!g) {
+      resolve(null);
+      return;
+    }
+    geocoder.geocode({ address }, (results, status) => {
+      if (status !== g.GeocoderStatus.OK || !results?.[0]) {
+        resolve(null);
+        return;
+      }
+      const first = results[0];
+      resolve({
+        address: first.formatted_address,
+        lat: first.geometry?.location?.lat?.() ?? null,
+        lng: first.geometry?.location?.lng?.() ?? null,
+      });
+    });
+  });
 }
 
 export async function geocodePlaceSelection(selection) {
@@ -88,25 +177,11 @@ export async function geocodePlaceSelection(selection) {
   const geocoder = new google.maps.Geocoder();
 
   if (selection.placeId) {
-    const result = await geocoder.geocode({ placeId: selection.placeId });
-    const first = result.results?.[0];
-    if (!first) return null;
-    return {
-      address: first.formatted_address,
-      lat: first.geometry?.location?.lat?.() ?? null,
-      lng: first.geometry?.location?.lng?.() ?? null,
-    };
+    return geocodePlaceIdPromise(geocoder, selection.placeId);
   }
 
   if (selection.address) {
-    const result = await geocoder.geocode({ address: selection.address });
-    const first = result.results?.[0];
-    if (!first) return null;
-    return {
-      address: first.formatted_address,
-      lat: first.geometry?.location?.lat?.() ?? null,
-      lng: first.geometry?.location?.lng?.() ?? null,
-    };
+    return geocodeAddressPromise(geocoder, selection.address);
   }
 
   return null;

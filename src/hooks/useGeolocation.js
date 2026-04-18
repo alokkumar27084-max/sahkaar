@@ -1,6 +1,13 @@
 import { useState, useCallback } from "react";
 import { reverseGeocodeCoords } from "../utils/googleMaps";
 
+function formatCoordinateFallback(lat, lng) {
+  const la = Number(lat);
+  const lo = Number(lng);
+  if (!Number.isFinite(la) || !Number.isFinite(lo)) return "Location detected";
+  return `Near ${la.toFixed(5)}, ${lo.toFixed(5)}`;
+}
+
 export function useGeolocation() {
   const [lat, setLat] = useState(null);
   const [lng, setLng] = useState(null);
@@ -14,7 +21,10 @@ export function useGeolocation() {
     setLng(nextLng);
     setAccuracy(nextAccuracy);
 
-    const formattedAddress = nextAddress || await reverseGeocodeCoords(nextLat, nextLng) || "Selected Location";
+    const formattedAddress =
+      nextAddress ||
+      (await reverseGeocodeCoords(nextLat, nextLng)) ||
+      formatCoordinateFallback(nextLat, nextLng);
     setAddress(formattedAddress);
     return formattedAddress;
   }, []);

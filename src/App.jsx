@@ -14,6 +14,7 @@ import LocationPromptModal from "./components/common/LocationPromptModal";
 import QuickServiceRequest from "./components/common/QuickServiceRequest";
 import SplashScreen from "./components/common/SplashScreen";
 import PageWrapper from "./components/common/PageWrapper";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import CustomCursor from "./components/common/CustomCursor";
 import usePageTracking from "./hooks/usePageTracking";
 
@@ -254,7 +255,9 @@ export default function App() {
                   {!showSplash && <Navbar />}
 
                   <Suspense fallback={<PageFallback />}>
-                    <AnimatedRoutes />
+                    <ErrorBoundary>
+                      <AnimatedRoutes />
+                    </ErrorBoundary>
                   </Suspense>
                 </div>
               </div>

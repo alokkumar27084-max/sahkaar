@@ -190,7 +190,7 @@ export default function ServiceDetailPage() {
                                     {related.map(r => {
                                         const RIcon = getIcon(r.icon);
                                         return (
-                                            <div key={r.slug} onClick={() => navigate(`/service/${r.slug}`)} className="group cursor-pointer glass-card p-5 hover:border-[var(--color-primary)]/50 transition-colors flex items-center gap-5">
+                                            <div key={r.slug} onClick={() => navigate(`/services/${r.slug}`)} className="group cursor-pointer glass-card p-5 hover:border-[var(--color-primary)]/50 transition-colors flex items-center gap-5">
                                                 <div className="w-12 h-12 rounded-2xl bg-[var(--color-bg)] flex items-center justify-center border border-[var(--color-border)] group-hover:scale-110 transition-transform">
                                                     <RIcon className="w-6 h-6 text-[var(--color-primary)]" />
                                                 </div>
@@ -222,7 +222,7 @@ export default function ServiceDetailPage() {
                                         </div>
                                         <h3 className="text-2xl font-display font-bold text-[var(--color-heading)] mb-2 tracking-tight">Request Sent</h3>
                                         <p className="text-sm text-[var(--color-muted)] mb-8 font-medium">A verified contractor has been notified and will call you shortly to confirm the appointment.</p>
-                                        <button onClick={() => navigate("/dashboard")} className="btn-primary w-full shadow-glow py-3.5">
+                                        <button onClick={() => navigate("/customer/dashboard")} className="btn-primary w-full shadow-glow py-3.5">
                                             Go to Dashboard
                                         </button>
                                     </div>
@@ -265,7 +265,7 @@ export default function ServiceDetailPage() {
                                                 <button type="submit" disabled={submitting} className="btn-primary w-full py-4 text-base shadow-glow flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform">
                                                     {submitting ? <span className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Request Now <FiArrowRight /></>}
                                                 </button>
-                                                <p className="text-center text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-widest mt-4">No commitment untill contractor accepts</p>
+                                                <p className="text-center text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-widest mt-4">No commitment until the contractor accepts</p>
                                             </div>
                                         </form>
                                     </div>

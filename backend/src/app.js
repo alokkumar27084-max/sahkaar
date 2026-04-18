@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 
 const routes = require('./routes');
+const db = require('./config/db');
 const swaggerUi = require('swagger-ui-express');
 const fs = require('fs');
 const path = require('path');
@@ -63,8 +64,24 @@ app.use('/uploads', (req, res, next) => {
 // Serve uploaded files from backend/uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Health endpoint used by deployment monitors
-app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+// Health endpoint used by deployment monitors (includes DB check when DATABASE_URL is set)
+app.get('/health', async (req, res) => {
+  const payload = { status: 'ok', time: new Date().toISOString() };
+  if (!process.env.DATABASE_URL) {
+    payload.db = 'not_configured';
+    return res.json(payload);
+  }
+  try {
+    await db.query('SELECT 1');
+    payload.db = 'ok';
+    return res.json(payload);
+  } catch (err) {
+    console.error('Health DB check failed:', err.message);
+    payload.status = 'degraded';
+    payload.db = 'error';
+    return res.status(503).json(payload);
+  }
+});
 
 // Mount app routes
 app.use('/api', routes);

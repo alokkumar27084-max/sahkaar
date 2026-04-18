@@ -3,11 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiSearch, FiMapPin, FiPhone, FiStar, FiGrid, FiMap, FiPlus, FiX } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useGeolocation } from "../../hooks/useGeolocation";
-import { GoogleMap, useJsApiLoader, MarkerF, InfoWindowF } from "@react-google-maps/api";
 import toast from "react-hot-toast";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://thekedaar-api.onrender.com/api";
+import { directoryAPI } from "../../services/api";
+import DirectoryMapView from "../../components/directory/DirectoryMapView";
 const MAPS_KEY = process.env.REACT_APP_GOOGLE_MAPS_KEY || "";
 
 const DIRECTORY_CATEGORIES = [
@@ -32,25 +30,7 @@ const stagger = {
   show: { opacity: 1, transition: { staggerChildren: 0.06 } }
 };
 
-const mapContainerStyle = { width: "100%", height: "100%" };
 const defaultCenter = { lat: 23.2599, lng: 77.4126 }; // Bhopal
-const mapOptions = {
-  disableDefaultUI: true,
-  zoomControl: true,
-  mapTypeControl: false,
-  streetViewControl: false,
-  styles: [
-    { elementType: "geometry", stylers: [{ color: "#0e1117" }] },
-    { elementType: "labels.text.stroke", stylers: [{ color: "#0e1117" }] },
-    { elementType: "labels.text.fill", stylers: [{ color: "#6b7280" }] },
-    { featureType: "road", elementType: "geometry", stylers: [{ color: "#1a1e2e" }] },
-    { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212740" }] },
-    { featureType: "water", elementType: "geometry", stylers: [{ color: "#090d1a" }] },
-    { featureType: "poi", elementType: "geometry", stylers: [{ color: "#111525" }] },
-    { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#0d1320" }] },
-    { featureType: "transit", elementType: "geometry", stylers: [{ color: "#111525" }] },
-  ],
-};
 
 export default function LocalDirectoryPage() {
   const { user } = useAuth();
@@ -68,10 +48,6 @@ export default function LocalDirectoryPage() {
   const [submitting, setSubmitting] = useState(false);
   const chipScrollRef = useRef(null);
 
-  const { isLoaded: mapsLoaded } = useJsApiLoader({
-    googleMapsApiKey: MAPS_KEY,
-  });
-
   const fetchListings = useCallback(async () => {
     setLoading(true);
     try {
@@ -79,11 +55,7 @@ export default function LocalDirectoryPage() {
       if (query) params.q = query;
       if (category !== "all") params.category = category;
       if (lat && lng) { params.lat = lat; params.lng = lng; params.radius_km = 10; }
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_URL}/directory`, {
-        params,
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+      const res = await directoryAPI.list(params);
       setListings(res.data.listings || []);
     } catch {
       setListings([]);
@@ -103,13 +75,10 @@ export default function LocalDirectoryPage() {
     }
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(`${API_URL}/directory`, {
+      await directoryAPI.create({
         ...formData,
         lat: lat || null,
         lng: lng || null,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Listing added successfully!");
       setShowAddForm(false);
@@ -306,81 +275,28 @@ export default function LocalDirectoryPage() {
             className="glass-card p-0 overflow-hidden rounded-2xl"
             style={{ height: "550px" }}
           >
-            {mapsLoaded ? (
-              <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={mapCenter}
-                zoom={13}
-                options={mapOptions}
-              >
-                {/* User location marker */}
-                {lat && lng && (
-                  <MarkerF
-                    position={{ lat: Number(lat), lng: Number(lng) }}
-                    icon={{
-                      path: window.google?.maps?.SymbolPath?.CIRCLE || 0,
-                      scale: 8,
-                      fillColor: "#6366F1",
-                      fillOpacity: 1,
-                      strokeColor: "#ffffff",
-                      strokeWeight: 3,
-                    }}
-                    title="Your Location"
-                  />
-                )}
-
-                {/* Listing markers */}
-                {listings.filter(l => l.lat && l.lng).map(listing => (
-                  <MarkerF
-                    key={listing.id}
-                    position={{ lat: Number(listing.lat), lng: Number(listing.lng) }}
-                    onClick={() => setSelectedMarker(listing)}
-                    icon={{
-                      path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
-                      fillColor: "#F59E0B",
-                      fillOpacity: 1,
-                      strokeColor: "#B45309",
-                      strokeWeight: 1,
-                      scale: 1.5,
-                      anchor: new window.google.maps.Point(12, 22),
-                    }}
-                  />
-                ))}
-
-                {/* Info Window */}
-                {selectedMarker && (
-                  <InfoWindowF
-                    position={{ lat: Number(selectedMarker.lat), lng: Number(selectedMarker.lng) }}
-                    onCloseClick={() => setSelectedMarker(null)}
-                  >
-                    <div style={{ padding: "4px 2px", maxWidth: "220px", fontFamily: "Inter, sans-serif" }}>
-                      <p style={{ fontWeight: 700, fontSize: "14px", marginBottom: "4px", color: "#0C0F1D" }}>
-                        {selectedMarker.business_name}
-                      </p>
-                      <p style={{ fontSize: "11px", color: "#6366F1", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
-                        {selectedMarker.category}
-                      </p>
-                      {selectedMarker.address && (
-                        <p style={{ fontSize: "12px", color: "#6B7094", marginBottom: "4px" }}>
-                          📍 {selectedMarker.address}
-                        </p>
-                      )}
-                      {selectedMarker.phone && (
-                        <a href={`tel:${selectedMarker.phone}`} style={{ fontSize: "12px", color: "#6366F1", fontWeight: 600 }}>
-                          📞 {selectedMarker.phone}
-                        </a>
-                      )}
-                    </div>
-                  </InfoWindowF>
-                )}
-              </GoogleMap>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-[var(--color-bg-elevated)]">
-                <div className="text-center p-8">
-                  <div className="w-10 h-10 border-3 border-[var(--color-primary)]/30 border-t-[var(--color-primary)] rounded-full animate-spin mx-auto mb-4" />
-                  <p className="text-[var(--color-muted)] text-sm">Loading map...</p>
+            {!MAPS_KEY ? (
+              <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[var(--color-bg-elevated)] p-8">
+                <div className="text-center max-w-md">
+                  <FiMap className="mx-auto text-amber-500 mb-4" size={40} />
+                  <p className="text-[var(--color-heading)] font-bold mb-2">Map unavailable</p>
+                  <p className="text-sm text-[var(--color-muted)] leading-relaxed">
+                    Set <code className="text-xs bg-[var(--color-border)] px-1.5 py-0.5 rounded">REACT_APP_GOOGLE_MAPS_KEY</code> in{" "}
+                    <code className="text-xs bg-[var(--color-border)] px-1.5 py-0.5 rounded">.env</code> to enable the hyperlocal map view.
+                  </p>
                 </div>
               </div>
+            ) : (
+              <DirectoryMapView
+                apiKey={MAPS_KEY}
+                listings={listings}
+                lat={lat}
+                lng={lng}
+                mapCenter={mapCenter}
+                selectedMarker={selectedMarker}
+                onSelectMarker={setSelectedMarker}
+                onCloseInfo={() => setSelectedMarker(null)}
+              />
             )}
           </motion.div>
         ) : listings.length === 0 ? (

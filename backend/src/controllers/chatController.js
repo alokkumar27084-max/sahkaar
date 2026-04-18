@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { getIo } = require('../config/socket');
+const { assertUserIsChatParticipant } = require('../utils/chatAccess');
 
 exports.getUserChats = async (req, res) => {
     try {
@@ -57,15 +58,25 @@ exports.getUserChats = async (req, res) => {
 exports.getChatMessages = async (req, res) => {
     try {
         const { chatId } = req.params;
+        const id = Number(chatId);
+        if (!Number.isFinite(id)) {
+            return res.status(400).json({ message: 'Invalid chat id' });
+        }
+
+        const allowed = await assertUserIsChatParticipant(id, req.user.id);
+        if (!allowed) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
         const { rows } = await db.query(
             'SELECT * FROM messages WHERE chat_id = $1 ORDER BY created_at ASC',
-            [chatId]
+            [id]
         );
 
         // Mark messages as read
         await db.query(
             'UPDATE messages SET is_read = true WHERE chat_id = $1 AND sender_id != $2 AND is_read = false',
-            [chatId, req.user.id]
+            [id, req.user.id]
         );
 
         res.json({ messages: rows });

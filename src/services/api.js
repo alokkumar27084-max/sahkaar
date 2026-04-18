@@ -154,3 +154,17 @@ export const notificationAPI = {
   markRead: (id) => api.patch(`/notifications/${id}/read`),
   markAllRead: () => api.patch("/notifications/read-all"),
 };
+
+export const profileAPI = {
+  getMe: () => api.get("/profiles/me"),
+  updateMe: (data) => api.put("/profiles/me", data),
+  uploadAvatar: (formData) =>
+    api.post("/profiles/me/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+};
+
+export const directoryAPI = {
+  list: (params) => api.get("/directory", { params }),
+  create: (data) => api.post("/directory", data),
+};
