@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiMessageCircle, FiTrash2, FiX } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
-import { WHATSAPP_URL } from "../../utils/constants";
 
 function formatPrice(value) {
   if (!value) return "—";
@@ -16,6 +15,7 @@ function formatDistance(value) {
 
 export default function CompareDrawer({ contractors, onRemove, onClear }) {
   const { lang } = useLanguage();
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
 
   const compareRows = useMemo(
@@ -160,15 +160,13 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
                       return (
                         <td key={`${contractor.id}-actions`} className="border-l border-[var(--color-border)] px-4 py-4">
                           <div className="flex flex-wrap gap-2">
-                            <a
-                              href={WHATSAPP_URL(phone, name)}
-                              target="_blank"
-                              rel="noreferrer"
+                            <button
+                              onClick={() => navigate("/chat", { state: { initChatWith: contractor.id } })}
                               className="btn-outline-cyan !h-10 !px-4"
                             >
                               <FiMessageCircle size={15} />
-                              WhatsApp
-                            </a>
+                              {lang === "hi" ? "मेसेज" : "Message"}
+                            </button>
                             <Link to={`/contractor/${contractor.id}`} className="btn-secondary !h-10 !px-4">
                               {lang === "hi" ? "प्रोफाइल" : "Profile"}
                               <FiArrowUpRight size={15} />

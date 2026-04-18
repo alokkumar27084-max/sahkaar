@@ -5,7 +5,6 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { contractorAPI, reviewAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
-import { WHATSAPP_URL } from "../../utils/constants";
 import { getImageUrl } from "../../utils/imageUtils";
 import StarRating from "../../components/common/StarRating";
 import Badge from "../../components/common/Badge";
@@ -194,11 +193,15 @@ export default function ContractorProfilePage() {
                     <button onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })} className="btn-primary w-full shadow-glow">
                         <FiBriefcase size={18} /> {lang === "hi" ? "अभी बुक करें" : "Book Contractor"}
                     </button>
-                    <a href={WHATSAPP_URL(phone, name)} target="_blank" rel="noopener noreferrer"
+                    <button
                         className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors shadow-sm"
-                        onClick={async () => { try { await contractorAPI.recordLead(id); } catch { } trackEvent("whatsapp_tap", { contractor_id: id, source: "profile" }); }}>
-                        <FiMessageCircle size={18} /> {t("profile.contact_whatsapp")}
-                    </a>
+                        onClick={async () => { 
+                            try { await contractorAPI.recordLead(id); } catch { } 
+                            trackEvent("in_app_message_tap", { contractor_id: id, source: "profile" }); 
+                            navigate("/chat", { state: { initChatWith: id } });
+                        }}>
+                        <FiMessageCircle size={18} /> {lang === "hi" ? "मेसेज भेजें" : "Message"}
+                    </button>
                     <div className="grid grid-cols-2 gap-3 mt-1">
                         <button onClick={() => { if (navigator.share) navigator.share({ title: name, url: window.location.href }); }}
                             className="btn-secondary w-full">

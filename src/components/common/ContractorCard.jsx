@@ -1,10 +1,9 @@
 import React, { useRef, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import StarRating from "./StarRating";
 import Badge from "./Badge";
 import Icon from "./Icon";
-import { WHATSAPP_URL } from "../../utils/constants";
 import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
 import { getImageUrl } from "../../utils/imageUtils";
@@ -53,6 +52,7 @@ function useTilt(maxTilt = 6) {
 
 export default function ContractorCard({ contractor, showCompare = false, isCompared = false, onCompare }) {
   const { t, lang } = useLanguage();
+  const navigate = useNavigate();
   const tilt = useTilt(6);
 
   const resolvedName = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";
@@ -75,10 +75,11 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
     experience_years,
   } = contractor;
 
-  async function handleWhatsAppTap(e) {
+  async function handleMessageTap(e) {
     e.stopPropagation();
     try { await contractorAPI.recordLead(id); } catch { /* no-op */ }
-    trackEvent("whatsapp_tap", { contractor_id: id, category: resolvedCategory, source: "card" });
+    trackEvent("in_app_message_tap", { contractor_id: id, category: resolvedCategory, source: "card" });
+    navigate("/chat", { state: { initChatWith: id } });
   }
 
   function handleCompareToggle(e) {
@@ -206,16 +207,13 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
 
       {/* Action bar with gradient border top */}
       <div className="grid grid-cols-2 border-t border-[var(--color-border)]">
-        <a
-          href={WHATSAPP_URL(resolvedPhone, resolvedName)}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
           className="inline-flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-emerald-400 bg-transparent hover:bg-emerald-500/5 transition-colors border-r border-[var(--color-border)]"
-          onClick={handleWhatsAppTap}
+          onClick={handleMessageTap}
         >
           <FiMessageCircle size={15} className="shrink-0" />
-          <span>{t("search.contact")}</span>
-        </a>
+          <span>{lang === "hi" ? "मेसेज" : "Message"}</span>
+        </button>
         <Link
           to={`/contractor/${id}`}
           className="inline-flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 transition-all group/link"
