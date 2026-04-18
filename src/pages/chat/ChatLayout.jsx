@@ -29,8 +29,16 @@ export default function ChatLayout() {
     // Determine if we are on a mobile device and showing a message thread
     const [showThreadOnlyMobile, setShowThreadOnlyMobile] = useState(false);
 
+    const activeChatIdRef = useRef(activeChatId);
+
     useEffect(() => {
-        // 1. Initialize socket connection
+        activeChatIdRef.current = activeChatId;
+    }, [activeChatId]);
+
+    useEffect(() => {
+        // 1. Initialize socket connection only once when user is available
+        if (!user?.id) return;
+
         const newSocket = io(SOCKET_URL, {
             withCredentials: true,
             autoConnect: true
@@ -40,15 +48,16 @@ export default function ChatLayout() {
 
         newSocket.on("connect", () => {
             console.log("Socket connected:", newSocket.id);
-            if (user?.id) {
-                newSocket.emit("join_own_room", user.id);
+            newSocket.emit("join_own_room", user.id);
+            if (activeChatIdRef.current) {
+                newSocket.emit("join_chat", activeChatIdRef.current);
             }
         });
 
         newSocket.on("new_message", (msg) => {
             setMessages((prev) => {
                 // Only append if it belongs to the currently active chat
-                if (msg.chat_id === activeChatId) {
+                if (msg.chat_id === activeChatIdRef.current) {
                     // Check if it already exists to prevent duplicates
                     if (!prev.some(m => m.id === msg.id)) {
                         return [...prev, msg];
@@ -58,15 +67,36 @@ export default function ChatLayout() {
             });
 
             // Update the chat list summary (latest message, unread count)
-            updateChatListSummary(msg.chat_id, msg.content, msg.sender_id !== user?.id);
+            setChats(prevChats => {
+                const updated = [...prevChats];
+                const idx = updated.findIndex(c => c.id === msg.chat_id);
+                if (idx !== -1) {
+                    const chat = { ...updated[idx] };
+                    chat.last_message = msg.content;
+                    chat.last_message_at = new Date().toISOString();
+                    // Increment unread count if we are not currently viewing this chat
+                    if (msg.sender_id !== user?.id && activeChatIdRef.current !== msg.chat_id) {
+                        chat.unread_count = Number(chat.unread_count || 0) + 1;
+                    }
+                    // Move to top
+                    updated.splice(idx, 1);
+                    updated.unshift(chat);
+                }
+                return updated;
+            });
         });
 
         return () => {
             console.log("Disconnecting socket...");
             newSocket.disconnect();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, activeChatId]);
+    }, [user?.id]); // Only recreate when user changes
+
+    useEffect(() => {
+        if (socket && activeChatId) {
+            socket.emit("join_chat", activeChatId);
+        }
+    }, [socket, activeChatId]);
 
     useEffect(() => {
         loadChats();
@@ -128,17 +158,9 @@ export default function ChatLayout() {
     };
 
     const handleSelectChat = (chatId) => {
-        if (activeChatId) {
-            // leave old room? Optional, but good practice
-        }
         setActiveChatId(chatId);
         setShowThreadOnlyMobile(true);
         loadMessages(chatId);
-
-        // Join socket room for this chat thread
-        if (socket) {
-            socket.emit("join_chat", chatId);
-        }
     };
 
     const updateChatListSummary = (chatId, content, isUnread) => {
@@ -149,7 +171,7 @@ export default function ChatLayout() {
                 const chat = { ...updated[idx] };
                 chat.last_message = content;
                 chat.last_message_at = new Date().toISOString();
-                if (isUnread && activeChatId !== chatId) {
+                if (isUnread && activeChatIdRef.current !== chatId) {
                     chat.unread_count = Number(chat.unread_count || 0) + 1;
                 }
                 // Move to top
