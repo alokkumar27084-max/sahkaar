@@ -15,12 +15,12 @@ const CustomCursor = () => {
         if (!dot || !follower || !glow) return;
 
         // GSAP quickTo for buttery smooth following
-        const xDot = window.gsap.quickTo(dot, "x", { duration: 0.1, ease: "power2.out" });
-        const yDot = window.gsap.quickTo(dot, "y", { duration: 0.1, ease: "power2.out" });
-        const xFollower = window.gsap.quickTo(follower, "x", { duration: 0.45, ease: "power3" });
-        const yFollower = window.gsap.quickTo(follower, "y", { duration: 0.45, ease: "power3" });
-        const xGlow = window.gsap.quickTo(glow, "x", { duration: 0.8, ease: "power3.out" });
-        const yGlow = window.gsap.quickTo(glow, "y", { duration: 0.8, ease: "power3.out" });
+        const xDot = window.gsap.quickTo(dot, "x", { duration: 0.05, ease: "power2.out" });
+        const yDot = window.gsap.quickTo(dot, "y", { duration: 0.05, ease: "power2.out" });
+        const xFollower = window.gsap.quickTo(follower, "x", { duration: 0.25, ease: "power3" });
+        const yFollower = window.gsap.quickTo(follower, "y", { duration: 0.25, ease: "power3" });
+        const xGlow = window.gsap.quickTo(glow, "x", { duration: 0.45, ease: "power3.out" });
+        const yGlow = window.gsap.quickTo(glow, "y", { duration: 0.45, ease: "power3.out" });
 
         const onMouseMove = (e) => {
             xDot(e.clientX - 3);
@@ -49,18 +49,18 @@ const CustomCursor = () => {
                     scale: 2.5,
                     borderColor: 'rgba(6, 182, 212, 0.5)',
                     backgroundColor: 'rgba(6, 182, 212, 0.04)',
-                    duration: 0.4,
+                    duration: 0.2,
                     ease: 'power2.out'
                 });
                 window.gsap.to(dot, {
                     scale: 0.5,
                     backgroundColor: '#22D3EE',
-                    duration: 0.3
+                    duration: 0.15
                 });
                 window.gsap.to(glow, {
                     scale: 1.5,
                     opacity: 0.8,
-                    duration: 0.5
+                    duration: 0.25
                 });
             } else if (!interactive && isHovered) {
                 isHovered = false;
@@ -68,18 +68,18 @@ const CustomCursor = () => {
                     scale: 1,
                     borderColor: 'rgba(99, 102, 241, 0.4)',
                     backgroundColor: 'transparent',
-                    duration: 0.4,
+                    duration: 0.2,
                     ease: 'power2.out'
                 });
                 window.gsap.to(dot, {
                     scale: 1,
                     backgroundColor: '#6366F1',
-                    duration: 0.3
+                    duration: 0.15
                 });
                 window.gsap.to(glow, {
                     scale: 1,
                     opacity: 0.4,
-                    duration: 0.5
+                    duration: 0.25
                 });
             }
         };
