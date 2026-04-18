@@ -58,7 +58,6 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
   const resolvedName = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";
   const resolvedCategory = contractor?.category || contractor?.categories?.[0] || "general";
   const resolvedReviewCount = contractor?.review_count ?? contractor?.reviews_count ?? 0;
-  const resolvedPhone = contractor?.phone || "";
 
   const {
     id,

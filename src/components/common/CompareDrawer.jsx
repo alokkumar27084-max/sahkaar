@@ -155,8 +155,6 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
                       {lang === "hi" ? "एक्शन" : "Action"}
                     </td>
                     {contractors.map((contractor) => {
-                      const name = contractor.name || contractor.business_name || contractor.user_name || "Contractor";
-                      const phone = contractor.phone || "";
                       return (
                         <td key={`${contractor.id}-actions`} className="border-l border-[var(--color-border)] px-4 py-4">
                           <div className="flex flex-wrap gap-2">

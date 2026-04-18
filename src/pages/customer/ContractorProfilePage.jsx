@@ -106,7 +106,6 @@ export default function ContractorProfilePage() {
   const is_labour_group = contractor?.is_labour_group;
   const is_responsibility_model = contractor?.is_responsibility_model;
   const is_available = contractor?.is_available;
-  const phone = contractor?.phone || "";
   const daily_rate = contractor?.daily_rate;
   const experience_years = contractor?.experience_years;
   const team_size = contractor?.team_size;
