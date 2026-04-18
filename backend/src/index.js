@@ -1,8 +1,24 @@
 // Entry point: load environment, create app, start listener
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const http = require('http');
+const { validateProductionEnv } = require('./config/validateEnv');
 const app = require('./app');
 const { initSocket } = require('./config/socket');
+
+validateProductionEnv();
+
+// Ensure upload directories exist (multer / static serving)
+const uploadsRoot = path.join(__dirname, '../uploads');
+for (const sub of ['', 'avatars']) {
+  const dir = sub ? path.join(uploadsRoot, sub) : uploadsRoot;
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch (e) {
+    console.warn('Could not create uploads directory:', dir, e.message);
+  }
+}
 
 const PORT = process.env.PORT || 5000;
 

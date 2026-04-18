@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const User = require('../models/userModel');
 const Contractor = require('../models/contractorModel');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const { getJwtSecret } = require('../config/jwt');
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const ALLOWED_LOCATION_SOURCES = new Set(['browser_gps', 'manual_pin', 'ip_approx']);
 
@@ -20,7 +20,7 @@ function toFiniteNumber(value) {
 function signUserToken(user) {
   return jwt.sign(
     { sub: user.id, id: user.id, role: user.role, phone: user.phone || null },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: JWT_EXPIRES_IN }
   );
 }
@@ -43,15 +43,21 @@ exports.register = async (req, res, next) => {
     const { name, phone, password, role } = req.body;
     if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
 
+    const ALLOWED_REGISTER_ROLES = new Set(['customer', 'contractor']);
+    const requestedRole = String(role || 'customer').toLowerCase();
+    if (!ALLOWED_REGISTER_ROLES.has(requestedRole)) {
+      return res.status(400).json({ ok: false, message: 'Invalid role. Allowed: customer, contractor' });
+    }
+
     const { sanitize, sanitizeObject } = require('../utils/sanitizers');
     const hashed = password ? await bcrypt.hash(password, 10) : null;
 
     const cleanName = sanitize(name || null);
     const cleanPhone = sanitize(phone || null);
     const cleanEmail = sanitize(req.body.email || null);
-    const user = await User.create({ name: cleanName, phone: cleanPhone, email: cleanEmail, password_hash: hashed, role: role || 'customer' });
+    const user = await User.create({ name: cleanName, phone: cleanPhone, email: cleanEmail, password_hash: hashed, role: requestedRole });
 
-    if ((role || 'customer') === 'contractor') {
+    if (requestedRole === 'contractor') {
       const { business_name, description, categories, services, latitude, longitude } = req.body;
       const hasProfilePayload =
         business_name !== undefined ||
@@ -124,7 +130,7 @@ exports.me = async (req, res, next) => {
         ? req.headers.authorization.replace('Bearer ', '').trim()
         : null);
     if (!token) return res.json({ ok: true, user: null });
-    const payload = require('jsonwebtoken').verify(token, JWT_SECRET);
+    const payload = require('jsonwebtoken').verify(token, getJwtSecret());
     const result = await db.query(
       `SELECT id, name, phone, email, role,
               location_lat, location_lng, location_accuracy_m, location_source, location_captured_at
@@ -178,10 +184,10 @@ exports.updateMyLocation = async (req, res, next) => {
 
 // Logout: clear cookie
 exports.logout = async (req, res, next) => {
-  const token = req.cookies && req.cookies.token;
+    const token = req.cookies && req.cookies.token;
   if (token) {
     try {
-      const payload = jwt.verify(token, JWT_SECRET);
+      const payload = jwt.verify(token, getJwtSecret());
       await db.query('DELETE FROM sessions WHERE user_id = $1', [payload.sub || payload.id]);
     } catch (_) { /* no-op */ }
   }
@@ -429,13 +435,11 @@ exports.resetPassword = async (req, res, next) => {
   try {
     const { email, token, newPassword } = req.body;
     if (!email || !token || !newPassword) {
-      client.release();
       return res.status(400).json({ ok: false, message: 'Email, token, and new password are required' });
     }
 
     const { isValidPassword } = require('../utils/validators');
     if (!isValidPassword(newPassword)) {
-      client.release();
       return res.status(400).json({ ok: false, message: 'Password must be at least 8 characters' });
     }
 
@@ -452,7 +456,6 @@ exports.resetPassword = async (req, res, next) => {
     );
 
     if (!tokenResult.rows.length) {
-      client.release();
       return res.status(400).json({ ok: false, message: 'Invalid or expired reset token' });
     }
 

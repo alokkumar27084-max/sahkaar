@@ -4,9 +4,7 @@ import { FiEdit3, FiCamera, FiMapPin, FiCalendar, FiSave } from "react-icons/fi"
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "https://thekedaar-api.onrender.com/api";
+import { profileAPI } from "../../services/api";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -42,10 +40,7 @@ export default function MyProfilePage() {
 
   async function fetchProfile() {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${API_URL}/profiles/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await profileAPI.getMe();
       if (res.data.profile) {
         setProfile(res.data.profile);
         setForm({
@@ -86,21 +81,13 @@ export default function MyProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const token = localStorage.getItem("token");
-
-      // Upload avatar first if present
       if (avatarFile) {
         const fd = new FormData();
         fd.append("avatar", avatarFile);
-        await axios.post(`${API_URL}/profiles/me/avatar`, fd, {
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
-        });
+        await profileAPI.uploadAvatar(fd);
       }
 
-      // Save profile data
-      await axios.put(`${API_URL}/profiles/me`, form, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await profileAPI.updateMe(form);
 
       toast.success(lang === "hi" ? "प्रोफाइल सेव हो गई!" : "Profile saved successfully!");
       setEditing(false);

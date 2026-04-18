@@ -5,13 +5,13 @@ const jwt = require('jsonwebtoken');
 
 // Using the provided Google Client ID
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const { getJwtSecret } = require('../config/jwt');
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 function signUserToken(user) {
     return jwt.sign(
         { sub: user.id, id: user.id, role: user.role, phone: user.phone || null },
-        JWT_SECRET,
+        getJwtSecret(),
         { expiresIn: JWT_EXPIRES_IN }
     );
 }

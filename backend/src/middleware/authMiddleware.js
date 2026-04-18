@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const { getJwtSecret } = require('../config/jwt');
 
 function readToken(req) {
   const cookieToken = req.cookies && req.cookies.token;
@@ -14,7 +13,7 @@ function readToken(req) {
 async function attachUserFromToken(req) {
   const token = readToken(req);
   if (!token) return null;
-  const payload = jwt.verify(token, JWT_SECRET);
+  const payload = jwt.verify(token, getJwtSecret());
   const user = {
     id: payload.sub || payload.id,
     role: payload.role || null,

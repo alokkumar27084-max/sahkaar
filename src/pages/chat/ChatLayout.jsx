@@ -41,14 +41,17 @@ export default function ChatLayout() {
 
         const newSocket = io(SOCKET_URL, {
             withCredentials: true,
-            autoConnect: true
+            autoConnect: true,
+            auth: {
+                token: localStorage.getItem("thekedaar_token") || "",
+            },
         });
 
         setSocket(newSocket);
 
         newSocket.on("connect", () => {
             console.log("Socket connected:", newSocket.id);
-            newSocket.emit("join_own_room", user.id);
+            newSocket.emit("join_own_room");
             if (activeChatIdRef.current) {
                 newSocket.emit("join_chat", activeChatIdRef.current);
             }

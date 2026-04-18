@@ -113,17 +113,17 @@ const bookingController = {
             scheduledFor,
         } = req.body;
 
+        const client = await pool.pool.connect();
         try {
-            // Begin Database Transaction
-            await pool.query("BEGIN");
+            await client.query("BEGIN");
 
-            const contractorPricingRes = await pool.query(
+            const contractorPricingRes = await client.query(
                 "SELECT daily_rate FROM contractors WHERE id = $1 LIMIT 1",
                 [contractorId]
             );
 
             if (!contractorPricingRes.rows[0]) {
-                await pool.query("ROLLBACK");
+                await client.query("ROLLBACK");
                 return res.status(404).json({ status: "error", message: "Contractor not found" });
             }
 
@@ -133,7 +133,6 @@ const bookingController = {
                 contractorDailyRate: contractorPricingRes.rows[0].daily_rate,
             });
 
-            // Insert Booking Record
             const insertBookingQuery = `
         INSERT INTO bookings (
           customer_id, contractor_id, service_category, service_tier, payment_plan,
@@ -143,7 +142,7 @@ const bookingController = {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13, $14, $15)
         RETURNING *;
       `;
-            const bookingResult = await pool.query(insertBookingQuery, [
+            const bookingResult = await client.query(insertBookingQuery, [
                 customerId,
                 contractorId,
                 serviceCategory,
@@ -164,24 +163,29 @@ const bookingController = {
             const booking = bookingResult.rows[0];
             const contractorMeta = await getContractorOwnerUserId(contractorId);
 
-            // If Razorpay is missing (like during active dev right now), we fake the Escrow tracking
             if (!razorpayInstance) {
+                if (process.env.NODE_ENV === "production") {
+                    await client.query("ROLLBACK");
+                    return res.status(503).json({
+                        status: "error",
+                        message: "Payment provider is not configured",
+                    });
+                }
                 await notifyUser(customerId, `Your booking request for ${serviceCategory} has been created.`, 'booking');
                 await notifyUser(contractorMeta?.user_id, `You received a new booking request for ${serviceCategory}.`, 'booking');
-                await pool.query("COMMIT");
+                await client.query("COMMIT");
                 return res.status(201).json({
                     status: "success",
                     message: "Escrow Intent generated (Mocked - Keys missing)",
-                    data: { 
-                        booking, 
+                    data: {
+                        booking,
                         pricing,
-                        razorpayOrderId: "mock_order_" + booking.id, // Fallback for frontend
+                        razorpayOrderId: "mock_order_" + booking.id,
                         razorpayKey: "mock_key_only_for_dev"
                     }
                 });
             }
 
-            // Generate actual Razorpay Order for Escrow hold
             const rzpOrderResponse = await razorpayInstance.orders.create({
                 amount: Math.round(pricing.amount * 100),
                 currency: "INR",
@@ -193,15 +197,14 @@ const bookingController = {
                 },
             });
 
-            // Insert tracking record into Payments table
-            await pool.query(
+            await client.query(
                 "INSERT INTO payments (booking_id, razorpay_order_id, amount) VALUES ($1, $2, $3)",
                 [booking.id, rzpOrderResponse.id, pricing.amount]
             );
 
             await notifyUser(customerId, `Your booking request for ${serviceCategory} has been created.`, 'booking');
             await notifyUser(contractorMeta?.user_id, `You received a new booking request for ${serviceCategory}.`, 'booking');
-            await pool.query("COMMIT");
+            await client.query("COMMIT");
 
             return res.status(201).json({
                 status: "success",
@@ -215,9 +218,11 @@ const bookingController = {
             });
 
         } catch (error) {
-            await pool.query("ROLLBACK");
+            await client.query("ROLLBACK").catch(() => { });
             console.error("Booking Creation Error:", error);
             res.status(500).json({ status: "error", message: "Error generating booking link", error: error.message });
+        } finally {
+            client.release();
         }
     },
 
@@ -227,7 +232,9 @@ const bookingController = {
 
         try {
             if (!process.env.RAZORPAY_KEY_SECRET) {
-                // Dev Mock Fallback: Force verification
+                if (process.env.NODE_ENV === "production") {
+                    return res.status(503).json({ status: "error", message: "Payment verification is not configured" });
+                }
                 await pool.query(
                     "UPDATE bookings SET payment_status = $1, status = $2 WHERE id = $3",
                     ["IN_ESCROW", "IN_PROGRESS", booking_id]

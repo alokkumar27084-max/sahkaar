@@ -190,7 +190,7 @@ export default function ContractorProfilePage() {
 
                 <div className="flex flex-col gap-3 shrink-0 lg:w-72">
                     <button onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })} className="btn-primary w-full shadow-glow">
-                        <FiBriefcase size={18} /> {lang === "hi" ? "अभी बुक करें" : "Book Contractor"}
+                        <FiBriefcase size={18} /> {lang === "hi" ? "बुक करें और पे करें" : "Book & pay (escrow)"}
                     </button>
                     <button
                         className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-colors shadow-sm"
@@ -316,7 +316,7 @@ export default function ContractorProfilePage() {
                                     <h3 className="font-bold text-[var(--color-heading)] mb-2 flex items-center gap-2"><FiCheckCircle className="text-emerald-500"/> Trust Guarantee</h3>
                                     <p className="text-xs text-[var(--color-muted)] mb-4 leading-relaxed">Book via Thekedaar for milestone protections, dedicated dispute resolution, and guaranteed service completion.</p>
                                     <button onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })} className="text-xs font-bold text-indigo-600 hover:text-indigo-700 uppercase tracking-widest flex items-center gap-1">
-                                        View Escrow Terms &rarr;
+                                        Book with escrow protection &rarr;
                                     </button>
                                 </div>
                             </div>
