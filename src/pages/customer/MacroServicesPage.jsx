@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { servicesAPI } from "../../services/api";
+import { buildContractorSearchPath } from "../../utils/serviceToContractorSearch";
 
 import {
     FiSearch, FiArrowRight, FiStar, FiShield,
@@ -126,11 +127,21 @@ export default function MacroServicesPage() {
                             ))}
                         </div>
 
-                        <motion.p variants={fadeUp} className="text-white/40 text-base md:text-lg max-w-lg mb-12 leading-relaxed">
+                        <motion.p variants={fadeUp} className="text-white/40 text-base md:text-lg max-w-lg mb-8 leading-relaxed">
                             {lang === "hi"
                                 ? "घर निर्माण, रेनोवेशन, इंटीरियर डिज़ाइन — बड़े प्रोजेक्ट्स के लिए वेरिफाइड ठेकेदार।"
                                 : "Construction, renovation, interior design — verified contractors for your biggest projects."}
                         </motion.p>
+
+                        <motion.div variants={fadeUp} className="mb-10">
+                            <button
+                                type="button"
+                                onClick={() => navigate("/search?sort=distance&radius_km=5")}
+                                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm shadow-lg hover:opacity-95 transition-opacity"
+                            >
+                                {lang === "hi" ? "पास के ठेकेदार खोजें" : "Find nearby contractors"} <FiArrowRight size={18} />
+                            </button>
+                        </motion.div>
 
                         <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
                             {[
@@ -229,6 +240,11 @@ export default function MacroServicesPage() {
                         <AnimatePresence mode="popLayout">
                             {filtered.map((svc) => {
                                 const SvcIcon = getIcon(svc.icon);
+                                const displayName = lang === "hi" && svc.name_hi ? svc.name_hi : svc.name;
+                                const searchPath = buildContractorSearchPath(activeCategory, {
+                                    serviceName: displayName,
+                                    serviceSlug: svc.slug,
+                                });
                                 return (
                                     <motion.div
                                         key={svc.id}
@@ -236,7 +252,7 @@ export default function MacroServicesPage() {
                                         layout
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                                        onClick={() => navigate(`/services/${svc.slug}`)}
+                                        onClick={() => navigate(searchPath)}
                                         className="glass-card p-8 cursor-pointer group relative overflow-hidden flex flex-col justify-between transition-all duration-500 hover:shadow-glow"
                                     >
                                         {/* Hover glow */}
@@ -262,12 +278,19 @@ export default function MacroServicesPage() {
                                                 </p>
                                             </div>
 
-                                            <div className="mt-auto flex items-center justify-between">
-                                                <div className="flex flex-col">
+                                            <div className="mt-auto flex items-center justify-between gap-3">
+                                                <div className="flex flex-col min-w-0">
                                                     <span className="text-[10px] font-semibold text-[var(--color-muted)] uppercase tracking-widest mb-0.5">Starting From</span>
                                                     <span className="text-2xl font-bold text-[var(--color-heading)]">₹{svc.price_starts_at?.toLocaleString()}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); navigate(`/services/${svc.slug}`); }}
+                                                        className="mt-2 text-left text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                                                    >
+                                                        {lang === "hi" ? "विवरण और रिक्वेस्ट फॉर्म" : "Details & request form"}
+                                                    </button>
                                                 </div>
-                                                <div className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center scale-0 group-hover:scale-100 transition-transform duration-500 shadow-btn">
+                                                <div className="w-12 h-12 shrink-0 rounded-full bg-amber-500 text-white flex items-center justify-center scale-0 group-hover:scale-100 transition-transform duration-500 shadow-btn">
                                                     <FiArrowRight size={20} />
                                                 </div>
                                             </div>
