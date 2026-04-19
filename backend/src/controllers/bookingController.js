@@ -189,7 +189,7 @@ const bookingController = {
             const rzpOrderResponse = await razorpayInstance.orders.create({
                 amount: Math.round(pricing.amount * 100),
                 currency: "INR",
-                receipt: `receipt_booking_${booking.id}`,
+                receipt: String(booking.id).replace(/-/g, "").substring(0, 39),
                 notes: {
                     contractor_id: String(contractorId),
                     customer_id: String(customerId),
