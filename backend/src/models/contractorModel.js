@@ -197,7 +197,7 @@ exports.search = async ({
   const lngValue = Number(lng);
   const hasCoordinates = Number.isFinite(latValue) && Number.isFinite(lngValue) &&
     latValue >= -90 && latValue <= 90 && lngValue >= -180 && lngValue <= 180;
-  const maxRadiusKm = Math.max(2, Math.min(parseFloat(radius_km) || 5, 5));
+  const maxRadiusKm = Math.max(2, Math.min(parseFloat(radius_km) || 5, 25));
   const minRadiusKmSafe = Math.max(0, Math.min(parseFloat(min_radius_km) || 0, maxRadiusKm));
   const maxRadiusMeters = maxRadiusKm * 1000;
   const minRadiusMeters = minRadiusKmSafe * 1000;

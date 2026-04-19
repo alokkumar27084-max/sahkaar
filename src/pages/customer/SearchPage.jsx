@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiMapPin, FiSearch, FiSliders } from "react-icons/fi";
@@ -16,7 +16,7 @@ import ContractorMapPanel from "../../components/common/ContractorMapPanel";
 import { trackEvent } from "../../utils/analytics";
 import { readSavedLocation, saveLocationSnapshot } from "../../utils/locationStorage";
 
-const RADIUS_OPTIONS = [2, 3, 5];
+const RADIUS_OPTIONS = [2, 3, 5, 10, 15];
 const PAGE_SIZE = 20;
 const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 const cardVariant = {
@@ -40,6 +40,8 @@ export default function SearchPage() {
   const [searchLocationLabel, setSearchLocationLabel] = useState(() => readSavedLocation()?.address || "");
 
   const query = searchParams.get("q") || "";
+  const contextLabel = searchParams.get("context_label") || "";
+  const fromServiceSlug = searchParams.get("from_service") || "";
   const category = searchParams.get("category") || "";
   const sort = searchParams.get("sort") || "distance";
   const verified = searchParams.get("verified") === "true";
@@ -52,6 +54,17 @@ export default function SearchPage() {
   const effectiveLat = urlLat || user?.location_lat || null;
   const effectiveLng = urlLng || user?.location_lng || null;
   const hasSearchLocation = effectiveLat != null && effectiveLng != null;
+
+  const [qInput, setQInput] = useState(query);
+  useEffect(() => {
+    setQInput(query);
+  }, [query]);
+
+  const contextBanner = useMemo(() => {
+    if (contextLabel) return contextLabel;
+    if (fromServiceSlug) return fromServiceSlug.replace(/-/g, " ");
+    return null;
+  }, [contextLabel, fromServiceSlug]);
 
   const persistSearchLocation = useCallback(async (selection, source = "browser_gps", nextAccuracy = null) => {
     if (!selection?.lat || !selection?.lng) return;
@@ -163,6 +176,18 @@ export default function SearchPage() {
   return (
     <main id="main-content" className="max-w-[1200px] mx-auto px-4 md:px-8 pb-20 pt-24 min-h-screen bg-[var(--color-bg)]">
       
+      {contextBanner && (
+        <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-5 py-4">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary)] mb-1">
+            {lang === "hi" ? "कैटलॉग से" : "From catalog"}
+          </p>
+          <p className="text-sm font-bold text-[var(--color-heading)]">
+            {lang === "hi" ? "आपके लिए: " : "Showing pros for: "}
+            <span className="text-[var(--color-primary)]">{contextBanner}</span>
+          </p>
+        </motion.section>
+      )}
+
       {!hasSearchLocation && (
         <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-3xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-8 shadow-inner shadow-amber-500/5">
           <h2 className="font-display text-2xl font-bold text-amber-900 dark:text-amber-500 mb-2 flex items-center gap-3">
@@ -186,7 +211,16 @@ export default function SearchPage() {
           
           <div className="relative">
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
-            <input type="search" defaultValue={query} placeholder={t("home.search_placeholder")} className="input-field !pl-11 !h-12 !text-sm bg-[var(--color-bg)] w-full" onKeyDown={(e) => { if (e.key === "Enter") updateParam("q", e.target.value); }} />
+            <input
+              type="search"
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
+              placeholder={t("home.search_placeholder")}
+              className="input-field !pl-11 !h-12 !text-sm bg-[var(--color-bg)] w-full"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") updateParam("q", qInput);
+              }}
+            />
           </div>
           
           <button onClick={() => setShowFilters((s) => !s)} className={`h-12 px-5 rounded-xl font-bold border transition-all inline-flex items-center justify-center gap-2 text-sm shrink-0 ${showFilters ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-heading)] hover:border-[var(--color-primary)]"}`}>

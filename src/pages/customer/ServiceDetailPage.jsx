@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { servicesAPI } from "../../services/api";
+import { buildContractorSearchPath } from "../../utils/serviceToContractorSearch";
 import toast from "react-hot-toast";
 import {
     FiArrowLeft, FiArrowRight, FiStar, FiShield,
@@ -104,6 +105,12 @@ export default function ServiceDetailPage() {
     if (!service) return null;
 
     const SvcIcon = getIcon(service.icon);
+    const nearbyPath = service.category_slug
+        ? buildContractorSearchPath(service.category_slug, {
+            serviceName: service.name,
+            serviceSlug: service.slug,
+        })
+        : `/search?sort=distance&radius_km=5&q=${encodeURIComponent(service.name || "")}`;
     
     // Parse related tasks if stored as JSON string
     let tasksList = [];
@@ -122,9 +129,36 @@ export default function ServiceDetailPage() {
             <div className="max-w-[1200px] mx-auto px-4 md:px-8 relative z-10">
                 
                 {/* Back Link */}
-                <button onClick={() => navigate("/quick-services")} className="mb-8 text-sm font-bold tracking-widest text-[var(--color-muted)] hover:text-[var(--color-heading)] flex items-center gap-2 uppercase transition-colors">
+                <button
+                    onClick={() => navigate(service.category_type === "bada" ? "/macro-services" : "/quick-services")}
+                    className="mb-8 text-sm font-bold tracking-widest text-[var(--color-muted)] hover:text-[var(--color-heading)] flex items-center gap-2 uppercase transition-colors"
+                >
                     <FiArrowLeft size={16} /> All Services
                 </button>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-10 rounded-2xl border border-[var(--color-primary)]/25 bg-gradient-to-r from-[var(--color-primary)]/10 to-cyan-500/10 p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                >
+                    <div>
+                        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-primary)] mb-2">
+                            {lang === "hi" ? "पास के प्रोफेशनल" : "Nearby on Thekedaar"}
+                        </p>
+                        <p className="text-[var(--color-heading)] font-bold text-lg md:text-xl">
+                            {lang === "hi"
+                                ? "पहले अपने एरिया में वेरिफाइड प्रोफेशनल देखें, फिर बुक करें।"
+                                : "Browse verified professionals near you, then book the one you trust."}
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate(nearbyPath)}
+                        className="shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[var(--color-primary)] text-white font-bold shadow-glow hover:opacity-95 transition-opacity"
+                    >
+                        {lang === "hi" ? "पास के खोजें" : "Find nearby"} <FiArrowRight />
+                    </button>
+                </motion.div>
 
                 <div className="grid lg:grid-cols-[1fr_minmax(400px,450px)] gap-12 lg:gap-16">
                     
