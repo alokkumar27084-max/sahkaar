@@ -62,18 +62,38 @@ export default function LoginPage() {
   }, [countdown]);
 
   // Check if returning from email sign-in link
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
+    async function completeEmailSignIn(emailForSignIn) {
+      setLoading(true);
+      try {
+        const result = await signInWithEmailLink(firebaseAuth, emailForSignIn, window.location.href);
+        const idToken = await result.user.getIdToken();
+        const res = await authAPI.verifyEmailToken(idToken);
+        window.localStorage.removeItem('emailForSignIn');
+        if (res.data.isNewUser) {
+          toast.error('No account found. Please register first.');
+          navigate('/register');
+        } else {
+          login(res.data.user, res.data.token);
+          toast.success('Logged in!');
+          navigate(res.data.user.role === 'admin' ? '/admin/dashboard' : res.data.user.role === 'contractor' ? '/contractor/dashboard' : '/');
+        }
+      } catch (err) {
+        console.error('Email link sign-in error:', err);
+        toast.error(err?.response?.data?.message || err.message || 'Sign-in failed.');
+      } finally { setLoading(false); }
+    }
+
     if (isSignInWithEmailLink(firebaseAuth, window.location.href)) {
       let savedEmail = window.localStorage.getItem('emailForSignIn');
       if (!savedEmail) {
         savedEmail = window.prompt('Please provide your email for confirmation');
       }
       if (savedEmail) {
-        handleEmailLinkReturn(savedEmail);
+        completeEmailSignIn(savedEmail);
       }
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize invisible reCAPTCHA for Firebase Phone Auth
   const setupRecaptcha = useCallback(() => {
@@ -183,28 +203,6 @@ export default function LoginPage() {
       }
     }
     finally { setLoading(false); }
-  }
-
-  // Handle return from email sign-in link
-  async function handleEmailLinkReturn(emailForSignIn) {
-    setLoading(true);
-    try {
-      const result = await signInWithEmailLink(firebaseAuth, emailForSignIn, window.location.href);
-      const idToken = await result.user.getIdToken();
-      const res = await authAPI.verifyEmailToken(idToken);
-      window.localStorage.removeItem('emailForSignIn');
-      if (res.data.isNewUser) {
-        toast.error(lang === "hi" ? "कोई खाता नहीं मिला। पहले रजिस्टर करें।" : "No account found. Please register first.");
-        navigate(customerNext !== "/" ? `/register?next=${encodeURIComponent(customerNext)}` : "/register");
-      } else {
-        login(res.data.user, res.data.token);
-        toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
-        navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
-      }
-    } catch (err) {
-      console.error('Email link sign-in error:', err);
-      toast.error(err?.response?.data?.message || err.message || 'Sign-in failed.');
-    } finally { setLoading(false); }
   }
 
 
