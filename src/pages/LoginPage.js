@@ -1,21 +1,28 @@
 // ─────────────────────────────────────────────────────────
-// LoginPage.js — OTP-based Login + Register
+// LoginPage.js — Firebase-powered Login + Register
 //
 // FLOW:
-//   Step 1: User enters phone number → clicks Send OTP
-//   Step 2: User enters 6-digit OTP  → backend verifies
-//   Step 3: If new user → show register form
-//   Step 3: If existing user → logged in, redirected
+//   Phone: Enter phone → Firebase sends OTP SMS → Enter OTP → Verified → Login/Register
+//   Email: Enter email → Firebase sends sign-in link → User clicks link → Verified → Login/Register
 // ─────────────────────────────────────────────────────────
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { authAPI } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import {
+  auth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+} from '../config/firebase';
 import './LoginPage.css';
 
-const STEP = { PHONE: 'phone', OTP: 'otp', ROLE: 'role' };
+const STEP = { METHOD: 'method', PHONE: 'phone', OTP: 'otp', EMAIL: 'email', EMAIL_SENT: 'email_sent', ROLE: 'role' };
+const METHOD = { PHONE: 'phone', EMAIL: 'email' };
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -26,20 +33,40 @@ export default function LoginPage() {
   // Where to go after login (if redirected from a protected page)
   const from = location.state?.from?.pathname || '/';
 
-  const [step, setStep]       = useState(STEP.PHONE);
-  const [phone, setPhone]     = useState('');
-  const [otp, setOtp]         = useState(['', '', '', '', '', '']); // 6 boxes
-  const [loading, setLoading] = useState(false);
-  const [countdown, setCountdown] = useState(0); // resend timer
-  const [isNewUser, setIsNewUser] = useState(false);
-  const [role, setRole]       = useState('customer');
+  const [step, setStep]               = useState(STEP.PHONE);
+  const [method, setMethod]           = useState(METHOD.PHONE);
+  const [phone, setPhone]             = useState('');
+  const [email, setEmail]             = useState('');
+  const [otp, setOtp]                 = useState(['', '', '', '', '', '']); // 6 boxes
+  const [loading, setLoading]         = useState(false);
+  const [countdown, setCountdown]     = useState(0); // resend timer
+  const [role, setRole]               = useState('customer');
+  const [verifiedPhone, setVerifiedPhone] = useState('');
+  const [verifiedEmail, setVerifiedEmail] = useState('');
 
+  // Firebase confirmation result (for phone OTP)
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const recaptchaVerifierRef = useRef(null);
   const otpRefs = useRef([]);
 
   // Redirect if already logged in
   useEffect(() => {
     if (isLoggedIn) navigate(from, { replace: true });
   }, [isLoggedIn]);
+
+  // Check if returning from email sign-in link
+  useEffect(() => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      // Get the email from localStorage (saved when link was sent)
+      let savedEmail = window.localStorage.getItem('emailForSignIn');
+      if (!savedEmail) {
+        savedEmail = window.prompt('Please provide your email for confirmation');
+      }
+      if (savedEmail) {
+        handleEmailLinkSignIn(savedEmail);
+      }
+    }
+  }, []);
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -48,7 +75,22 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // ── STEP 1: SEND OTP ──────────────────────────────────────
+  // Initialize invisible reCAPTCHA for phone auth
+  const setupRecaptcha = useCallback(() => {
+    if (recaptchaVerifierRef.current) return;
+
+    recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {
+        // reCAPTCHA solved - will proceed with phone auth
+      },
+      'expired-callback': () => {
+        recaptchaVerifierRef.current = null;
+      },
+    });
+  }, []);
+
+  // ── PHONE: SEND OTP via Firebase ──────────────────────────
   async function handleSendOTP(e) {
     e.preventDefault();
     if (phone.length !== 10) {
@@ -57,15 +99,25 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      const data = await authAPI.sendOTP(phone);
-      setIsNewUser(data.isNewUser || false);
+      setupRecaptcha();
+      const phoneNumber = `+91${phone}`;
+      const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifierRef.current);
+      setConfirmationResult(result);
       setStep(STEP.OTP);
-      setCountdown(60); // 60 second resend timer
+      setCountdown(60);
       toast.success(`${t('auth.otpSent')} +91${phone}`);
-      // Auto-focus first OTP box
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } catch (err) {
-      toast.error(err.message || t('common.error'));
+      console.error('Firebase phone auth error:', err);
+      // Reset reCAPTCHA on error
+      recaptchaVerifierRef.current = null;
+      if (err.code === 'auth/too-many-requests') {
+        toast.error('Too many attempts. Please try again later.');
+      } else if (err.code === 'auth/invalid-phone-number') {
+        toast.error('Invalid phone number. Please check and try again.');
+      } else {
+        toast.error(err.message || t('common.error'));
+      }
     } finally {
       setLoading(false);
     }
@@ -99,7 +151,7 @@ export default function LoginPage() {
     }
   }
 
-  // ── STEP 2: VERIFY OTP ────────────────────────────────────
+  // ── PHONE: VERIFY OTP via Firebase ────────────────────────
   async function handleVerifyOTP(e) {
     e.preventDefault();
     const otpString = otp.join('');
@@ -107,21 +159,36 @@ export default function LoginPage() {
       toast.error('Enter the 6-digit OTP');
       return;
     }
+    if (!confirmationResult) {
+      toast.error('Session expired. Please resend OTP.');
+      setStep(STEP.PHONE);
+      return;
+    }
     setLoading(true);
     try {
-      const data = await authAPI.verifyOTP(phone, otpString);
+      // Verify OTP with Firebase
+      const credential = await confirmationResult.confirm(otpString);
+      const idToken = await credential.user.getIdToken();
+
+      // Send Firebase ID token to our backend for user lookup/login
+      const res = await authAPI.verifyPhoneToken(idToken);
+      const data = res.data;
 
       if (data.isNewUser) {
-        // New user needs to select role (customer or contractor)
+        setVerifiedPhone(data.phone || phone);
         setStep(STEP.ROLE);
       } else {
-        // Existing user — log them in
         login(data.user, data.token);
         toast.success('Welcome back!');
         navigate(from, { replace: true });
       }
     } catch (err) {
-      toast.error(err.message || 'Invalid OTP. Please try again.');
+      console.error('OTP verify error:', err);
+      if (err.code === 'auth/invalid-verification-code') {
+        toast.error('Invalid OTP. Please check and try again.');
+      } else {
+        toast.error(err?.response?.data?.message || err.message || 'Invalid OTP. Please try again.');
+      }
       setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
     } finally {
@@ -129,11 +196,76 @@ export default function LoginPage() {
     }
   }
 
-  // ── STEP 3: SELECT ROLE AND REGISTER ─────────────────────
+  // ── EMAIL: SEND SIGN-IN LINK via Firebase ─────────────────
+  async function handleSendEmailLink(e) {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    setLoading(true);
+    try {
+      const actionCodeSettings = {
+        url: window.location.origin + '/login',
+        handleCodeInApp: true,
+      };
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      // Save email for later verification
+      window.localStorage.setItem('emailForSignIn', email);
+      setStep(STEP.EMAIL_SENT);
+      toast.success(`Sign-in link sent to ${email}`);
+    } catch (err) {
+      console.error('Firebase email link error:', err);
+      if (err.code === 'auth/invalid-email') {
+        toast.error('Invalid email address.');
+      } else {
+        toast.error(err.message || t('common.error'));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── EMAIL: HANDLE RETURNING FROM EMAIL LINK ───────────────
+  async function handleEmailLinkSignIn(emailForSignIn) {
+    setLoading(true);
+    try {
+      const result = await signInWithEmailLink(auth, emailForSignIn, window.location.href);
+      const idToken = await result.user.getIdToken();
+
+      // Send Firebase ID token to our backend
+      const res = await authAPI.verifyEmailToken(idToken);
+      const data = res.data;
+
+      // Clear saved email
+      window.localStorage.removeItem('emailForSignIn');
+
+      if (data.isNewUser) {
+        setVerifiedEmail(data.email || emailForSignIn);
+        setStep(STEP.ROLE);
+      } else {
+        login(data.user, data.token);
+        toast.success('Welcome back!');
+        navigate(from, { replace: true });
+      }
+    } catch (err) {
+      console.error('Email link sign-in error:', err);
+      toast.error(err?.response?.data?.message || err.message || 'Sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── STEP: SELECT ROLE AND REGISTER ─────────────────────
   async function handleRegister() {
     setLoading(true);
     try {
-      const data = await authAPI.register({ phone, role });
+      const registerData = { role };
+      if (verifiedPhone) registerData.phone = verifiedPhone;
+      if (verifiedEmail) registerData.email = verifiedEmail;
+
+      const res = await authAPI.register(registerData);
+      const data = res.data;
       login(data.user, data.token);
       toast.success('Account created!');
       if (role === 'contractor') {
@@ -142,10 +274,18 @@ export default function LoginPage() {
         navigate(from, { replace: true });
       }
     } catch (err) {
-      toast.error(err.message || t('common.error'));
+      toast.error(err?.response?.data?.message || err.message || t('common.error'));
     } finally {
       setLoading(false);
     }
+  }
+
+  // ── Switch between phone and email method ─────────────────
+  function switchMethod(newMethod) {
+    setMethod(newMethod);
+    setStep(newMethod === METHOD.PHONE ? STEP.PHONE : STEP.EMAIL);
+    setOtp(['', '', '', '', '', '']);
+    setConfirmationResult(null);
   }
 
   return (
@@ -158,7 +298,25 @@ export default function LoginPage() {
           <span className="logo-kedaar">kedaar</span>
         </div>
 
-        {/* ── STEP 1: PHONE ── */}
+        {/* Method Toggle (Phone / Email) */}
+        {(step === STEP.PHONE || step === STEP.EMAIL) && (
+          <div className="method-toggle">
+            <button
+              className={`method-btn ${method === METHOD.PHONE ? 'active' : ''}`}
+              onClick={() => switchMethod(METHOD.PHONE)}
+            >
+              📱 {t('auth.phone') || 'Phone'}
+            </button>
+            <button
+              className={`method-btn ${method === METHOD.EMAIL ? 'active' : ''}`}
+              onClick={() => switchMethod(METHOD.EMAIL)}
+            >
+              📧 {t('auth.email') || 'Email'}
+            </button>
+          </div>
+        )}
+
+        {/* ── PHONE INPUT ── */}
         {step === STEP.PHONE && (
           <form onSubmit={handleSendOTP} className="animate-fade-in">
             <h2>{t('auth.loginTitle')}</h2>
@@ -194,13 +352,66 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* ── STEP 2: OTP ── */}
+        {/* ── EMAIL INPUT ── */}
+        {step === STEP.EMAIL && (
+          <form onSubmit={handleSendEmailLink} className="animate-fade-in">
+            <h2>{t('auth.loginTitle')}</h2>
+            <p className="login-sub">We'll send a sign-in link to your email</p>
+
+            <div className="input-group" style={{ marginTop: '24px' }}>
+              <label className="input-label">{t('auth.email') || 'Email'}</label>
+              <input
+                type="email"
+                className="input-field"
+                placeholder="Enter your email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full btn-lg"
+              disabled={loading || !email.includes('@')}
+            >
+              {loading ? <span className="spinner" /> : 'Send Sign-in Link'}
+            </button>
+
+            <p className="login-terms">{t('auth.terms')}</p>
+          </form>
+        )}
+
+        {/* ── EMAIL LINK SENT ── */}
+        {step === STEP.EMAIL_SENT && (
+          <div className="animate-fade-in email-sent-step">
+            <div className="email-sent-icon">📧</div>
+            <h2>Check your email</h2>
+            <p className="login-sub">
+              We've sent a sign-in link to <strong>{email}</strong>
+            </p>
+            <p className="login-sub" style={{ marginTop: '8px' }}>
+              Click the link in the email to sign in. You can close this tab.
+            </p>
+            <button
+              type="button"
+              className="btn btn-outline btn-full"
+              onClick={() => switchMethod(METHOD.EMAIL)}
+              style={{ marginTop: '24px' }}
+            >
+              ← Try a different email
+            </button>
+          </div>
+        )}
+
+        {/* ── OTP (Phone) ── */}
         {step === STEP.OTP && (
           <form onSubmit={handleVerifyOTP} className="animate-fade-in">
             <button
               type="button"
               className="back-btn"
-              onClick={() => { setStep(STEP.PHONE); setOtp(['','','','','','']); }}
+              onClick={() => { setStep(STEP.PHONE); setOtp(['','','','','','']); setConfirmationResult(null); }}
             >
               ← Back
             </button>
@@ -253,7 +464,7 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* ── STEP 3: ROLE SELECTION ── */}
+        {/* ── ROLE SELECTION ── */}
         {step === STEP.ROLE && (
           <div className="animate-fade-in">
             <h2>Welcome to Thekedaar!</h2>
@@ -288,6 +499,9 @@ export default function LoginPage() {
           </div>
         )}
       </div>
+
+      {/* Invisible reCAPTCHA container for Firebase Phone Auth */}
+      <div id="recaptcha-container"></div>
     </div>
   );
 }

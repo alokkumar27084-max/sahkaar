@@ -2,7 +2,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const msg91 = require('../services/msg91');
+const { verifyIdToken } = require('../config/firebaseAdmin');
 const crypto = require('crypto');
 const User = require('../models/userModel');
 const Contractor = require('../models/contractorModel');
@@ -195,235 +195,129 @@ exports.logout = async (req, res, next) => {
   res.json({ ok: true });
 };
 
-// ── Phone OTP ─────────────────────────────────────────
+// ── Phone OTP (Firebase) ─────────────────────────────────────────
 
-// Request OTP: send OTP via MSG91
-exports.requestOtp = async (req, res, next) => {
-  try {
-    const { phone } = req.body;
-    if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
-    const cleanPhone = String(phone).replace(/\D/g, '').slice(-10);
-    if (cleanPhone.length !== 10) {
-      return res.status(400).json({ ok: false, message: 'valid 10 digit phone required' });
-    }
-
-    await db.query('DELETE FROM otps WHERE phone = $1 OR expires_at < now() OR used = true', [cleanPhone]);
-
-    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-    await db.query(
-      `INSERT INTO otps (phone, code, expires_at, used)
-       VALUES ($1, $2, now() + interval '10 minutes', false)`,
-      [cleanPhone, otpCode]
-    );
-
-    try {
-      const result = await msg91.sendOtp(cleanPhone);
-      const response = { ok: true, success: true, message: result.message || 'OTP sent' };
-      if (process.env.NODE_ENV !== 'production' && result.otp_for_testing) {
-        response.otp_for_testing = result.otp_for_testing;
-      }
-      return res.json(response);
-    } catch (providerErr) {
-      if (process.env.NODE_ENV === 'production') throw providerErr;
-    }
-
-    res.json({
-      ok: true,
-      success: true,
-      message: 'OTP generated (development fallback)',
-      otp_for_testing: process.env.NODE_ENV === 'production' ? undefined : otpCode,
-    });
-  } catch (err) {
-    console.error('requestOtp error:', err.message);
-    res.status(400).json({ ok: false, message: err.message });
-  }
-};
-
-// Verify phone OTP: only if account exists
+// Verify phone via Firebase ID token
+// Frontend sends the Firebase ID token after OTP verification on client side
 exports.verifyOtp = async (req, res, next) => {
   try {
-    const { phone, otp } = req.body;
-    if (!phone || !otp) return res.status(400).json({ ok: false, message: 'phone and otp required' });
+    const { idToken, phone } = req.body;
+    if (!idToken) return res.status(400).json({ ok: false, message: 'Firebase ID token required' });
 
-    const { sanitize } = require('../utils/sanitizers');
-    const cleanPhone = String(sanitize(phone)).replace(/\D/g, '').slice(-10);
-    const cleanOtp = sanitize(otp);
-    const otpResult = await db.query(
-      `SELECT id, code, expires_at, used FROM otps WHERE phone = $1 ORDER BY created_at DESC LIMIT 1`,
-      [cleanPhone]
-    );
+    // Verify the Firebase ID token
+    const decoded = await verifyIdToken(idToken);
 
-    const latest = otpResult.rows[0];
-    if (!latest) return res.status(400).json({ ok: false, message: 'Invalid OTP' });
-    if (latest.used) return res.status(400).json({ ok: false, message: 'OTP already used' });
-    if (new Date(latest.expires_at).getTime() < Date.now()) {
-      return res.status(400).json({ ok: false, message: 'OTP expired' });
+    // Extract phone from Firebase token (format: +91XXXXXXXXXX)
+    const firebasePhone = decoded.phone_number;
+    if (!firebasePhone) {
+      return res.status(400).json({ ok: false, message: 'No phone number in Firebase token' });
     }
 
-    const providerVerified = await msg91.verifyOtp(cleanPhone, cleanOtp).catch(() => false);
-    const localVerified = String(latest.code) === String(cleanOtp);
-    if (!providerVerified && !localVerified) {
-      return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+    // Normalize to 10-digit Indian number
+    const cleanPhone = firebasePhone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ ok: false, message: 'Invalid phone number in token' });
     }
 
-    await db.query('UPDATE otps SET used = true WHERE id = $1', [latest.id]);
-
-    // Account must exist — do NOT auto-create
+    // Check if user exists
     const existing = await db.query('SELECT id FROM users WHERE phone = $1', [cleanPhone]);
     if (!existing.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'No account found with this phone number. Please register first.',
+      // New user — return flag so frontend shows register step
+      return res.json({
+        ok: true,
+        success: true,
+        isNewUser: true,
+        phone: cleanPhone,
+        message: 'Phone verified. Please register to continue.',
       });
     }
 
+    // Existing user — log them in
     const user = await User.findById(existing.rows[0].id);
     const token = signUserToken(user);
     res.cookie('token', token, cookieOptions());
     res.json({ ok: true, success: true, user, token });
   } catch (err) {
+    console.error('verifyOtp (Firebase) error:', err.message);
+    if (err.code === 'auth/id-token-expired') {
+      return res.status(401).json({ ok: false, message: 'Token expired. Please try again.' });
+    }
+    if (err.code === 'auth/argument-error' || err.code === 'auth/id-token-revoked') {
+      return res.status(400).json({ ok: false, message: 'Invalid token. Please try again.' });
+    }
     next(err);
   }
 };
 
-// ── Email OTP ─────────────────────────────────────────
-const { sendOtpEmail } = require('../services/emailService');
-
-// Request email OTP
-exports.requestEmailOtp = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ ok: false, message: 'email required' });
-    const cleanEmail = String(email).trim().toLowerCase();
-
-    const existing = await db.query('SELECT id FROM users WHERE LOWER(email) = $1', [cleanEmail]);
-    if (!existing.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'No account found with this email. Please register first.',
-      });
-    }
-
-    await db.query("DELETE FROM otps WHERE phone = $1 OR expires_at < now() OR used = true", [cleanEmail]);
-
-    const otpCode = String(Math.floor(100000 + Math.random() * 900000));
-    await db.query(
-      `INSERT INTO otps (phone, code, expires_at, used)
-       VALUES ($1, $2, now() + interval '10 minutes', false)`,
-      [cleanEmail, otpCode]
-    );
-
-    try { await sendOtpEmail(cleanEmail, otpCode); } catch (e) {
-      console.error('Failed to send OTP email:', e.message);
-    }
-
-    const response = { ok: true, success: true, message: 'OTP sent to email' };
-    if (process.env.NODE_ENV !== 'production') response.otp_for_testing = otpCode;
-    return res.json(response);
-  } catch (err) {
-    console.error('requestEmailOtp error:', err.message);
-    res.status(400).json({ ok: false, message: err.message });
-  }
+// Legacy requestOtp — no longer sends SMS (Firebase handles it on client)
+// Kept for backward compatibility; returns success immediately
+exports.requestOtp = async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
+  // Firebase handles OTP sending on the client side
+  res.json({ ok: true, success: true, message: 'Use Firebase Phone Auth on client' });
 };
 
-// Verify email OTP
+// ── Email Auth (Firebase Email Link) ─────────────────────────────────────────
+
+// Verify email via Firebase ID token (after user clicks email sign-in link)
 exports.verifyEmailOtp = async (req, res, next) => {
   try {
-    const { email, otp } = req.body;
-    if (!email || !otp) return res.status(400).json({ ok: false, message: 'email and otp required' });
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ ok: false, message: 'Firebase ID token required' });
 
-    const { sanitize } = require('../utils/sanitizers');
-    const cleanEmail = String(sanitize(email)).trim().toLowerCase();
-    const cleanOtp = sanitize(otp);
+    // Verify the Firebase ID token
+    const decoded = await verifyIdToken(idToken);
 
-    const otpResult = await db.query(
-      `SELECT id, code, expires_at, used FROM otps WHERE phone = $1 ORDER BY created_at DESC LIMIT 1`,
-      [cleanEmail]
-    );
-
-    const latest = otpResult.rows[0];
-    if (!latest) return res.status(400).json({ ok: false, message: 'Invalid OTP' });
-    if (latest.used) return res.status(400).json({ ok: false, message: 'OTP already used' });
-    if (new Date(latest.expires_at).getTime() < Date.now()) {
-      return res.status(400).json({ ok: false, message: 'OTP expired' });
-    }
-    if (String(latest.code) !== String(cleanOtp)) {
-      return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+    const firebaseEmail = decoded.email;
+    if (!firebaseEmail) {
+      return res.status(400).json({ ok: false, message: 'No email in Firebase token' });
     }
 
-    await db.query('UPDATE otps SET used = true WHERE id = $1', [latest.id]);
+    const cleanEmail = firebaseEmail.trim().toLowerCase();
 
+    // Check if user exists
     const existing = await db.query('SELECT id FROM users WHERE LOWER(email) = $1', [cleanEmail]);
     if (!existing.rows.length) {
-      return res.status(404).json({
-        ok: false,
-        code: 'ACCOUNT_NOT_FOUND',
-        message: 'No account found with this email. Please register first.',
+      return res.json({
+        ok: true,
+        success: true,
+        isNewUser: true,
+        email: cleanEmail,
+        message: 'Email verified. Please register to continue.',
       });
     }
 
+    // Existing user — log them in
     const user = await User.findById(existing.rows[0].id);
     const token = signUserToken(user);
     res.cookie('token', token, cookieOptions());
     res.json({ ok: true, success: true, user, token });
   } catch (err) {
+    console.error('verifyEmailOtp (Firebase) error:', err.message);
+    if (err.code === 'auth/id-token-expired') {
+      return res.status(401).json({ ok: false, message: 'Token expired. Please try again.' });
+    }
     next(err);
   }
 };
 
-// ── Password Reset ─────────────────────────────────────────
+// Request email link — handled on frontend via Firebase SDK
+exports.requestEmailOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ ok: false, message: 'email required' });
+  res.json({ ok: true, success: true, message: 'Use Firebase Email Link Auth on client' });
+};
+
+// ── Password Reset (Firebase handles email sending) ─────────────────────────
+// Firebase sendPasswordResetEmail() is called from the frontend.
+// This endpoint is kept for backward compatibility.
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ ok: false, message: 'Email required' });
-
-    const cleanEmail = String(email).trim().toLowerCase();
-    const userResult = await db.query('SELECT id, name FROM users WHERE LOWER(email) = $1', [cleanEmail]);
-    if (!userResult.rows.length) {
-      // Silently return success to prevent email enumeration
-      return res.json({ ok: true, message: 'If an account with that email exists, a password reset link has been sent.' });
-    }
-
-    const user = userResult.rows[0];
-    const token = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
-    // Invalidate existing active tokens
-    await db.query('UPDATE password_resets SET used = true WHERE user_id = $1 AND used = false', [user.id]);
-
-    await db.query(
-      `INSERT INTO password_resets (user_id, token, expires_at)
-       VALUES ($1, $2, now() + interval '1 hour')`,
-      [user.id, hashedToken]
-    );
-
-    // Get the frontend origin from request headers
-    const origin = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetUrl = `${origin}/reset-password?token=${token}&email=${encodeURIComponent(cleanEmail)}`;
-
-    console.log(`[DEV ONLY] Password Reset URL: ${resetUrl}`);
-
-    try {
-      const { sendEmail } = require('../services/emailService');
-      const htmlContent = `
-        <div style="font-family: sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-          <h2>Reset Your Password</h2>
-          <p>Hi ${user.name || 'User'},</p>
-          <p>You recently requested to reset your password. Click the button below to set a new password:</p>
-          <div style="margin: 30px 0;">
-            <a href="${resetUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Reset Password</a>
-          </div>
-          <p>This link will expire in 1 hour.</p>
-          <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-        </div>
-      `;
-      await sendEmail(cleanEmail, 'Password Reset Request', 'Click the link to reset your password.', htmlContent);
-    } catch (e) {
-      console.error("Failed to send reset email", e);
-    }
-
+    // Firebase handles password reset emails from the client side.
+    // Return success to avoid email enumeration.
     res.json({ ok: true, message: 'If an account with that email exists, a password reset link has been sent.' });
   } catch (err) {
     next(err);

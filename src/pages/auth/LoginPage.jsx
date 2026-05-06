@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { GoogleLogin } from '@react-oauth/google';
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI } from "../../services/api";
-import { isValidPhone, isValidEmail, isValidOTP, isValidPassword, sanitize } from "../../utils/validators";
+import { isValidPhone, isValidEmail, isValidPassword, sanitize } from "../../utils/validators";
 import { OTP_RESEND_SECONDS } from "../../utils/constants";
 import toast from "react-hot-toast";
 import { FiPhone, FiMail, FiLock, FiArrowRight, FiShield } from "react-icons/fi";
+import {
+  auth as firebaseAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink,
+} from '../../config/firebase';
 
 export default function LoginPage() {
   const { t, lang } = useLanguage();
@@ -32,12 +40,15 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [email, setEmail] = useState("");
-  const [emailOtpValue, setEmailOtpValue] = useState("");
   const [emailForOtp, setEmailForOtp] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [errors, setErrors] = useState({});
+
+  // Firebase phone auth state
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const recaptchaVerifierRef = useRef(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -50,6 +61,30 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, [countdown]);
 
+  // Check if returning from email sign-in link
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (isSignInWithEmailLink(firebaseAuth, window.location.href)) {
+      let savedEmail = window.localStorage.getItem('emailForSignIn');
+      if (!savedEmail) {
+        savedEmail = window.prompt('Please provide your email for confirmation');
+      }
+      if (savedEmail) {
+        handleEmailLinkReturn(savedEmail);
+      }
+    }
+  }, []);
+
+  // Initialize invisible reCAPTCHA for Firebase Phone Auth
+  const setupRecaptcha = useCallback(() => {
+    if (recaptchaVerifierRef.current) return;
+    recaptchaVerifierRef.current = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => { recaptchaVerifierRef.current = null; },
+    });
+  }, []);
+
   // Handle ACCOUNT_NOT_FOUND error — redirect to register
   function handleAccountNotFound(err) {
     const code = err.response?.data?.code;
@@ -61,71 +96,118 @@ export default function LoginPage() {
     return false;
   }
 
-  // ── Phone OTP handlers ──
+  // ── Phone OTP handlers (Firebase) ──
   async function handleSendOTP(e) {
     e.preventDefault();
     const cleanPhone = sanitize(phone.replace(/\s/g, ""));
     if (!isValidPhone(cleanPhone)) { setErrors({ phone: t("err.invalid_phone") }); return; }
     setLoading(true); setErrors({});
     try {
-      const res = await authAPI.sendOTP(cleanPhone);
+      setupRecaptcha();
+      const phoneNumber = `+91${cleanPhone}`;
+      const result = await signInWithPhoneNumber(firebaseAuth, phoneNumber, recaptchaVerifierRef.current);
+      setConfirmationResult(result);
       toast.success(t("auth.otp_sent"));
-      if (res.data.otp_for_testing) toast(`Dev OTP: ${res.data.otp_for_testing}`, { icon: "🧪", duration: 10000 });
       setStep(2); setCountdown(OTP_RESEND_SECONDS);
-    } catch (err) { toast.error(err.response?.data?.message || t("app.error")); }
+    } catch (err) {
+      console.error('Firebase phone auth error:', err);
+      recaptchaVerifierRef.current = null;
+      if (err.code === 'auth/too-many-requests') {
+        toast.error(lang === "hi" ? "बहुत अधिक प्रयास। बाद में पुनः प्रयास करें।" : "Too many attempts. Please try again later.");
+      } else if (err.code === 'auth/invalid-phone-number') {
+        toast.error(lang === "hi" ? "अमान्य फ़ोन नंबर" : "Invalid phone number");
+      } else {
+        toast.error(err.message || t("app.error"));
+      }
+    }
     finally { setLoading(false); }
   }
 
   async function handleVerifyOTP(e) {
     e.preventDefault();
     const cleanOTP = sanitize(otp.trim());
-    const cleanPhone = sanitize(phone.replace(/\s/g, ""));
-    if (!isValidOTP(cleanOTP)) { setErrors({ otp: t("err.invalid_otp") }); return; }
+    if (cleanOTP.length !== 6 || !/^\d{6}$/.test(cleanOTP)) { setErrors({ otp: t("err.invalid_otp") }); return; }
+    if (!confirmationResult) {
+      toast.error(lang === "hi" ? "सत्र समाप्त। कृपया पुनः OTP भेजें।" : "Session expired. Please resend OTP.");
+      setStep(1);
+      return;
+    }
     setLoading(true); setErrors({});
     try {
-      const res = await authAPI.verifyOTP(cleanPhone, cleanOTP);
-      login(res.data.user, res.data.token);
-      toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
-      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+      // Verify OTP with Firebase
+      const credential = await confirmationResult.confirm(cleanOTP);
+      const idToken = await credential.user.getIdToken();
+
+      // Send Firebase ID token to our backend
+      const res = await authAPI.verifyPhoneToken(idToken);
+      if (res.data.isNewUser) {
+        toast.error(lang === "hi" ? "कोई खाता नहीं मिला। पहले रजिस्टर करें।" : "No account found. Please register first.");
+        navigate(customerNext !== "/" ? `/register?next=${encodeURIComponent(customerNext)}` : "/register");
+      } else {
+        login(res.data.user, res.data.token);
+        toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
+        navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+      }
     } catch (err) {
-      if (!handleAccountNotFound(err)) setErrors({ otp: t("err.invalid_otp") });
+      console.error('OTP verify error:', err);
+      if (err.code === 'auth/invalid-verification-code') {
+        setErrors({ otp: t("err.invalid_otp") });
+      } else if (!handleAccountNotFound(err)) {
+        setErrors({ otp: t("err.invalid_otp") });
+      }
     }
     finally { setLoading(false); }
   }
 
-  // ── Email OTP handlers ──
+  // ── Email OTP handlers (Firebase Email Link) ──
   async function handleSendEmailOTP(e) {
     e.preventDefault();
     const cleanEmail = sanitize(emailForOtp.trim());
     if (!isValidEmail(cleanEmail)) { setErrors({ emailOtp: t("err.invalid_email") }); return; }
     setLoading(true); setErrors({});
     try {
-      const res = await authAPI.sendEmailOTP(cleanEmail);
-      toast.success(lang === "hi" ? "OTP ईमेल पर भेजा गया" : "OTP sent to email");
-      if (res.data.otp_for_testing) toast(`Dev OTP: ${res.data.otp_for_testing}`, { icon: "🧪", duration: 10000 });
+      const actionCodeSettings = {
+        url: window.location.origin + '/login',
+        handleCodeInApp: true,
+      };
+      await sendSignInLinkToEmail(firebaseAuth, cleanEmail, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', cleanEmail);
+      toast.success(lang === "hi" ? "साइन-इन लिंक ईमेल पर भेजा गया" : "Sign-in link sent to email");
       setStep(2); setCountdown(OTP_RESEND_SECONDS);
     } catch (err) {
-      if (!handleAccountNotFound(err)) toast.error(err.response?.data?.message || t("app.error"));
+      console.error('Firebase email link error:', err);
+      if (err.code === 'auth/invalid-email') {
+        setErrors({ emailOtp: t("err.invalid_email") });
+      } else {
+        toast.error(err.message || t("app.error"));
+      }
     }
     finally { setLoading(false); }
   }
 
-  async function handleVerifyEmailOTP(e) {
-    e.preventDefault();
-    const cleanOTP = sanitize(emailOtpValue.trim());
-    const cleanEmail = sanitize(emailForOtp.trim());
-    if (!isValidOTP(cleanOTP)) { setErrors({ emailOtp: t("err.invalid_otp") }); return; }
-    setLoading(true); setErrors({});
+  // Handle return from email sign-in link
+  async function handleEmailLinkReturn(emailForSignIn) {
+    setLoading(true);
     try {
-      const res = await authAPI.verifyEmailOTP(cleanEmail, cleanOTP);
-      login(res.data.user, res.data.token);
-      toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
-      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+      const result = await signInWithEmailLink(firebaseAuth, emailForSignIn, window.location.href);
+      const idToken = await result.user.getIdToken();
+      const res = await authAPI.verifyEmailToken(idToken);
+      window.localStorage.removeItem('emailForSignIn');
+      if (res.data.isNewUser) {
+        toast.error(lang === "hi" ? "कोई खाता नहीं मिला। पहले रजिस्टर करें।" : "No account found. Please register first.");
+        navigate(customerNext !== "/" ? `/register?next=${encodeURIComponent(customerNext)}` : "/register");
+      } else {
+        login(res.data.user, res.data.token);
+        toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
+        navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+      }
     } catch (err) {
-      if (!handleAccountNotFound(err)) setErrors({ emailOtp: t("err.invalid_otp") });
-    }
-    finally { setLoading(false); }
+      console.error('Email link sign-in error:', err);
+      toast.error(err?.response?.data?.message || err.message || 'Sign-in failed.');
+    } finally { setLoading(false); }
   }
+
+
 
   // ── Email Password handler ──
   async function handleEmailLogin(e) {
@@ -334,36 +416,28 @@ export default function LoginPage() {
                         {errors.emailOtp && <p className="text-danger text-xs mt-1.5">{errors.emailOtp}</p>}
                       </div>
                       <button type="submit" disabled={loading} className="btn-primary w-full">
-                        {loading ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>{lang === "hi" ? "OTP भेजें" : "Send OTP"} <FiArrowRight size={16} /></>}
+                        {loading ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>{lang === "hi" ? "साइन-इन लिंक भेजें" : "Send Sign-in Link"} <FiArrowRight size={16} /></>}
                       </button>
                     </form>
                   )}
                   {step === 2 && (
-                    <form onSubmit={handleVerifyEmailOTP} className="space-y-4">
+                    <div className="space-y-4 text-center">
+                      <div className="text-4xl mb-2">📧</div>
                       <div className="text-sm text-[var(--color-accent)] bg-[var(--color-accent)]/5 rounded-xl p-3 border border-[var(--color-accent)]/10">
-                        {lang === "hi" ? "OTP भेजा गया:" : "OTP sent to:"} <strong>{emailForOtp}</strong>
+                        {lang === "hi" ? "साइन-इन लिंक भेजा गया:" : "Sign-in link sent to:"} <strong>{emailForOtp}</strong>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-[var(--color-body)] mb-1.5">{t("auth.otp")}</label>
-                        <input type="text" inputMode="numeric" maxLength={6} value={emailOtpValue}
-                          onChange={(e) => setEmailOtpValue(e.target.value.replace(/\D/g, ""))}
-                          placeholder={t("auth.otp_placeholder")}
-                          className={`input-field text-center text-xl tracking-[0.4em] font-mono ${errors.emailOtp ? "error" : ""}`}
-                          autoFocus />
-                        {errors.emailOtp && <p className="text-danger text-xs mt-1.5">{errors.emailOtp}</p>}
-                      </div>
-                      <button type="submit" disabled={loading} className="btn-primary w-full">
-                        {loading ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : t("auth.verify_otp")}
-                      </button>
-                      <div className="text-center text-sm">
+                      <p className="text-[var(--color-muted)] text-sm">
+                        {lang === "hi" ? "अपने ईमेल में लिंक पर क्लिक करके साइन इन करें" : "Click the link in your email to sign in"}
+                      </p>
+                      <div className="text-center text-sm pt-2">
                         {countdown > 0 ? (
                           <span className="text-[var(--color-muted)]">Resend in {countdown}s</span>
                         ) : (
-                          <button type="button" onClick={handleSendEmailOTP} className="text-[var(--color-primary)] font-semibold hover:underline">{t("auth.resend_otp")}</button>
+                          <button type="button" onClick={handleSendEmailOTP} className="text-[var(--color-primary)] font-semibold hover:underline">{lang === "hi" ? "लिंक दोबारा भेजें" : "Resend link"}</button>
                         )}
                         <button type="button" onClick={() => setStep(1)} className="ml-4 text-[var(--color-muted)] hover:text-[var(--color-body)] text-sm">{lang === "hi" ? "ईमेल बदलें" : "Change email"}</button>
                       </div>
-                    </form>
+                    </div>
                   )}
                 </motion.div>
               )}
@@ -413,6 +487,9 @@ export default function LoginPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Invisible reCAPTCHA container for Firebase Phone Auth */}
+      <div id="recaptcha-container"></div>
     </div>
   );
 }

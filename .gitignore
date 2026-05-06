@@ -12,3 +12,5 @@ backend/.env.*
 *.log
 backend/uploads/
 local_dump.sql
+firebase-service-account.json
+backend/firebase-service-account.json
