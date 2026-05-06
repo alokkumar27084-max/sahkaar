@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiMail, FiArrowRight, FiCheckCircle } from "react-icons/fi";
-import { authAPI } from "../../services/api";
+import { auth } from "../../config/firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
 import toast from "react-hot-toast";
 
 export default function ForgotPasswordPage() {
@@ -15,7 +16,7 @@ export default function ForgotPasswordPage() {
 
         setLoading(true);
         try {
-            await authAPI.forgotPassword(email);
+            await sendPasswordResetEmail(auth, email);
             setSuccess(true);
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to process request");

@@ -38,6 +38,12 @@ api.interceptors.response.use(
 export default api;
 
 export const authAPI = {
+  // Phone auth: Firebase handles OTP sending on client side
+  // Backend only receives Firebase ID token for verification
+  verifyPhoneToken: (idToken) => api.post("/auth/otp/verify", { idToken }),
+  // Email auth: Firebase handles email link on client side
+  verifyEmailToken: (idToken) => api.post("/auth/otp/email/verify", { idToken }),
+  // Legacy aliases (kept for backward compat)
   sendOTP: (phone) => api.post("/auth/otp/request", { phone }),
   verifyOTP: (phone, otp) => api.post("/auth/otp/verify", { phone, otp }),
   sendEmailOTP: (email) => api.post("/auth/otp/email/request", { email }),

@@ -28,6 +28,62 @@
   margin-bottom: var(--gap-sm);
 }
 
+/* Phone / Email method toggle */
+.method-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: var(--gap-lg);
+  padding: 4px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.method-btn {
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.method-btn:hover {
+  color: var(--white);
+  background: rgba(255,255,255,0.06);
+}
+.method-btn.active {
+  color: var(--white);
+  background: rgba(0,180,216,0.15);
+  box-shadow: 0 0 12px rgba(0,180,216,0.1);
+}
+
+/* Email link sent state */
+.email-sent-step {
+  text-align: center;
+  padding: var(--gap-lg) 0;
+}
+.email-sent-icon {
+  font-size: 3rem;
+  margin-bottom: var(--gap-md);
+}
+.btn-outline {
+  background: none;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  color: var(--gray-300);
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-outline:hover {
+  border-color: var(--cyan);
+  color: var(--white);
+}
+
 /* Phone input with +91 prefix */
 .phone-input-wrap {
   display: flex;
