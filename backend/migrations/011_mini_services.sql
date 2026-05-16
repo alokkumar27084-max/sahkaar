@@ -56,6 +56,10 @@ CREATE TABLE IF NOT EXISTS service_requests (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- ── Ensure Columns Exist (Idempotency) ──────────────────────────
+ALTER TABLE service_categories ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'chhota';
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'chhota';
+
 -- ── Indexes ─────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS idx_svc_cat_type ON service_categories(type);
 CREATE INDEX IF NOT EXISTS idx_svc_cat_active ON service_categories(is_active);
