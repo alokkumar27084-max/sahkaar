@@ -28,6 +28,8 @@ export default function SearchPage() {
   
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [savingLocation, setSavingLocation] = useState(false);
+  const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [autoSaveRequested, setAutoSaveRequested] = useState(false);
   const [compareList, setCompareList] = useState([]);
