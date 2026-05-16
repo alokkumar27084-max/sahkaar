@@ -62,6 +62,17 @@ CREATE INDEX IF NOT EXISTS idx_services_active ON services(is_active);
 CREATE INDEX IF NOT EXISTS idx_svc_req_status ON service_requests(status);
 CREATE INDEX IF NOT EXISTS idx_svc_req_created ON service_requests(created_at DESC);
 
--- NOTE: Seed data for Macro services is handled in later migrations (e.g., 019_seed_bada_services.sql).
+-- ── Seed: Macro Project Categories ──────────────────────────────
+INSERT INTO service_categories (name, name_hi, slug, description, description_hi, icon, display_order) VALUES
+  ('Home Construction', 'घर का निर्माण', 'home-construction', 'Complete house construction from foundation to finishing', 'नींव से लेकर फिनिशिंग तक पूरा मकान निर्माण', 'building', 1),
+  ('Home Renovation', 'घर का रेनोवेशन', 'home-renovation', 'Kitchen remodel, bathroom renovation, room extension', 'किचन रीमॉडल, बाथरूम रेनोवेशन, कमरा एक्सटेंशन', 'wrench', 2),
+  ('Interior Design', 'इंटीरियर डिज़ाइन', 'interior-design', 'Modular kitchen, false ceiling, furniture design, decor', 'मॉड्यूलर किचन, फॉल्स सीलिंग, फर्नीचर डिज़ाइन', 'palette', 3),
+  ('Commercial Projects', 'कमर्शियल प्रोजेक्ट्स', 'commercial-projects', 'Office construction, shop interiors, warehouse setup', 'ऑफिस निर्माण, दुकान इंटीरियर, वेयरहाउस सेटअप', 'landmark', 4),
+  ('Electrical Overhaul', 'इलेक्ट्रिकल ओवरहॉल', 'electrical-overhaul', 'Complete rewiring, panel upgrade, industrial electrical work', 'पूरी वायरिंग बदलना, पैनल अपग्रेड', 'cable', 5),
+  ('Plumbing Overhaul', 'प्लंबिंग ओवरहॉल', 'plumbing-overhaul', 'Complete plumbing renovation, water tank, drainage system', 'पूरी प्लंबिंग रेनोवेशन, पानी की टंकी, ड्रेनेज सिस्टम', 'pipette', 6)
+ON CONFLICT (slug) DO NOTHING;
+
+-- NOTE: Seed data for specific services is handled in 019_seed_bada_services.sql.
 -- Legacy 'chhota' seeds have been removed to align with the Macro-only model.
+
 
