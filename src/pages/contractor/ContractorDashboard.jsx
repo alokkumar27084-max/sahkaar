@@ -160,6 +160,7 @@ export default function ContractorDashboard() {
     { label: "WhatsApp Leads", value: profile?.leads_count || 0, icon: "message" },
     { label: "Rating", value: Number.isFinite(ratingValue) ? ratingValue.toFixed(1) : "-", icon: "rating" },
     { label: "Reviews", value: reviewCountValue, icon: "review" },
+    { label: "In Escrow", value: `₹${bookings.filter(b => b.payment_status === 'IN_ESCROW').reduce((acc, b) => acc + Number(b.amount), 0).toLocaleString()}`, icon: "briefcase" },
   ];
 
   return (
@@ -362,8 +363,8 @@ export default function ContractorDashboard() {
                                     <div className="bg-gradient-to-r from-[var(--color-surface)] to-[var(--color-bg)] p-5 border-b border-[var(--color-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded">
-                                                    {book.service_tier === "macro" ? "BADA KAAM" : "CHHOTA KAAM"}
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                                                    Macro Project
                                                 </span>
                                             </div>
                                             <h3 className="text-lg font-bold text-[var(--color-heading)]">{book.service_category}</h3>
@@ -387,7 +388,7 @@ export default function ContractorDashboard() {
                                         </div>
                                     </div>
                                     <div className="p-5 bg-[var(--color-bg)]/50">
-                                        <div className="grid sm:grid-cols-2 gap-4">
+                                        <div className="grid sm:grid-cols-2 gap-4 mb-4">
                                             <div>
                                                 <p className="text-[10px] uppercase font-bold text-[var(--color-muted)] mb-1">Customer</p>
                                                 <p className="text-sm font-semibold text-[var(--color-heading)]">{book.customer_name}</p>
@@ -398,6 +399,30 @@ export default function ContractorDashboard() {
                                                 <p className="text-xs text-[var(--color-body)] line-clamp-2 leading-relaxed">{book.location_address}</p>
                                             </div>
                                         </div>
+
+                                        {book.milestone_details && book.milestone_details.length > 0 && (
+                                            <div className="border-t border-[var(--color-border)] pt-4">
+                                                <p className="text-[10px] uppercase font-bold text-[var(--color-muted)] mb-3 flex items-center gap-2">
+                                                    <FiCheckCircle className="text-indigo-500" /> Milestone Tracking
+                                                </p>
+                                                <div className="space-y-2">
+                                                    {book.milestone_details.map((m, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center text-xs">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className={`w-2 h-2 rounded-full ${m.status === 'due_now' ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                                                                <span className="text-[var(--color-body)] font-medium">{m.title} ({m.percentage}%)</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="font-bold text-[var(--color-heading)]">₹{Number(m.amount).toLocaleString('en-IN')}</span>
+                                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${m.status === 'due_now' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                                    {m.status === 'due_now' ? 'IN ESCROW' : 'RELEASED'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}

@@ -1,44 +1,38 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import {
-  FiMapPin,
-  FiBriefcase,
-  FiLock,
-  FiCheckCircle,
-  FiChevronLeft,
-  FiCalendar,
-  FiShield,
-  FiCreditCard,
-} from "react-icons/fi";
+import { FiBriefcase, FiCalendar, FiCheckCircle, FiChevronLeft, FiCreditCard, FiLock, FiMapPin, FiShield } from "react-icons/fi";
+import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
-import { bookingAPI } from "../../services/api";
+import { bookingAPI, contractorAPI, quoteAPI } from "../../services/api";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import LocationSearchInput from "../../components/common/LocationSearchInput";
 import ContractorMapPanel from "../../components/common/ContractorMapPanel";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { inferServiceTier, getSuggestedProjectValue } from "../../utils/bookingPricing";
 import { readSavedLocation, saveLocationSnapshot } from "../../utils/locationStorage";
 import { reverseGeocodeCoords } from "../../utils/googleMaps";
-import toast from "react-hot-toast";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 const STEPS = [
   { id: 1, label: "Details" },
   { id: 2, label: "Location" },
-  { id: 3, label: "Pay" },
+  { id: 3, label: "Payment" },
 ];
 
+function money(value) {
+  return `Rs ${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
 export default function BookingCheckoutPage() {
-  useParams();
+  const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { lat, lng, address, loading: geoLoading, request: requestLocation, error: geoError } = useGeolocation();
-  const [contractor] = useState(state?.contractor || null);
-  const [notes, setNotes] = useState("");
+
+  const [contractor, setContractor] = useState(state?.contractor || null);
+  const [contractorLoading, setContractorLoading] = useState(!state?.contractor);
   const [serviceTier, setServiceTier] = useState(() => inferServiceTier(state?.contractor || null));
-  const [projectValue, setProjectValue] = useState(() =>
-    getSuggestedProjectValue(state?.contractor || null, inferServiceTier(state?.contractor || null))
-  );
+  const [projectValue, setProjectValue] = useState(() => getSuggestedProjectValue(state?.contractor || null, inferServiceTier(state?.contractor || null)));
   const [pricing, setPricing] = useState(null);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [addressInput, setAddressInput] = useState(() => readSavedLocation()?.address || "");
@@ -47,45 +41,84 @@ export default function BookingCheckoutPage() {
     return saved?.lat && saved?.lng ? saved : null;
   });
   const [scheduledFor, setScheduledFor] = useState("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [quote, setQuote] = useState(null);
+  const [loadingQuote, setLoadingQuote] = useState(!!state?.quoteId);
 
-  // Fix stale localStorage / old builds that stored the literal "Selected Location"
+  useEffect(() => {
+    let active = true;
+    if (contractor || !id) {
+      setContractorLoading(false);
+      return undefined;
+    }
+    async function loadContractor() {
+      setContractorLoading(true);
+      try {
+        const res = await contractorAPI.getById(id);
+        if (!active) return;
+        const nextContractor = res.data.contractor;
+        setContractor(nextContractor);
+        const nextTier = inferServiceTier(nextContractor);
+        setServiceTier(nextTier);
+        setProjectValue(getSuggestedProjectValue(nextContractor, nextTier));
+      } catch {
+        toast.error("Contractor details could not be loaded.");
+        navigate("/search");
+      } finally {
+        if (active) setContractorLoading(false);
+      }
+    }
+    loadContractor();
+    return () => {
+      active = false;
+    };
+  }, [contractor, id, navigate]);
+
+  useEffect(() => {
+    if (!state?.quoteId) return;
+    let active = true;
+    async function loadQuote() {
+      setLoadingQuote(true);
+      try {
+        const res = await quoteAPI.getQuoteById(state.quoteId);
+        if (active) {
+          setQuote(res.data.quote);
+          setProjectValue(res.data.quote.total_amount);
+          setServiceTier("custom");
+        }
+      } catch (err) {
+        toast.error("Failed to load quote details.");
+      } finally {
+        if (active) setLoadingQuote(false);
+      }
+    }
+    loadQuote();
+    return () => { active = false; };
+  }, [state?.quoteId]);
+
   useEffect(() => {
     let cancelled = false;
     const saved = readSavedLocation();
-    if (!saved?.lat || !saved?.lng) return;
-    const a = (saved.address || "").trim().toLowerCase();
-    if (a && a !== "selected location" && a !== "location detected") return;
+    if (!saved?.lat || !saved?.lng) return undefined;
+    const currentAddress = (saved.address || "").trim().toLowerCase();
+    if (currentAddress && currentAddress !== "selected location" && currentAddress !== "location detected") return undefined;
 
     (async () => {
       const resolved =
         (await reverseGeocodeCoords(saved.lat, saved.lng)) ||
         `Near ${Number(saved.lat).toFixed(5)}, ${Number(saved.lng).toFixed(5)}`;
       if (cancelled) return;
+      const snapshot = { address: resolved, lat: Number(saved.lat), lng: Number(saved.lng) };
       setAddressInput(resolved);
-      const snap = { address: resolved, lat: Number(saved.lat), lng: Number(saved.lng) };
-      setSelectedLocation(snap);
-      saveLocationSnapshot(snap);
+      setSelectedLocation(snapshot);
+      saveLocationSnapshot(snapshot);
     })();
 
     return () => {
       cancelled = true;
     };
   }, []);
-
-  const stepProgress = useMemo(() => {
-    let s = 1;
-    if (selectedLocation?.lat && selectedLocation?.lng && addressInput?.trim()) s = 2;
-    if (s === 2 && pricing && !pricingLoading) s = 3;
-    return s;
-  }, [selectedLocation, addressInput, pricing, pricingLoading]);
-
-  useEffect(() => {
-    if (!contractor) {
-      toast.error("Contractor details missing.");
-      navigate("/search");
-    }
-  }, [contractor, navigate]);
 
   useEffect(() => {
     if (!address || !lat || !lng) return;
@@ -96,14 +129,15 @@ export default function BookingCheckoutPage() {
   }, [address, lat, lng]);
 
   useEffect(() => {
-    if (!contractor) return;
+    if (!contractor || quote) return undefined;
     let active = true;
     async function fetchQuote() {
       setPricingLoading(true);
       try {
         const res = await bookingAPI.quote({
           contractorId: contractor.id,
-          serviceTier,
+          quoteId: state?.quoteId,
+          serviceTier: quote ? "custom" : serviceTier,
           estimatedProjectValue: projectValue,
         });
         if (active) setPricing(res.data.data);
@@ -119,6 +153,12 @@ export default function BookingCheckoutPage() {
     };
   }, [contractor, projectValue, serviceTier]);
 
+  const stepProgress = useMemo(() => {
+    if (pricing && !pricingLoading) return 3;
+    if (selectedLocation?.lat && selectedLocation?.lng && addressInput?.trim()) return 2;
+    return 1;
+  }, [addressInput, pricing, pricingLoading, selectedLocation]);
+
   const loadRazorpayScript = useCallback(
     () =>
       new Promise((resolve) => {
@@ -133,20 +173,22 @@ export default function BookingCheckoutPage() {
   );
 
   async function handleBookAndPay() {
-    if (!selectedLocation?.lat || !selectedLocation?.lng || !addressInput?.trim()) {
-      toast.error("Please provide your location first to book.");
+    if (!selectedLocation?.lat || !selectedLocation?.lng || !addressInput.trim()) {
+      toast.error("Please pin your service location first.");
       return;
     }
     if (!pricing) {
-      toast.error("Payment details are still loading. Please wait a moment.");
+      toast.error("Payment quote is still loading.");
       return;
     }
+
     setLoading(true);
     try {
       const res = await bookingAPI.create({
         contractorId: contractor.id,
+        quoteId: state?.quoteId,
         serviceCategory: contractor.category || contractor.trade || "General Service",
-        serviceTier,
+        serviceTier: quote ? "custom" : serviceTier,
         estimatedProjectValue: projectValue,
         notes,
         locationAddress: addressInput,
@@ -156,31 +198,25 @@ export default function BookingCheckoutPage() {
         scheduledFor: scheduledFor || null,
       });
       const orderData = res.data.data;
-      if (!orderData.razorpayOrderId) {
-        toast.success("Booking created and protected on the platform.");
-        setLoading(false);
-        navigate("/customer/dashboard");
-        return;
-      }
 
       if (orderData.razorpayKey === "mock_key_only_for_dev") {
-        toast.loading("Simulating payment (dev only)...", { id: "mock_pay" });
+        toast.loading("Simulating payment in development...", { id: "mock_pay" });
         setTimeout(async () => {
           try {
             await bookingAPI.verify({
               razorpay_order_id: orderData.razorpayOrderId,
-              razorpay_payment_id: "mock_payment_" + Date.now(),
+              razorpay_payment_id: `mock_payment_${Date.now()}`,
               razorpay_signature: "mock_signature",
               booking_id: orderData.booking.id,
             });
-            toast.success("Payment secured in escrow (mock). Booking confirmed!", { id: "mock_pay" });
+            toast.success("Payment secured in escrow. Booking confirmed.", { id: "mock_pay" });
             navigate("/customer/dashboard");
           } catch {
             toast.error("Mock payment verification failed.", { id: "mock_pay" });
           } finally {
             setLoading(false);
           }
-        }, 1200);
+        }, 900);
         return;
       }
 
@@ -192,15 +228,20 @@ export default function BookingCheckoutPage() {
       }
 
       const amountPaise = Math.round(Number(orderData.pricing?.amount || pricing.amount || 0) * 100);
-
-      const options = {
+      const rzp = new window.Razorpay({
         key: orderData.razorpayKey,
         amount: amountPaise,
         currency: "INR",
         name: "Thekedaar",
-        description: `Escrow booking — ${contractor.category || contractor.trade || "Service"}`,
+        description: `Escrow booking - ${contractor.category || contractor.trade || "Service"}`,
         order_id: orderData.razorpayOrderId,
-        handler: async function (response) {
+        prefill: {
+          name: user?.name || "",
+          email: user?.email || "",
+          contact: user?.phone || "",
+        },
+        theme: { color: "#6366f1" },
+        handler: async (response) => {
           setLoading(true);
           try {
             await bookingAPI.verify({
@@ -209,7 +250,7 @@ export default function BookingCheckoutPage() {
               razorpay_signature: response.razorpay_signature,
               booking_id: orderData.booking.id,
             });
-            toast.success("Payment secured in escrow. Booking confirmed!");
+            toast.success("Payment secured in escrow. Booking confirmed.");
             navigate("/customer/dashboard");
           } catch {
             toast.error("Payment verification failed. Contact support with your order ID.");
@@ -218,22 +259,12 @@ export default function BookingCheckoutPage() {
           }
         },
         modal: {
-          ondismiss: function () {
-            setLoading(false);
-          },
+          ondismiss: () => setLoading(false),
         },
-        prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
-          contact: user?.phone || "",
-        },
-        theme: { color: "#6366f1" },
-      };
+      });
 
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (response) {
-        const msg = response?.error?.description || response?.error?.reason || "Payment failed";
-        toast.error(msg);
+      rzp.on("payment.failed", (response) => {
+        toast.error(response?.error?.description || response?.error?.reason || "Payment failed");
         setLoading(false);
       });
       rzp.open();
@@ -243,9 +274,9 @@ export default function BookingCheckoutPage() {
     }
   }
 
-  if (!contractor) {
+  if (!contractor || contractorLoading || loadingQuote) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center pt-24">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] pt-24">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -253,107 +284,77 @@ export default function BookingCheckoutPage() {
 
   const payableNow = pricing?.amount || 0;
   const initial = contractor.business_name?.[0] || contractor.name?.[0] || "?";
+  const displayName = contractor.business_name || contractor.name || contractor.user_name || "Contractor";
 
   return (
-    <div className="bg-[var(--color-bg)] min-h-screen pt-24 pb-16 px-4 md:px-6">
-      <div className="max-w-6xl mx-auto">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="flex items-center text-[var(--color-muted)] hover:text-[var(--color-heading)] mb-6 transition-colors text-sm font-medium"
-        >
+    <main className="min-h-screen bg-[var(--color-bg)] px-4 pb-16 pt-24 md:px-6">
+      <div className="mx-auto max-w-6xl">
+        <button type="button" onClick={() => navigate(-1)} className="mb-6 flex items-center text-sm font-bold text-[var(--color-muted)] hover:text-[var(--color-heading)]">
           <FiChevronLeft className="mr-1" size={18} /> Back
         </button>
 
-        {/* Hero strip */}
-        <div className="relative overflow-hidden rounded-3xl border border-[var(--color-border)] bg-gradient-to-br from-indigo-500/10 via-[var(--color-surface)] to-cyan-500/5 p-6 md:p-8 mb-8">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_100%_0%,rgba(99,102,241,0.12),transparent)] pointer-events-none" />
-          <div className="relative">
-            <p className="text-[var(--color-primary)] text-[10px] md:text-[11px] font-bold uppercase tracking-[0.25em] mb-2">
-              Secure payment
-            </p>
-            <h1 className="font-display text-2xl md:text-4xl font-extrabold text-[var(--color-heading)] tracking-tight mb-2">
-              Book & pay with escrow
-            </h1>
-            <p className="text-[var(--color-muted)] text-sm md:text-base max-w-2xl leading-relaxed">
-              You’ll review everything below, then the{" "}
-              <strong className="text-[var(--color-heading)]">Razorpay</strong> checkout opens in a secure window to
-              complete payment. Funds stay protected until work milestones are met.
-            </p>
-            <div className="flex flex-wrap gap-3 mt-5">
-              {STEPS.map((s, i) => (
-                <div
-                  key={s.id}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                    stepProgress >= s.id
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-heading)]"
-                      : "border-[var(--color-border)] text-[var(--color-muted)]"
-                  }`}
-                >
-                  <span
-                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                      stepProgress >= s.id ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-border)] text-[var(--color-muted)]"
-                    }`}
-                  >
-                    {stepProgress > s.id ? "✓" : s.id}
-                  </span>
-                  {s.label}
-                  {i < STEPS.length - 1 && <span className="hidden sm:inline text-[var(--color-border)] mx-1">→</span>}
-                </div>
-              ))}
-            </div>
+        <section className="mb-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 md:p-8">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-primary)]">Secure checkout</p>
+          <h1 className="font-display text-3xl font-black text-[var(--color-heading)] md:text-5xl">Book with escrow protection</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] md:text-base">
+            Review the job, pin the service location, and continue to Razorpay. Your payment is tracked against this booking before work begins.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            {STEPS.map((step) => (
+              <span
+                key={step.id}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${
+                  stepProgress >= step.id ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-heading)]" : "border-[var(--color-border)] text-[var(--color-muted)]"
+                }`}
+              >
+                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${stepProgress > step.id ? "bg-emerald-500 text-white" : stepProgress === step.id ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-border)]"}`}>
+                  {stepProgress > step.id ? "✓" : step.id}
+                </span>
+                {step.label}
+              </span>
+            ))}
           </div>
-        </div>
+        </section>
 
-        <div className="grid lg:grid-cols-[1fr_minmax(300px,380px)] gap-8 lg:gap-10 items-start">
-          {/* Main column */}
-          <div className="space-y-8">
-            <section className="glass-card p-6 md:p-8 rounded-2xl space-y-6">
-              <h2 className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-[0.15em]">Professional</h2>
-              <div className="flex items-center gap-4 bg-[var(--color-surface)] p-4 rounded-2xl border border-[var(--color-border)]">
-                <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-[var(--color-primary)]/20 to-cyan-500/10 text-[var(--color-primary)] font-bold flex items-center justify-center text-xl shrink-0 ring-2 ring-[var(--color-border)]">
+        <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
+          <div className="space-y-6">
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Professional</p>
+              <div className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-xl font-black text-white">
                   {initial}
                 </div>
                 <div>
-                  <h3 className="text-lg md:text-xl font-bold text-[var(--color-heading)]">
-                    {contractor.business_name || contractor.name}
-                  </h3>
-                  <p className="text-[var(--color-primary)] font-medium text-sm flex items-center gap-1.5 mt-1">
+                  <h2 className="text-xl font-black text-[var(--color-heading)]">{displayName}</h2>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-[var(--color-primary)]">
                     <FiBriefcase size={14} /> {contractor.category || contractor.trade || "General Service"}
                   </p>
                 </div>
               </div>
             </section>
 
-            <section className="glass-card p-6 md:p-8 rounded-2xl space-y-4">
-              <h2 className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-[0.15em]">Job type</h2>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {[
-                  { id: "quick", title: "Chhota Kaam", copy: "Full amount held in escrow until completion." },
-                  { id: "macro", title: "Bada Kaam", copy: "Milestone-style plan for larger projects." },
-                ].map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => {
-                      setServiceTier(option.id);
-                      setProjectValue(getSuggestedProjectValue(contractor, option.id));
-                    }}
-                    className={`rounded-2xl border p-4 text-left transition-all ${
-                      serviceTier === option.id
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/8 shadow-md ring-1 ring-[var(--color-primary)]/20"
-                        : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/30"
-                    }`}
-                  >
-                    <p className="font-semibold text-[var(--color-heading)]">{option.title}</p>
-                    <p className="mt-1 text-sm text-[var(--color-body)] leading-snug">{option.copy}</p>
-                  </button>
-                ))}
-              </div>
-            </section>
 
-            <section className="glass-card p-6 md:p-8 rounded-2xl space-y-4">
-              <h2 className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-[0.15em]">Service location</h2>
+
+            {quote && (
+              <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+                <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Quotation details</p>
+                <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+                  {quote.items.map((item, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="text-[var(--color-body)]">{item.title}</span>
+                      <span className="font-bold text-[var(--color-heading)]">{money(item.amount)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between border-t border-[var(--color-border)] pt-2 font-black text-[var(--color-heading)]">
+                    <span>Quoted Total</span>
+                    <span>{money(quote.total_amount)}</span>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Service location</p>
               <LocationSearchInput
                 value={addressInput}
                 onChange={setAddressInput}
@@ -362,44 +363,28 @@ export default function BookingCheckoutPage() {
                   setAddressInput(selection.address);
                   saveLocationSnapshot(selection);
                 }}
-                placeholder="Search address, society, or landmark"
+                placeholder="Search address, society, market, or landmark"
               />
-              <div
-                className={`p-5 rounded-2xl border ${
-                  selectedLocation?.lat
-                    ? "border-emerald-500/30 bg-emerald-500/[0.04]"
-                    : "border-[var(--color-border)] bg-[var(--color-surface)]"
-                }`}
-              >
-                {!selectedLocation?.lat || !selectedLocation?.lng ? (
-                  <div className="text-center py-2">
-                    <p className="text-[var(--color-body)] mb-4 text-sm">
-                      Pin your location so the professional can reach you on time.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => requestLocation()}
-                      disabled={geoLoading}
-                      className="btn-outline-cyan mx-auto text-sm"
-                    >
-                      {geoLoading ? <LoadingSpinner size="sm" /> : <><FiMapPin className="mr-2 inline" /> Use my current location</>}
-                    </button>
-                    {geoError && <p className="text-rose-500 mt-3 text-xs">{geoError}</p>}
-                  </div>
-                ) : (
-                  <div className="flex items-start gap-3">
-                    <FiCheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={20} />
+              <div className={`mt-4 rounded-xl border p-4 ${selectedLocation?.lat ? "border-emerald-500/30 bg-emerald-500/[0.06]" : "border-[var(--color-border)] bg-[var(--color-bg)]"}`}>
+                {selectedLocation?.lat && selectedLocation?.lng ? (
+                  <div className="flex gap-3">
+                    <FiCheckCircle className="mt-0.5 shrink-0 text-emerald-600" size={20} />
                     <div>
-                      <p className="text-[var(--color-heading)] font-semibold mb-1">Location saved</p>
-                      <p className="text-sm text-[var(--color-body)] leading-relaxed">{addressInput}</p>
-                      <button
-                        type="button"
-                        onClick={() => requestLocation()}
-                        className="text-[var(--color-primary)] text-xs mt-2 font-semibold hover:underline"
-                      >
-                        Update location
+                      <p className="font-bold text-[var(--color-heading)]">Location pinned</p>
+                      <p className="mt-1 text-sm text-[var(--color-body)]">{addressInput}</p>
+                      <button type="button" onClick={() => requestLocation()} className="mt-2 text-xs font-bold text-[var(--color-primary)] hover:underline">
+                        Use current GPS instead
                       </button>
                     </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="mb-3 text-sm text-[var(--color-body)]">Pin your location so the contractor can reach the right place.</p>
+                    <button type="button" onClick={() => requestLocation()} disabled={geoLoading} className="btn-secondary mx-auto">
+                      {geoLoading ? <LoadingSpinner size="sm" /> : <FiMapPin />}
+                      Use current location
+                    </button>
+                    {geoError && <p className="mt-2 text-xs font-semibold text-rose-500">{geoError}</p>}
                   </div>
                 )}
               </div>
@@ -414,103 +399,75 @@ export default function BookingCheckoutPage() {
               />
             )}
 
-            <section className="glass-card p-6 md:p-8 rounded-2xl space-y-4">
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <h2 className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-[0.15em] mb-3">
+                <label className={quote ? "opacity-50 pointer-events-none" : ""}>
+                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">
                     {serviceTier === "macro" ? "Estimated project value" : "Service budget"}
-                  </h2>
-                  <input
-                    type="number"
-                    min={149}
-                    step="50"
-                    value={projectValue}
-                    onChange={(e) => setProjectValue(Number(e.target.value) || 0)}
-                    className="input-field"
-                    placeholder="₹ Amount"
-                  />
-                </div>
-                <div>
-                  <h2 className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-[0.15em] mb-3">Schedule</h2>
+                  </span>
+                  <input className="input-field" type="number" min={149} step="50" value={projectValue} onChange={(event) => setProjectValue(Number(event.target.value) || 0)} placeholder="Rs Amount" readOnly={!!quote} />
+                </label>
+                <label>
+                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Schedule</span>
                   <div className="relative">
-                    <FiCalendar className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)] pointer-events-none" />
-                    <input
-                      type="datetime-local"
-                      value={scheduledFor}
-                      onChange={(e) => setScheduledFor(e.target.value)}
-                      className="input-field !pl-10"
-                    />
+                    <FiCalendar className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
+                    <input className="input-field !pl-10" type="datetime-local" value={scheduledFor} onChange={(event) => setScheduledFor(event.target.value)} />
                   </div>
-                </div>
+                </label>
               </div>
-              <div>
-                <h2 className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-[0.15em] mb-3">Notes (optional)</h2>
-                <textarea
-                  className="input-field min-h-[96px] resize-y"
-                  placeholder="Access instructions, parking, materials…"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
+              <label className="mt-4 block">
+                <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Notes</span>
+                <textarea className="input-field min-h-[96px] resize-y" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Access instructions, parking, materials..." />
+              </label>
             </section>
           </div>
 
-          {/* Sticky summary */}
-          <aside className="lg:sticky lg:top-28 space-y-4">
-            <div className="glass-card p-6 md:p-7 rounded-2xl border border-[var(--color-border)] shadow-xl shadow-black/5">
-              <div className="flex items-center gap-2 mb-4 text-[var(--color-heading)]">
+          <aside className="lg:sticky lg:top-28">
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-xl">
+              <div className="mb-4 flex items-center gap-2 text-[var(--color-heading)]">
                 <FiCreditCard className="text-[var(--color-primary)]" />
-                <span className="font-display font-bold text-lg">Payment summary</span>
+                <h2 className="font-display text-xl font-black">Payment summary</h2>
               </div>
 
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 mb-4">
-                <div className="flex justify-between items-start gap-3 text-sm">
-                  <span className="text-[var(--color-muted)]">
-                    {serviceTier === "macro" ? "Project estimate" : "Protected total"}
-                  </span>
-                  <span className="font-bold text-[var(--color-heading)]">
-                    ₹{Number(pricing?.estimatedProjectValue || projectValue || 0).toLocaleString("en-IN")}
-                  </span>
+              <div className="mb-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+                <div className="flex justify-between gap-4 text-sm">
+                  <span className="text-[var(--color-muted)]">{serviceTier === "macro" ? "Project estimate" : "Protected total"}</span>
+                  <span className="font-black text-[var(--color-heading)]">{money(pricing?.estimatedProjectValue || projectValue)}</span>
                 </div>
                 {pricingLoading ? (
-                  <p className="mt-3 text-xs text-[var(--color-muted)]">Calculating escrow…</p>
+                  <p className="mt-3 text-xs text-[var(--color-muted)]">Calculating escrow...</p>
                 ) : pricing?.milestoneDetails?.length ? (
-                  <div className="mt-4 space-y-2 pt-4 border-t border-[var(--color-border)]">
+                  <div className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-4">
                     {pricing.milestoneDetails.map((item) => (
-                      <div key={item.title} className="flex justify-between text-xs">
+                      <div key={item.title} className="flex justify-between gap-4 text-xs">
                         <span className="text-[var(--color-body)]">{item.title}</span>
-                        <span className="font-semibold text-[var(--color-heading)]">
-                          ₹{Number(item.amount || 0).toLocaleString("en-IN")}
-                        </span>
+                        <span className="font-bold text-[var(--color-heading)]">{money(item.amount)}</span>
                       </div>
                     ))}
                   </div>
                 ) : null}
               </div>
 
-              <div className="flex justify-between items-baseline mb-2">
-                <span className="text-[var(--color-heading)] font-semibold">Pay now</span>
-                <span className="text-3xl font-black text-[var(--color-heading)] tracking-tight">
-                  ₹{Number(payableNow || 0).toLocaleString("en-IN")}
-                </span>
+              <div className="mb-2 flex items-baseline justify-between gap-4">
+                <span className="font-bold text-[var(--color-heading)]">Pay now</span>
+                <span className="text-3xl font-black text-[var(--color-heading)]">{money(payableNow)}</span>
               </div>
-              <p className="text-[11px] text-[var(--color-muted)] mb-6 leading-relaxed">
-                This is the amount collected today into escrow for this booking. GST may apply as per invoice from the
-                professional.
+              <p className="mb-6 text-xs leading-relaxed text-[var(--color-muted)]">
+                This amount is collected for the booking and tracked against Razorpay payment verification.
               </p>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex gap-3 p-3 rounded-xl bg-indigo-500/[0.06] border border-indigo-500/15">
-                  <FiLock className="text-indigo-500 shrink-0 mt-0.5" size={18} />
-                  <p className="text-xs text-[var(--color-body)] leading-relaxed">
-                    <strong className="text-[var(--color-heading)]">Escrow.</strong>{" "}
-                    {pricing?.customerCopy || "Funds are held safely and released as work is completed."}
+              <div className="mb-6 space-y-3">
+                <div className="flex gap-3 rounded-xl border border-indigo-500/15 bg-indigo-500/[0.06] p-3">
+                  <FiLock className="mt-0.5 shrink-0 text-indigo-500" size={18} />
+                  <p className="text-xs leading-relaxed text-[var(--color-body)]">
+                    <strong className="text-[var(--color-heading)]">Escrow protection.</strong>{" "}
+                    {pricing?.customerCopy || "Funds are recorded safely and released as work is completed."}
                   </p>
                 </div>
-                <div className="flex gap-3 p-3 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/15">
-                  <FiShield className="text-emerald-600 shrink-0 mt-0.5" size={18} />
-                  <p className="text-xs text-[var(--color-body)] leading-relaxed">
-                    Payments are processed by <strong>Razorpay</strong>. We never store your card on our servers.
+                <div className="flex gap-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
+                  <FiShield className="mt-0.5 shrink-0 text-emerald-600" size={18} />
+                  <p className="text-xs leading-relaxed text-[var(--color-body)]">
+                    Payments are processed by Razorpay. Card details are never stored on Thekedaar servers.
                   </p>
                 </div>
               </div>
@@ -519,25 +476,17 @@ export default function BookingCheckoutPage() {
                 type="button"
                 onClick={handleBookAndPay}
                 disabled={loading || !selectedLocation?.lat || pricingLoading || !pricing}
-                className={`btn-primary w-full h-14 text-base font-bold shadow-glow ${
-                  !selectedLocation?.lat || loading || pricingLoading || !pricing ? "opacity-60 cursor-not-allowed" : ""
-                }`}
+                className={`btn-primary h-14 w-full justify-center text-base font-black ${loading || !selectedLocation?.lat || pricingLoading || !pricing ? "cursor-not-allowed opacity-60" : ""}`}
               >
-                {loading ? (
-                  <LoadingSpinner />
-                ) : (
-                  <>
-                    Continue to Razorpay — ₹{Number(payableNow || 0).toLocaleString("en-IN")}
-                  </>
-                )}
+                {loading ? <LoadingSpinner /> : `Continue to Razorpay - ${money(payableNow)}`}
               </button>
-              <p className="text-center text-[10px] text-[var(--color-muted)] mt-3 uppercase tracking-wider">
-                Secure checkout · Powered by Razorpay
+              <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
+                Secure checkout | Powered by Razorpay
               </p>
-            </div>
+            </section>
           </aside>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

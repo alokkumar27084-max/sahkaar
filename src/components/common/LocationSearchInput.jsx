@@ -8,6 +8,7 @@ export default function LocationSearchInput({
   onSelect,
   placeholder = "Search your area, landmark, or address",
   disabled = false,
+  className = "",
 }) {
   const [predictions, setPredictions] = useState([]);
   const [loadingPredictions, setLoadingPredictions] = useState(false);
@@ -94,7 +95,7 @@ export default function LocationSearchInput({
         onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="input-field !pl-10"
+        className={`input-field !pl-10 ${className}`}
       />
 
       {canUseGoogleMaps && predictions.length > 0 && (

@@ -4,25 +4,7 @@ function toAmount(value, fallback = 0) {
 }
 
 export function inferServiceTier(contractor) {
-  if (!contractor) return "quick";
-
-  const category = String(contractor.category || contractor.categories?.[0] || "").toLowerCase();
-  const macroCategories = [
-    "construction",
-    "renovation",
-    "interior",
-    "civil",
-    "commercial",
-    "event",
-    "architecture",
-    "waterproofing",
-  ];
-
-  if (contractor.is_responsibility_model || macroCategories.some((item) => category.includes(item))) {
-    return "macro";
-  }
-
-  return "quick";
+  return "macro";
 }
 
 export function getSuggestedProjectValue(contractor, serviceTier) {

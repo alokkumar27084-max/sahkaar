@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /macro-services
+Allow: /search
+Allow: /contractor/
+Allow: /services/
+Disallow: /admin/
+Disallow: /customer/dashboard
+Disallow: /contractor/dashboard
+Disallow: /contractor/edit
+Disallow: /chat
+Disallow: /checkout/
+Disallow: /profile
+Disallow: /forgot-password
+Disallow: /reset-password
+
+Sitemap: https://thekedaar.com/sitemap.xml

@@ -1,7 +1,11 @@
 import axios from "axios";
 
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:5000/api" : "/api");
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "https://thekedaar-api.onrender.com/api",
+  baseURL: API_BASE_URL,
   withCredentials: true,
   timeout: 15000,
   headers: {
@@ -26,7 +30,6 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const url = error.config?.url || "";
-      // Don't redirect for /auth/me — AuthContext handles that gracefully
       if (!url.includes("/auth/me") && !window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
       }
@@ -38,12 +41,8 @@ api.interceptors.response.use(
 export default api;
 
 export const authAPI = {
-  // Phone auth: Firebase handles OTP sending on client side
-  // Backend only receives Firebase ID token for verification
   verifyPhoneToken: (idToken) => api.post("/auth/otp/verify", { idToken }),
-  // Email auth: Firebase handles email link on client side
   verifyEmailToken: (idToken) => api.post("/auth/otp/email/verify", { idToken }),
-  // Legacy aliases (kept for backward compat)
   sendOTP: (phone) => api.post("/auth/otp/request", { phone }),
   verifyOTP: (phone, otp) => api.post("/auth/otp/verify", { phone, otp }),
   sendEmailOTP: (email) => api.post("/auth/otp/email/request", { email }),
@@ -59,6 +58,7 @@ export const authAPI = {
 };
 
 export const contractorAPI = {
+  getPublicStats: () => api.get("/contractors/public-stats"),
   getFeatured: () => api.get("/contractors/featured"),
   search: (params) => api.get("/contractors/search", { params }),
   getById: (id) => api.get(`/contractors/${id}`),
@@ -68,7 +68,6 @@ export const contractorAPI = {
   updateMe: (data) => api.put("/contractors/me", data),
   update: (id, data) => api.put(`/contractors/${id}`, data),
   setAvail: (available) => api.patch("/contractors/me/availability", { available }),
-  // Multipart uploads
   uploadMyPhoto: (formData) => api.post("/contractors/photo", formData, { headers: { "Content-Type": "multipart/form-data" } }),
   uploadMyWork: (formData) => api.post("/contractors/portfolio", formData, { headers: { "Content-Type": "multipart/form-data" } }),
   setMyPortfolio: (photos) => api.put("/contractors/portfolio", { photos }),
@@ -78,7 +77,6 @@ export const contractorAPI = {
   requestVerification: (id) => api.post(`/contractors/${id}/request-verification`),
   addPortfolioItem: (id, formData) => api.post(`/contractors/${id}/portfolio-items`, formData, { headers: { "Content-Type": "multipart/form-data" } }),
   removePortfolioItem: (id, itemId) => api.delete(`/contractors/${id}/portfolio-items/${itemId}`),
-  // Base64 uploads
   uploadPhotoBase64: (base64) => api.post("/contractors/photo/base64", { image: base64 }),
   uploadWorkBase64: (base64Array) => api.post("/contractors/portfolio/base64", { images: base64Array }),
   addReview: (id, data) => api.post(`/contractors/${id}/reviews`, data),
@@ -95,30 +93,23 @@ export const adminAPI = {
   getStats: () => api.get("/admin/stats"),
   getActivity: () => api.get("/admin/activity"),
   getAnalytics: (days) => api.get("/admin/analytics", { params: { days } }),
-
   getUsers: (params) => api.get("/admin/users", { params }),
   getUser: (id) => api.get(`/admin/users/${id}`),
   createUser: (data) => api.post("/admin/users", data),
   updateUser: (id, data) => api.patch(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
-
   getContractors: (params) => api.get("/admin/contractors", { params }),
   getPendingContractors: () => api.get("/admin/contractors/pending"),
   createContractor: (data) => api.post("/admin/contractors", data),
   updateContractor: (id, data) => api.patch(`/admin/contractors/${id}`, data),
   verifyContractor: (id, data) => api.patch(`/admin/contractors/${id}/verify`, data),
   deleteContractor: (id) => api.delete(`/admin/contractors/${id}`),
-
   getReports: (status = "pending") => api.get("/admin/reports", { params: { status } }),
   resolveReport: (id, status) => api.patch(`/admin/reports/${id}`, { status }),
-
   getReviews: (params) => api.get("/admin/reviews", { params }),
   deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
-
   getSettings: () => api.get("/admin/settings"),
   updateSettings: (data) => api.put("/admin/settings", data),
-
-  // Service management
   getServiceCategories: (params) => api.get("/admin/service-categories", { params }),
   createServiceCategory: (data) => api.post("/admin/service-categories", data),
   updateServiceCategory: (id, data) => api.patch(`/admin/service-categories/${id}`, data),
@@ -145,6 +136,9 @@ export const chatAPI = {
   initChat: (contractorId) => api.post("/chat/init", { contractorId }),
   getMessages: (chatId) => api.get(`/chat/${chatId}/messages`),
   sendMessage: (chatId, content) => api.post(`/chat/${chatId}/messages`, { content }),
+  sendImage: (chatId, formData) => api.post(`/chat/${chatId}/messages/media`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  }),
 };
 
 export const bookingAPI = {
@@ -170,7 +164,9 @@ export const profileAPI = {
     }),
 };
 
-export const directoryAPI = {
-  list: (params) => api.get("/directory", { params }),
-  create: (data) => api.post("/directory", data),
+export const quoteAPI = {
+  createQuote: (data) => api.post("/quotes", data),
+  getQuotesByChat: (chatId) => api.get(`/quotes/chat/${chatId}`),
+  getQuoteById: (id) => api.get(`/quotes/${id}`),
+  updateQuoteStatus: (quoteId, status) => api.put(`/quotes/${quoteId}/status`, { status }),
 };

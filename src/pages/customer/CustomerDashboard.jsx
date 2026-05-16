@@ -184,8 +184,8 @@ export default function CustomerDashboard() {
                         {/* Recent Service Requests (Small cards) */}
                         <motion.section initial="hidden" animate="show" variants={stagger}>
                             <div className="flex items-center justify-between mb-5">
-                                <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight">Rapid Requests</h2>
-                                <Link to="/quick-services" className="text-sm font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] flex items-center gap-1 transition-colors">
+                                <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight">Recent Requests</h2>
+                                <Link to="/search" className="text-sm font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] flex items-center gap-1 transition-colors">
                                     Book New <FiArrowRight size={14} />
                                 </Link>
                             </div>
@@ -197,8 +197,8 @@ export default function CustomerDashboard() {
                             ) : requests.length === 0 ? (
                                 <div className="glass-card p-10 text-center flex flex-col items-center justify-center border-dashed">
                                     <div className="w-12 h-12 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-4"><FiClock className="text-[var(--color-muted)]" size={20} /></div>
-                                    <p className="text-[var(--color-heading)] font-semibold mb-1">No rapid requests</p>
-                                    <p className="text-[var(--color-muted)] text-sm mb-4">Request instant services like AC repair or plumbing.</p>
+                                    <p className="text-[var(--color-heading)] font-semibold mb-1">No service requests</p>
+                                    <p className="text-[var(--color-muted)] text-sm mb-4">Request services from premium contractors.</p>
                                 </div>
                             ) : (
                                 <div className="grid sm:grid-cols-2 gap-4">
@@ -250,8 +250,8 @@ export default function CustomerDashboard() {
                                             <div className="bg-gradient-to-r from-[var(--color-surface)] to-[var(--color-bg)] p-6 border-b border-[var(--color-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                                 <div>
                                                     <div className="flex items-center gap-2 mb-1.5">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded">
-                                                            {booking.service_tier === "macro" ? "BADA KAAM" : "CHHOTA KAAM"}
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                                                            Macro Project
                                                         </span>
                                                         <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider">
                                                             ID: #{booking.id.slice(0,8)}
@@ -299,14 +299,33 @@ export default function CustomerDashboard() {
                                                         <div className="flex justify-between items-center">
                                                             <span className="text-sm text-[var(--color-body)] font-medium">Status</span>
                                                             <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                                                booking.payment_status === "CAPTURED" || booking.payment_status === "RELEASED" 
+                                                                booking.payment_status === "CAPTURED" || booking.payment_status === "RELEASED" || booking.payment_status === "IN_ESCROW"
                                                                     ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
                                                             }`}>
-                                                                {booking.payment_status}
+                                                                {booking.payment_status?.replace('_', ' ')}
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </div>
+
+                                                {booking.milestone_details && booking.milestone_details.length > 0 && (
+                                                    <div className="mb-6 bg-[var(--color-bg)]/30 rounded-xl p-4 border border-[var(--color-border)]">
+                                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 flex items-center gap-2">
+                                                            <FiCheckCircle className="text-indigo-500" /> Milestone Breakdown
+                                                        </p>
+                                                        <div className="space-y-2">
+                                                            {booking.milestone_details.map((m, idx) => (
+                                                                <div key={idx} className="flex justify-between items-center text-xs">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className={`w-2 h-2 rounded-full ${m.status === 'due_now' ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                                                                        <span className="text-[var(--color-body)] font-medium">{m.title} ({m.percentage}%)</span>
+                                                                    </div>
+                                                                    <span className="font-bold text-[var(--color-heading)]">₹{Number(m.amount).toLocaleString('en-IN')}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 {booking.status === "IN_PROGRESS" && (
                                                     <div className="flex justify-end pt-4 border-t border-[var(--color-border)]">

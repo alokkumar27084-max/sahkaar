@@ -47,7 +47,7 @@ export default function ServiceDetailPage() {
                 setService(res.data.service);
                 setRelated(res.data.related || []);
             })
-            .catch(() => navigate("/quick-services"))
+            .catch(() => navigate("/macro-services"))
             .finally(() => setLoading(false));
     }, [slug, navigate]);
 
@@ -130,7 +130,7 @@ export default function ServiceDetailPage() {
                 
                 {/* Back Link */}
                 <button
-                    onClick={() => navigate(service.category_type === "bada" ? "/macro-services" : "/quick-services")}
+                    onClick={() => navigate("/macro-services")}
                     className="mb-8 text-sm font-bold tracking-widest text-[var(--color-muted)] hover:text-[var(--color-heading)] flex items-center gap-2 uppercase transition-colors"
                 >
                     <FiArrowLeft size={16} /> All Services
@@ -212,7 +212,7 @@ export default function ServiceDetailPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-display text-2xl text-amber-900 dark:text-amber-500 font-bold mb-3 tracking-tight">Instant Service Guarantee</h3>
-                                    <p className="text-amber-800 dark:text-amber-200/80 leading-relaxed font-medium">When you book this quick service, our algorithm dispatches the nearest verified professional within 5 kilometers. Most professionals arrive within 60 minutes.</p>
+                                    <p className="text-amber-800 dark:text-amber-200/80 leading-relaxed font-medium">When you book this service, our algorithm dispatches the nearest verified professional within 5 kilometers. Most professionals arrive within 60 minutes.</p>
                                 </div>
                             </div>
                         </motion.section>
@@ -230,7 +230,7 @@ export default function ServiceDetailPage() {
                                                 </div>
                                                 <div>
                                                     <h4 className="font-bold text-[var(--color-heading)] text-base group-hover:text-[var(--color-primary)] transition-colors">{r.name}</h4>
-                                                    <p className="text-xs text-[var(--color-muted)] font-medium mt-0.5">Quick Service</p>
+                                                    <p className="text-xs text-[var(--color-muted)] font-medium mt-0.5">Service</p>
                                                 </div>
                                             </div>
                                         );

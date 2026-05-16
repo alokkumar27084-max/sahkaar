@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiMessageCircle, FiTrash2, FiX } from "react-icons/fi";
+import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiMessageCircle, FiTrash2, FiX, FiActivity } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 
 function formatPrice(value) {
@@ -22,43 +22,31 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
     () => [
       {
         label: lang === "hi" ? "रेटिंग" : "Rating",
-        value: (c) => `${Number(c.rating || 0).toFixed(1)} / 5`,
+        value: (c) => (
+          <div className="flex items-center gap-1.5 font-black text-amber-400">
+            {Number(c.rating || 0).toFixed(1)} <span className="text-[10px] text-slate-500 font-normal">/ 5</span>
+          </div>
+        ),
       },
       {
         label: lang === "hi" ? "रिव्यू" : "Reviews",
-        value: (c) => `${c.review_count ?? c.reviews_count ?? 0}`,
+        value: (c) => <span className="font-bold text-white">{c.review_count ?? c.reviews_count ?? 0}</span>,
       },
       {
         label: lang === "hi" ? "दैनिक दर" : "Daily Rate",
-        value: (c) => formatPrice(c.daily_rate),
+        value: (c) => <span className="font-bold text-emerald-400">{formatPrice(c.daily_rate)}</span>,
       },
       {
         label: lang === "hi" ? "अनुभव" : "Experience",
-        value: (c) => (c.experience_years ? `${c.experience_years} yrs` : "—"),
-      },
-      {
-        label: lang === "hi" ? "टीम साइज" : "Team Size",
-        value: (c) => (c.team_size ? `${c.team_size}` : "—"),
+        value: (c) => <span className="font-bold text-white">{c.experience_years ? `${c.experience_years}y` : "—"}</span>,
       },
       {
         label: lang === "hi" ? "दूरी" : "Distance",
-        value: (c) => formatDistance(c.distance_km),
-      },
-      {
-        label: lang === "hi" ? "उपलब्धता" : "Availability",
-        value: (c) => (c.is_available ? (lang === "hi" ? "उपलब्ध" : "Available") : (lang === "hi" ? "व्यस्त" : "Busy")),
+        value: (c) => <span className="text-cyan-400 font-bold">{formatDistance(c.distance_km)}</span>,
       },
       {
         label: lang === "hi" ? "वेरिफाइड" : "Verified",
-        value: (c) => (c.is_verified ? <FiCheck className="inline-block text-emerald-500" /> : "—"),
-      },
-      {
-        label: lang === "hi" ? "लेबर ग्रुप" : "Labour Group",
-        value: (c) => (c.is_labour_group ? (lang === "hi" ? "हाँ" : "Yes") : "—"),
-      },
-      {
-        label: lang === "hi" ? "रिस्पॉन्सिबिलिटी मॉडल" : "Responsibility Model",
-        value: (c) => (c.is_responsibility_model ? (lang === "hi" ? "हाँ" : "Yes") : "—"),
+        value: (c) => (c.is_verified ? <FiCheck className="text-emerald-500" size={18} /> : <span className="text-slate-600">—</span>),
       },
     ],
     [lang]
@@ -67,112 +55,92 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
   if (!contractors.length) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4 md:px-6">
-      <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl backdrop-blur-xl">
-        <div className="flex flex-col gap-3 border-b border-[var(--color-border)] px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-[var(--color-heading)]">
-              {contractors.length} {lang === "hi" ? "प्रोफाइल तुलना के लिए चुनी गई" : "profiles selected for comparison"}
-            </span>
-            {contractors.map((contractor) => (
-              <span
-                key={contractor.id}
-                className="inline-flex items-center gap-2 rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-medium text-[var(--color-body)]"
-              >
-                {contractor.name || contractor.business_name || contractor.user_name || "Contractor"}
-                <button
-                  type="button"
-                  onClick={() => onRemove(contractor.id)}
-                  className="text-[var(--color-muted)] transition-colors hover:text-[var(--color-danger)]"
-                  aria-label="Remove from comparison"
-                >
-                  <FiX size={14} />
-                </button>
+    <div className="fixed inset-x-0 bottom-6 z-[250] px-6">
+      <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0D1021]/90 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] backdrop-blur-3xl animate-in fade-in slide-in-from-bottom-10 duration-500">
+        
+        {/* Compact Header */}
+        <div className="flex flex-col gap-4 px-8 py-5 md:flex-row md:items-center md:justify-between border-b border-white/5">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex -space-x-3">
+               {contractors.map(c => (
+                 <div key={c.id} className="w-10 h-10 rounded-full border-4 border-[#0D1021] bg-slate-800 overflow-hidden ring-1 ring-white/10">
+                    <img src={c.photo_url || `https://ui-avatars.com/api/?name=${c.name || 'C'}`} alt="Pro" className="w-full h-full object-cover" />
+                 </div>
+               ))}
+            </div>
+            <div className="ml-2">
+              <span className="text-sm font-black text-white uppercase tracking-widest">
+                Compare Pros <span className="text-indigo-400 ml-1">({contractors.length}/3)</span>
               </span>
-            ))}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {contractors.length >= 2 && (
-              <button
-                type="button"
-                onClick={() => setExpanded((prev) => !prev)}
-                className="btn-secondary !h-10 !px-4"
-              >
-                {expanded ? (lang === "hi" ? "छिपाएँ" : "Collapse") : (lang === "hi" ? "तुलना देखें" : "Compare Now")}
-                {expanded ? <FiChevronDown size={16} /> : <FiChevronUp size={16} />}
-              </button>
-            )}
-            <button type="button" onClick={onClear} className="btn-ghost !h-10 !px-4">
-              <FiTrash2 size={16} />
-              {lang === "hi" ? "साफ़ करें" : "Clear"}
+          <div className="flex items-center gap-3">
+            <button 
+              type="button" 
+              onClick={onClear} 
+              className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="flex items-center gap-3 px-6 py-2.5 rounded-full bg-indigo-500 text-white text-[11px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all"
+            >
+              {expanded ? "Close Table" : "Compare Now"}
+              {expanded ? <FiChevronDown /> : <FiChevronUp />}
             </button>
           </div>
         </div>
 
-        {expanded && contractors.length >= 2 && (
-          <div className="max-h-[70vh] overflow-auto px-4 py-4 md:px-6">
-            <div className="min-w-[760px] overflow-hidden rounded-2xl border border-[var(--color-border)]">
+        {/* Expanded Comparison Table */}
+        {expanded && (
+          <div className="max-h-[60vh] overflow-auto p-8 custom-scrollbar">
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02]">
               <table className="w-full border-collapse">
-                <thead className="bg-[var(--color-bg)]">
-                  <tr>
-                    <th className="border-b border-[var(--color-border)] px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-[var(--color-muted)]">
-                      {lang === "hi" ? "फ़ीचर" : "Feature"}
-                    </th>
-                    {contractors.map((contractor) => (
-                      <th
-                        key={contractor.id}
-                        className="border-b border-l border-[var(--color-border)] px-4 py-4 text-left"
-                      >
-                        <div className="text-sm font-semibold text-[var(--color-heading)]">
-                          {contractor.name || contractor.business_name || contractor.user_name || "Contractor"}
-                        </div>
-                        <div className="mt-1 text-xs capitalize text-[var(--color-muted)]">
-                          {(contractor.category || contractor.categories?.[0] || "general").replace("_", " ")}
-                        </div>
+                <thead>
+                  <tr className="bg-white/[0.03]">
+                    <th className="px-6 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Metric</th>
+                    {contractors.map((c) => (
+                      <th key={c.id} className="px-6 py-5 text-left border-l border-white/5">
+                        <div className="text-sm font-black text-white truncate max-w-[150px]">{c.name || c.business_name}</div>
+                        <div className="mt-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest">{(c.category || "General").replace("_", " ")}</div>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-white/5">
                   {compareRows.map((row) => (
-                    <tr key={row.label} className="odd:bg-[var(--color-surface)] even:bg-[var(--color-bg)]/50">
-                      <td className="border-b border-[var(--color-border)] px-4 py-3 text-sm font-medium text-[var(--color-heading)]">
-                        {row.label}
-                      </td>
-                      {contractors.map((contractor) => (
-                        <td
-                          key={`${contractor.id}-${row.label}`}
-                          className="border-b border-l border-[var(--color-border)] px-4 py-3 text-sm text-[var(--color-body)]"
-                        >
-                          {row.value(contractor)}
+                    <tr key={row.label} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-6 py-4 text-xs font-bold text-slate-400">{row.label}</td>
+                      {contractors.map((c) => (
+                        <td key={`${c.id}-${row.label}`} className="px-6 py-4 border-l border-white/5">
+                          {row.value(c)}
                         </td>
                       ))}
                     </tr>
                   ))}
-                  <tr>
-                    <td className="px-4 py-4 text-sm font-medium text-[var(--color-heading)]">
-                      {lang === "hi" ? "एक्शन" : "Action"}
-                    </td>
-                    {contractors.map((contractor) => {
-                      return (
-                        <td key={`${contractor.id}-actions`} className="border-l border-[var(--color-border)] px-4 py-4">
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => navigate("/chat", { state: { initChatWith: contractor.id } })}
-                              className="btn-outline-cyan !h-10 !px-4"
-                            >
-                              <FiMessageCircle size={15} />
-                              {lang === "hi" ? "मेसेज" : "Message"}
-                            </button>
-                            <Link to={`/contractor/${contractor.id}`} className="btn-secondary !h-10 !px-4">
-                              {lang === "hi" ? "प्रोफाइल" : "Profile"}
-                              <FiArrowUpRight size={15} />
-                            </Link>
-                          </div>
-                        </td>
-                      );
-                    })}
+                  <tr className="bg-white/[0.01]">
+                    <td className="px-6 py-6 text-xs font-bold text-slate-400">Actions</td>
+                    {contractors.map((c) => (
+                      <td key={`${c.id}-actions`} className="px-6 py-6 border-l border-white/5">
+                        <div className="flex gap-2">
+                           <button
+                            onClick={() => navigate("/chat", { state: { initChatWith: c.id } })}
+                            className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all"
+                           >
+                             <FiMessageCircle size={16} />
+                           </button>
+                           <Link 
+                            to={`/contractor/${c.id}`} 
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-[10px] font-black uppercase tracking-widest text-white border border-white/10 hover:border-white/30 transition-all"
+                           >
+                             Profile <FiArrowUpRight size={14} />
+                           </Link>
+                        </div>
+                      </td>
+                    ))}
                   </tr>
                 </tbody>
               </table>

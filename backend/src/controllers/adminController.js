@@ -519,6 +519,7 @@ exports.deleteUser = async (req, res, next) => {
     await client.query('DELETE FROM otps WHERE phone = (SELECT phone FROM users WHERE id = $1)', [userId]);
     await client.query('DELETE FROM reports WHERE reporter_id = $1', [userId]);
     await client.query('DELETE FROM reviews WHERE user_id = $1', [userId]);
+    await client.query('DELETE FROM service_requests WHERE user_id = $1', [userId]);
 
     if (contractor) {
       await client.query('DELETE FROM reports WHERE contractor_id = $1', [contractor.id]);
@@ -762,6 +763,7 @@ exports.deleteContractor = async (req, res, next) => {
 
     await client.query('DELETE FROM reports WHERE contractor_id = $1', [id]);
     await client.query('DELETE FROM reviews WHERE contractor_id = $1', [id]);
+    await client.query('DELETE FROM service_requests WHERE user_id = $1', [contractor.user_id]);
     await client.query('DELETE FROM contractors WHERE id = $1', [id]);
     await client.query('DELETE FROM users WHERE id = $1', [contractor.user_id]);
 
@@ -991,7 +993,7 @@ exports.createServiceCategory = async (req, res, next) => {
     const result = await db.query(
       `INSERT INTO service_categories (name, name_hi, slug, description, description_hi, icon, type, display_order, is_active)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [p.name, p.name_hi || null, p.slug, p.description || null, p.description_hi || null, p.icon || null, p.type || 'chhota', p.display_order || 0, p.is_active !== false]
+      [p.name, p.name_hi || null, p.slug, p.description || null, p.description_hi || null, p.icon || null, p.type || 'bada', p.display_order || 0, p.is_active !== false]
     );
     res.status(201).json({ ok: true, category: result.rows[0] });
   } catch (err) { next(err); }

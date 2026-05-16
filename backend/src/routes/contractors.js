@@ -6,7 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const Contractor = require('../models/contractorModel');
 
-// Use diskStorage to preserve file extensions (fixes image display bug)
+// Use diskStorage to preserve file extensions
 const storage = multer.diskStorage({
   destination: path.join(__dirname, '../../uploads/'),
   filename: (req, file, cb) => {
@@ -26,10 +26,17 @@ const upload = multer({
   },
 });
 
-// Public: get featured, list contractors and search
+// Public: stats, featured, list, search
+router.get('/public-stats', controller.getPublicStats);
 router.get('/featured', controller.featured);
 router.get('/', controller.list);
 router.get('/search', controller.search);
+router.get('/:id/reviews', controller.getReviews);
+router.post('/:id/lead', controller.recordLead);
+router.post('/:id/leads', controller.recordLead);
+router.get('/:id', controller.getById);
+
+// Protected: my profile and availability
 router.get('/me', requireAuth, controller.getMyProfile);
 router.get('/me/profile', requireAuth, controller.getMyProfile);
 router.patch('/me/availability', requireAuth, controller.setMyAvailability);
@@ -43,10 +50,6 @@ router.patch('/:id/availability', requireAuth, async (req, res, next) => {
     return next(err);
   }
 });
-router.get('/:id/reviews', controller.getReviews);
-router.post('/:id/lead', controller.recordLead);
-router.post('/:id/leads', controller.recordLead);
-router.get('/:id', controller.getById);
 
 // Protected: create/update contractor profile
 router.post('/', requireAuth, controller.create);
@@ -58,7 +61,7 @@ router.put('/me', requireAuth, async (req, res, next) => {
 router.put('/:id', requireAuth, controller.update);
 router.delete('/:id', requireAuth, controller.remove);
 
-// Upload profile image (multipart form-data, field name `image`)
+// Upload profile image
 router.post('/photo', requireAuth, upload.single('image'), async (req, res, next) => {
   try {
     const my = await Contractor.findByUserId(req.user.id);
@@ -76,7 +79,7 @@ router.post('/:id/upload/base64', requireAuth, controller.uploadImageBase64);
 router.post('/portfolio/base64', requireAuth, controller.uploadPortfolioBase64);
 router.post('/:id/portfolio/base64', requireAuth, controller.uploadPortfolioBase64);
 
-// Upload portfolio photos (photos[])
+// Upload portfolio photos
 router.post('/portfolio', requireAuth, upload.array('photos', 5), async (req, res, next) => {
   try {
     const profile = await Contractor.findByUserId(req.user.id);
@@ -98,15 +101,13 @@ router.put('/portfolio', requireAuth, async (req, res, next) => {
 router.post('/:id/portfolio', requireAuth, upload.array('photos', 5), controller.uploadPortfolio);
 router.put('/:id/portfolio', requireAuth, controller.setPortfolio);
 
-// New portfolio items table routes
+// Portfolio items and verification
 router.post('/:id/portfolio-items', requireAuth, upload.single('image'), controller.addPortfolioItem);
 router.delete('/:id/portfolio-items/:itemId', requireAuth, controller.removePortfolioItem);
 router.post('/:id/request-verification', requireAuth, controller.requestVerification);
-
-// Upload ID proof (id_proof)
 router.post('/:id/idproof', requireAuth, upload.single('id_proof'), controller.uploadIdProof);
 
-// Reviews
+// Reviews and reporting
 router.post('/:id/reviews', requireAuth, controller.addReview);
 router.post('/:id/report', requireAuth, controller.reportContractor);
 

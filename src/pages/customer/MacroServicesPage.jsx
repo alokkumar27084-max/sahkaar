@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { servicesAPI } from "../../services/api";
 import { buildContractorSearchPath } from "../../utils/serviceToContractorSearch";
+import SEOHead from "../../components/common/SEOHead";
 
 import {
     FiSearch, FiArrowRight, FiStar, FiShield,
@@ -75,83 +76,66 @@ export default function MacroServicesPage() {
 
     return (
         <main className="overflow-hidden">
+            <SEOHead
+                title="Thekedaar Services — Construction, Renovation & Interior Design"
+                description="Book verified premium contractors for construction, renovation, civil work, waterproofing, interior design, and more. Escrow payment protection on every project."
+                canonical="https://thekedaar.com/macro-services"
+            />
 
             {/* ═══════ HERO ═══════ */}
-            <section className="relative min-h-[55vh] md:min-h-[65vh] flex items-center overflow-hidden">
-                {/* Deep navy gradient with warm accents */}
-                <div className="absolute inset-0 bg-[#030712]" />
-                <div className="absolute inset-0 overflow-hidden">
-                    <motion.div
-                        animate={{
-                            x: [0, 50, -40, 30, 0], y: [0, -40, 20, -30, 0], scale: [1, 1.15, 0.95, 1.1, 1],
-                            borderRadius: ["30% 70% 70% 30% / 30% 30% 70% 70%", "50% 50% 30% 70% / 60% 40% 60% 40%", "30% 70% 70% 30% / 30% 30% 70% 70%"]
-                        }}
-                        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute top-[5%] left-[5%] w-[500px] h-[500px] bg-gradient-to-br from-amber-600/15 to-orange-600/8 blur-[100px]"
-                    />
-                    <motion.div
-                        animate={{
-                            x: [0, -50, 40, 0], y: [0, 40, -30, 0], scale: [1, 0.9, 1.1, 1],
-                            borderRadius: ["50% 50% 30% 70% / 60% 40% 60% 40%", "30% 70% 70% 30% / 30% 30% 70% 70%", "50% 50% 30% 70% / 60% 40% 60% 40%"]
-                        }}
-                        transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
-                        className="absolute bottom-[5%] right-[5%] w-[600px] h-[600px] bg-gradient-to-bl from-indigo-500/10 to-violet-500/6 blur-[120px]"
-                    />
+            <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-[#090B19]">
+                {/* Background effects */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-500/10 blur-[120px] rounded-full" />
                 </div>
 
-                <div className="relative z-10 max-w-[1200px] mx-auto px-4 md:px-8 pt-16 md:pt-20 pb-12 w-full">
-                    <motion.div initial="hidden" animate="show" variants={stagger} className="max-w-3xl">
-                        <motion.div variants={fadeUp} className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.06] mb-10">
-                            <FiLayers size={14} className="text-amber-400" />
-                            <span className="text-white/60 text-[11px] font-medium uppercase tracking-[0.2em]">
-                                {lang === "hi" ? "बड़े प्रोजेक्ट्स के लिए" : "Built for Big Projects"}
+                <div className="relative z-10 max-w-[1400px] mx-auto px-6 pt-32 pb-24 text-center">
+                    <motion.div initial="hidden" animate="show" variants={stagger}>
+                        <motion.div variants={fadeUp} className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] mb-12 shadow-2xl backdrop-blur-xl">
+                            <FiLayers size={14} className="text-indigo-400" />
+                            <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em]">
+                                {lang === "hi" ? "प्रीमियम बड़े प्रोजेक्ट्स" : "Premium Large Scale Services"}
                             </span>
                         </motion.div>
 
-                        <div className="mb-10">
-                            {(lang === "hi" ? ["मैक्रो", "सर्विसेज."] : ["MACRO", "SERVICES."]).map((word, i) => (
-                                <motion.span
-                                    key={word}
-                                    initial={{ opacity: 0, y: 60, filter: "blur(10px)" }}
-                                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                                    transition={{ delay: 0.2 + i * 0.12, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                                    className={`font-display font-extrabold uppercase leading-[0.92] tracking-[-0.04em] block ${i === 1
-                                        ? "bg-gradient-to-r from-amber-400 via-orange-300 to-amber-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-[gradient_3s_ease_infinite]"
-                                        : "text-white"}`}
-                                    style={{
-                                        fontSize: 'clamp(2.5rem, 10vw, 8rem)',
-                                    }}
-                                >
-                                    {word}
-                                </motion.span>
-                            ))}
+                        <div className="mb-12 flex flex-col items-center">
+                            <motion.h1 
+                              variants={fadeUp}
+                              className="font-display text-white font-black uppercase tracking-tighter leading-[1.1] mb-2"
+                              style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)' }}
+                            >
+                                {lang === "hi" ? "ठेकेदार" : "Thekedaar"} <br />
+                                <span className="bg-gradient-to-r from-indigo-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
+                                  {lang === "hi" ? "सर्विसेज" : "Services"}
+                                </span>
+                            </motion.h1>
+                            
+                            <motion.p variants={fadeUp} className="text-indigo-200/60 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                                {lang === "hi"
+                                    ? "घर निर्माण, रेनोवेशन और इंटीरियर डिज़ाइन के लिए भारत के सबसे भरोसेमंद ठेकेदार खोजें"
+                                    : "India's most trusted ecosystem for construction, renovation, and elite interior design projects"}
+                            </motion.p>
                         </div>
 
-                        <motion.p variants={fadeUp} className="text-white/40 text-base md:text-lg max-w-lg mb-8 leading-relaxed">
-                            {lang === "hi"
-                                ? "घर निर्माण, रेनोवेशन, इंटीरियर डिज़ाइन — बड़े प्रोजेक्ट्स के लिए वेरिफाइड ठेकेदार।"
-                                : "Construction, renovation, interior design — verified contractors for your biggest projects."}
-                        </motion.p>
-
-                        <motion.div variants={fadeUp} className="mb-10">
+                        <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-4 mb-16">
                             <button
-                                type="button"
                                 onClick={() => navigate("/search?sort=distance&radius_km=5")}
-                                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-sm shadow-lg hover:opacity-95 transition-opacity"
+                                className="px-8 py-4 rounded-2xl bg-indigo-500 text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
                             >
-                                {lang === "hi" ? "पास के ठेकेदार खोजें" : "Find nearby contractors"} <FiArrowRight size={18} />
+                                {lang === "hi" ? "शुरू करें" : "Start Discovering"} <FiArrowRight size={18} />
                             </button>
                         </motion.div>
 
-                        <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
+                        <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-6">
                             {[
-                                { icon: FiShield, text: lang === "hi" ? "एस्क्रो भुगतान" : "Escrow Payments" },
-                                { icon: FiStar, text: lang === "hi" ? "माइलस्टोन ट्रैकिंग" : "Milestone Tracking" },
-                                { icon: FiCheckCircle, text: lang === "hi" ? "वेरिफाइड ठेकेदार" : "Verified Contractors" },
-                            ].map(pill => (
-                                <span key={pill.text} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-white/50 text-xs font-medium uppercase tracking-wider backdrop-blur-sm">
-                                    <pill.icon size={13} className="text-amber-400" /> {pill.text}
-                                </span>
+                                { text: lang === "hi" ? "100% सुरक्षित भुगतान" : "100% Secure Escrow" },
+                                { text: lang === "hi" ? "वेरिफाइड प्रोफेशनल्स" : "Verified Professionals" },
+                                { text: lang === "hi" ? "रियल-टाइम ट्रैकिंग" : "Real-time Tracking" },
+                            ].map(item => (
+                                <div key={item.text} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                                    <FiCheckCircle className="text-emerald-400" /> {item.text}
+                                </div>
                             ))}
                         </motion.div>
                     </motion.div>

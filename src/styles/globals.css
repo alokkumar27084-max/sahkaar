@@ -151,14 +151,17 @@ body {
 ::-webkit-scrollbar {
   width: 7px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-bg);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 10px;
   border: 2px solid var(--color-bg);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-muted);
 }
@@ -189,9 +192,17 @@ body::before {
 }
 
 @keyframes ambientDrift {
-  0% { transform: scale(1) translate(0, 0); }
-  50% { transform: scale(1.05) translate(-2%, 1%); }
-  100% { transform: scale(1) translate(1%, -1%); }
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+
+  50% {
+    transform: scale(1.05) translate(-2%, 1%);
+  }
+
+  100% {
+    transform: scale(1) translate(1%, -1%);
+  }
 }
 
 /* Noise texture for premium depth */
@@ -270,8 +281,14 @@ select {
 }
 
 /* No scrollbar utility */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 /* ═══════════════════════════════════════════
    TYPOGRAPHY — Premium Scale
@@ -291,10 +308,22 @@ select {
   color: var(--color-heading);
   font-family: 'Syne', system-ui, sans-serif;
   font-weight: 800;
-  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-size: clamp(1.2rem, 8vw, 3.25rem);
   line-height: 1.1;
   letter-spacing: -0.035em;
   text-transform: uppercase;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  white-space: normal;
+}
+
+@media (max-width: 480px) {
+  .section-title {
+    font-size: clamp(1.1rem, 10vw, 1.8rem);
+    letter-spacing: -0.04em;
+    line-height: 1.2;
+  }
 }
 
 .section-subtitle {
@@ -381,13 +410,11 @@ select {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(
-    135deg,
-    transparent 30%,
-    rgba(99, 102, 241, 0.12) 50%,
-    rgba(6, 182, 212, 0.10) 70%,
-    transparent 90%
-  );
+  background: linear-gradient(135deg,
+      transparent 30%,
+      rgba(99, 102, 241, 0.12) 50%,
+      rgba(6, 182, 212, 0.10) 70%,
+      transparent 90%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -537,12 +564,10 @@ select {
   left: -150%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(
-    110deg,
-    transparent 20%,
-    rgba(255, 255, 255, 0.25) 50%,
-    transparent 80%
-  );
+  background: linear-gradient(110deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.25) 50%,
+      transparent 80%);
   transform: skewX(-20deg);
 }
 
@@ -719,19 +744,31 @@ textarea.input-field {
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 1100;
+  z-index: 9999;
   width: min(92vw, 400px);
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px 16px 40px;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 40px);
   background: var(--color-surface);
   border-left: 1px solid var(--color-border);
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.12);
+  box-shadow: -20px 0 80px rgba(0, 0, 0, 0.15);
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Fix for white bar on overscroll */
+.side-panel::before {
+  content: "";
+  position: absolute;
+  top: -50vh;
+  left: 0;
+  right: 0;
+  height: 50vh;
+  background: inherit;
+  pointer-events: none;
 }
 
 .dark .side-panel {
@@ -790,20 +827,23 @@ textarea.input-field {
    ═══════════════════════════════════════════ */
 
 .skeleton {
-  background: linear-gradient(
-    100deg,
-    var(--color-border) 30%,
-    var(--color-divider) 50%,
-    var(--color-border) 70%
-  );
+  background: linear-gradient(100deg,
+      var(--color-border) 30%,
+      var(--color-divider) 50%,
+      var(--color-border) 70%);
   background-size: 300% 100%;
   animation: shimmer 1.8s ease infinite;
   border-radius: var(--radius-md);
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -812,17 +852,38 @@ textarea.input-field {
 
 /* Gradient text shimmer */
 @keyframes gradient {
-  0% { background-position: 0% center; }
-  50% { background-position: 100% center; }
-  100% { background-position: 0% center; }
+  0% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
+  }
+
+  100% {
+    background-position: 0% center;
+  }
 }
 
 /* Float animation for decorative elements */
 @keyframes float {
-  0%, 100% { transform: translateY(0) translateX(0); }
-  25% { transform: translateY(-15px) translateX(8px); }
-  50% { transform: translateY(-5px) translateX(-5px); }
-  75% { transform: translateY(-20px) translateX(3px); }
+
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+
+  25% {
+    transform: translateY(-15px) translateX(8px);
+  }
+
+  50% {
+    transform: translateY(-5px) translateX(-5px);
+  }
+
+  75% {
+    transform: translateY(-20px) translateX(3px);
+  }
 }
 
 .animate-float {
@@ -840,14 +901,30 @@ textarea.input-field {
 }
 
 @keyframes scrollBounce {
-  0%, 100% { transform: translateY(0); opacity: 0.6; }
-  50% { transform: translateY(12px); opacity: 0.2; }
+
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: translateY(12px);
+    opacity: 0.2;
+  }
 }
 
 /* Pulse glow for CTA buttons */
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 4px 30px rgba(99,102,241,0.25); }
-  50% { box-shadow: 0 4px 50px rgba(99,102,241,0.40), 0 0 20px rgba(99,102,241,0.15); }
+
+  0%,
+  100% {
+    box-shadow: 0 4px 30px rgba(99, 102, 241, 0.25);
+  }
+
+  50% {
+    box-shadow: 0 4px 50px rgba(99, 102, 241, 0.40), 0 0 20px rgba(99, 102, 241, 0.15);
+  }
 }
 
 .animate-pulse-glow {
@@ -892,8 +969,13 @@ textarea.input-field {
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .marquee-text {
@@ -932,11 +1014,9 @@ textarea.input-field {
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(
-    circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(255, 255, 255, 0.06) 0%,
-    transparent 60%
-  );
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(255, 255, 255, 0.06) 0%,
+      transparent 60%);
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: 1;
@@ -980,9 +1060,11 @@ textarea.input-field {
 .testimonial-card:nth-child(odd) {
   transform: rotate(-2deg);
 }
+
 .testimonial-card:nth-child(even) {
   transform: rotate(2deg);
 }
+
 .testimonial-card:hover {
   transform: rotate(0deg) translateY(-4px) !important;
 }
@@ -1018,6 +1100,7 @@ textarea.input-field {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
@@ -1080,7 +1163,8 @@ textarea.input-field {
 @media (max-width: 767px) {
   .input-field {
     height: 44px;
-    font-size: 16px; /* prevent zoom on iOS */
+    font-size: 16px;
+    /* prevent zoom on iOS */
   }
 }
 
@@ -1089,6 +1173,7 @@ textarea.input-field {
    ═══════════════════════════════════════════ */
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

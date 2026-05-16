@@ -2,7 +2,9 @@
  * Image utility for handling URLs correctly
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://thekedaar-api.onrender.com/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : '/api');
 const BACKEND_BASE_URL = API_BASE_URL.replace('/api', '');
 
 /**

@@ -163,23 +163,17 @@ exports.getOrCreateChat = async (req, res) => {
         const { contractorId } = req.body;
         const customerId = req.user.id;
 
-        // Check if thread exists
-        const existing = await db.query(
-            'SELECT * FROM chats WHERE customer_id = $1 AND contractor_id = $2',
-            [customerId, contractorId]
-        );
-
-        if (existing.rows.length > 0) {
-            return res.json({ chat: existing.rows[0] });
-        }
-
-        // Create new
+        // Create new or get existing using ON CONFLICT (idempotent)
         const { rows } = await db.query(
-            'INSERT INTO chats (customer_id, contractor_id) VALUES ($1, $2) RETURNING *',
+            `INSERT INTO chats (customer_id, contractor_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT (customer_id, contractor_id) 
+             DO UPDATE SET last_message_at = EXCLUDED.last_message_at
+             RETURNING *`,
             [customerId, contractorId]
         );
 
-        res.status(201).json({ chat: rows[0] });
+        res.status(rows.length > 0 ? (rows[0].created_at === rows[0].last_message_at ? 201 : 200) : 200).json({ chat: rows[0] });
     } catch (error) {
         console.error('Error creating chat:', error);
         res.status(500).json({ message: 'Error creating chat' });

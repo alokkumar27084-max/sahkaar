@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiMapPin, FiSearch, FiSliders } from "react-icons/fi";
+import { FiMapPin, FiSearch, FiSliders, FiFilter, FiStar, FiCheckCircle, FiX, FiGrid, FiMap, FiArrowRight, FiNavigation } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI, contractorAPI } from "../../services/api";
@@ -15,20 +15,18 @@ import LocationSearchInput from "../../components/common/LocationSearchInput";
 import ContractorMapPanel from "../../components/common/ContractorMapPanel";
 import { trackEvent } from "../../utils/analytics";
 import { readSavedLocation, saveLocationSnapshot } from "../../utils/locationStorage";
+import SEOHead from "../../components/common/SEOHead";
 
-const RADIUS_OPTIONS = [2, 3, 5, 10, 15];
+const RADIUS_OPTIONS = [2, 3, 5, 10, 15, 25];
 const PAGE_SIZE = 20;
-const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-const cardVariant = {
-  hidden: { opacity: 0, y: 24, filter: "blur(4px)" },
-  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { type: "spring", stiffness: 120, damping: 18 } }
-};
 
 export default function SearchPage() {
   const { t, lang } = useLanguage();
   const { user, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { lat, lng, address, accuracy, request: getLocation, error: geoError, loading: geoLoading } = useGeolocation();
+  const { lat, lng, address, accuracy, request: getLocation, loading: geoLoading } = useGeolocation();
+  
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [savingLocation, setSavingLocation] = useState(false);
@@ -38,38 +36,38 @@ export default function SearchPage() {
   const [compareList, setCompareList] = useState([]);
   const [manualLocationInput, setManualLocationInput] = useState(() => readSavedLocation()?.address || "");
   const [searchLocationLabel, setSearchLocationLabel] = useState(() => readSavedLocation()?.address || "");
+  const [viewMode, setViewMode] = useState("split"); // 'split', 'list', 'map'
+  const [hoveredContractorId, setHoveredContractorId] = useState(null);
+  
+  // Adaptive View Handling for Mobile
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const effectiveViewMode = isMobile && viewMode === "split" ? "list" : viewMode;
 
+  // Search Params
   const query = searchParams.get("q") || "";
-  const contextLabel = searchParams.get("context_label") || "";
-  const fromServiceSlug = searchParams.get("from_service") || "";
   const category = searchParams.get("category") || "";
   const sort = searchParams.get("sort") || "distance";
   const verified = searchParams.get("verified") === "true";
   const featured = searchParams.get("featured") === "true";
-  const labour = searchParams.get("labour_group") === "true";
+  const rating = Number(searchParams.get("min_rating") || "0");
   const radiusKm = Number(searchParams.get("radius_km") || "5");
   const urlLat = searchParams.get("lat");
   const urlLng = searchParams.get("lng");
   const page = Number(searchParams.get("page") || "1");
-  const effectiveLat = urlLat || user?.location_lat || null;
-  const effectiveLng = urlLng || user?.location_lng || null;
+
+  const savedLoc = useMemo(() => readSavedLocation(), []);
+  // Priority: URL Params > Last Session Selection > User Profile Default
+  const effectiveLat = urlLat || savedLoc?.lat || user?.location_lat || null;
+  const effectiveLng = urlLng || savedLoc?.lng || user?.location_lng || null;
   const hasSearchLocation = effectiveLat != null && effectiveLng != null;
 
   const [qInput, setQInput] = useState(query);
-  useEffect(() => {
-    setQInput(query);
-  }, [query]);
+  useEffect(() => setQInput(query), [query]);
 
-  const contextBanner = useMemo(() => {
-    if (contextLabel) return contextLabel;
-    if (fromServiceSlug) return fromServiceSlug.replace(/-/g, " ");
-    return null;
-  }, [contextLabel, fromServiceSlug]);
-
+  // Persist Location
   const persistSearchLocation = useCallback(async (selection, source = "browser_gps", nextAccuracy = null) => {
     if (!selection?.lat || !selection?.lng) return;
     setSavingLocation(true);
-    setError(null);
     try {
       await authAPI.updateLocation({
         lat: Number(selection.lat),
@@ -86,8 +84,8 @@ export default function SearchPage() {
       setSearchLocationLabel(selection.address || "");
       setManualLocationInput(selection.address || "");
       saveLocationSnapshot(selection);
-    } catch {
-      setError("Could not save your location.");
+    } catch (err) {
+      console.error("Location save error", err);
     } finally {
       setSavingLocation(false);
     }
@@ -104,12 +102,27 @@ export default function SearchPage() {
     setSearchLocationLabel(address);
     setManualLocationInput(address);
     saveLocationSnapshot({ address, lat, lng });
-  }, [address, lat, lng]);
+    
+    // Auto-update search params if we just got a browser location and didn't have one
+    if (lat && lng && !urlLat && !urlLng) {
+      const next = new URLSearchParams(searchParams);
+      next.set("lat", String(lat));
+      next.set("lng", String(lng));
+      setSearchParams(next);
+    }
+  }, [address, lat, lng, urlLat, urlLng, searchParams, setSearchParams]);
 
+  // Automatic Location Request if missing
+  useEffect(() => {
+    if (!hasSearchLocation && !geoLoading) {
+      getLocation();
+    }
+  }, [hasSearchLocation, geoLoading, getLocation]);
+
+  // Data Fetching
   const runSearch = useCallback(async () => {
     if (!hasSearchLocation) {
       setContractors([]);
-      setError("Please share your location to see nearby contractors.");
       return;
     }
     setLoading(true);
@@ -121,242 +134,430 @@ export default function SearchPage() {
         sort,
         verified: verified || undefined,
         featured: featured || undefined,
-        labour_group: labour || undefined,
+        min_rating: rating > 0 ? rating : undefined,
         lat: effectiveLat,
         lng: effectiveLng,
         radius_km: radiusKm,
         page,
         limit: PAGE_SIZE
       };
-      Object.keys(params).forEach((key) => params[key] === undefined && delete params[key]);
       const res = await contractorAPI.search(params);
       const rows = res.data.contractors || [];
       setContractors((prev) => (page > 1 ? [...prev, ...rows] : rows));
-      trackEvent("search", { q: query || "", category: category || "", result_count: rows.length, page, radius_km: radiusKm });
-    } catch {
-      setError(t("app.error"));
+      trackEvent("search", { q: query, category, result_count: rows.length });
+    } catch (err) {
+      setError("Failed to load contractors. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [query, category, sort, verified, featured, labour, effectiveLat, effectiveLng, hasSearchLocation, page, radiusKm, t]);
+  }, [query, category, sort, verified, featured, rating, effectiveLat, effectiveLng, hasSearchLocation, page, radiusKm]);
 
   useEffect(() => { runSearch(); }, [runSearch]);
 
-  function updateParam(key, value) {
+  const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams);
-    if (value !== undefined && value !== null && value !== "") next.set(key, String(value));
+    if (value !== undefined && value !== null && value !== "" && value !== 0) next.set(key, String(value));
     else next.delete(key);
     next.set("page", "1");
     setSearchParams(next);
-  }
+  };
 
-  function loadMore() {
+  const loadMore = () => {
     const next = new URLSearchParams(searchParams);
     next.set("page", String(page + 1));
     setSearchParams(next);
-  }
+  };
 
-  function handleCompare(contractor, shouldAdd) {
+  const handleCompare = (contractor, shouldAdd) => {
     if (shouldAdd) {
-      if (compareList.some((item) => item.id === contractor.id)) return;
-      if (compareList.length >= 3) {
-        setError(lang === "hi" ? "एक समय में अधिकतम 3 प्रोफाइल तुलना कर सकते हैं।" : "You can compare up to 3 profiles at a time.");
-        return;
-      }
-      setCompareList((prev) => [...prev, contractor]);
-      return;
+      if (compareList.length >= 3) return;
+      setCompareList(prev => [...prev, contractor]);
+    } else {
+      setCompareList(prev => prev.filter(item => item.id !== contractor.id));
     }
-    setCompareList((prev) => prev.filter((item) => item.id !== contractor.id));
-  }
+  };
 
-  async function handleManualLocationSelect(selection) {
-    await persistSearchLocation(selection, "manual_pin");
-  }
+  useEffect(() => {
+    if (showFilters) {
+      document.body.style.overflow = "hidden";
+      document.body.classList.add("external-panel-open");
+    } else {
+      document.body.style.overflow = "";
+      document.body.classList.remove("external-panel-open");
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("external-panel-open");
+    };
+  }, [showFilters]);
+
+  const seoTitle = category ? `${CATEGORIES.find(c => c.id === category)?.label || category} Near You` : "Search Top Contractors";
 
   return (
-    <main id="main-content" className="max-w-[1200px] mx-auto px-4 md:px-8 pb-20 pt-24 min-h-screen bg-[var(--color-bg)]">
+    <div className="min-h-screen bg-[#090B19] text-white">
+      <SEOHead title={seoTitle} description="Find the best verified contractors in your area." />
       
-      {contextBanner && (
-        <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 rounded-2xl border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-5 py-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-primary)] mb-1">
-            {lang === "hi" ? "कैटलॉग से" : "From catalog"}
-          </p>
-          <p className="text-sm font-bold text-[var(--color-heading)]">
-            {lang === "hi" ? "आपके लिए: " : "Showing pros for: "}
-            <span className="text-[var(--color-primary)]">{contextBanner}</span>
-          </p>
-        </motion.section>
-      )}
-
-      {!hasSearchLocation && (
-        <motion.section initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 rounded-3xl border border-amber-200 dark:border-amber-500/30 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 p-8 shadow-inner shadow-amber-500/5">
-          <h2 className="font-display text-2xl font-bold text-amber-900 dark:text-amber-500 mb-2 flex items-center gap-3">
-             <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0"><FiMapPin /></div> Location Required
-          </h2>
-          <p className="text-base text-amber-800 dark:text-amber-300/80 mb-6 font-medium max-w-2xl">Share your current location or manually search your locality to see verified contractors within a 2-5 km radius.</p>
-          <div className="mb-5 max-w-2xl">
-            <LocationSearchInput value={manualLocationInput} onChange={setManualLocationInput} onSelect={handleManualLocationSelect} placeholder="Search area, colony, or landmark" disabled={savingLocation} />
-          </div>
-          <button onClick={() => { setAutoSaveRequested(true); getLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }); }} disabled={geoLoading || savingLocation} className="px-6 py-3 bg-amber-500 hover:bg-amber-600 font-bold text-white rounded-xl shadow-md transition-colors flex items-center gap-2">
-            {geoLoading || savingLocation ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <FiMapPin/>}
-            {geoLoading || savingLocation ? "Detecting location..." : "Use my current location"}
+      {/* ═══════ SEARCH HEADER — Sticky ═══════ */}
+      <header className="fixed top-[76px] left-0 right-0 z-[100] h-20 bg-[#090B19]/90 backdrop-blur-3xl border-b border-white/[0.05] flex items-center px-4 md:px-6">
+        <div className="flex-1 flex items-center gap-6 max-w-[1600px] mx-auto">
+          {/* Logo shorthand / Back */}
+          <button onClick={() => navigate("/")} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
+            <FiX size={20} />
           </button>
-          {geoError && <p className="text-xs text-rose-500 font-bold mt-3">{geoError}</p>}
-        </motion.section>
-      )}
 
-      {/* Premium Filter Bank */}
-      <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 md:p-6 mb-8 z-20 relative">
-        <div className="grid lg:grid-cols-[1fr_auto_minmax(280px,350px)] gap-3 items-center">
-          
-          <div className="relative">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
-            <input
-              type="search"
+          {/* Search Inputs */}
+          <div className="flex-1 flex items-center gap-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl h-12 px-4 shadow-inner min-w-0">
+            <FiSearch className="text-slate-500 shrink-0" />
+            <input 
+              type="text" 
               value={qInput}
               onChange={(e) => setQInput(e.target.value)}
-              placeholder={t("home.search_placeholder")}
-              className="input-field !pl-11 !h-12 !text-sm bg-[var(--color-bg)] w-full"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") updateParam("q", qInput);
-              }}
+              onKeyDown={(e) => e.key === "Enter" && updateParam("q", qInput)}
+              placeholder="What do you need?" 
+              className="bg-transparent border-none outline-none text-sm w-full min-w-0"
             />
+            <div className="w-px h-6 bg-white/10 mx-2 hidden sm:block" />
+            <div className="hidden sm:flex items-center gap-2 min-w-[120px] md:min-w-[200px]">
+              <FiMapPin className="text-indigo-400 shrink-0" size={14} />
+              <LocationSearchInput 
+                value={manualLocationInput} 
+                onChange={setManualLocationInput} 
+                onSelect={(sel) => persistSearchLocation(sel, "manual")}
+                placeholder="Change area..."
+                className="!bg-transparent !border-none !p-0 !h-auto !text-[11px] !font-bold"
+              />
+            </div>
           </div>
-          
-          <button onClick={() => setShowFilters((s) => !s)} className={`h-12 px-5 rounded-xl font-bold border transition-all inline-flex items-center justify-center gap-2 text-sm shrink-0 ${showFilters ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-heading)] hover:border-[var(--color-primary)]"}`}>
-              <FiSliders size={15} className="shrink-0" /> {t("search.filter")}
+
+          {/* View Toggles */}
+          <div className="hidden lg:flex items-center bg-white/[0.03] border border-white/[0.08] rounded-xl p-1 gap-1">
+            <button 
+              onClick={() => setViewMode("split")}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "split" ? "bg-indigo-500 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
+            >
+              <FiGrid size={14} /> Split
+            </button>
+            <button 
+              onClick={() => setViewMode("map")}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "map" ? "bg-indigo-500 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
+            >
+              <FiMap size={14} /> Map
+            </button>
+          </div>
+
+          <button onClick={() => setShowFilters(true)} className="h-12 w-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 lg:w-auto lg:px-6 lg:gap-2 active:scale-95 transition-all">
+            <FiSliders size={18} />
+            <span className="hidden lg:inline text-xs font-bold uppercase tracking-widest">Filters</span>
           </button>
-          
-          <div className="w-full relative">
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-[var(--color-primary-muted)] flex items-center justify-center z-10 text-[var(--color-primary)]"><FiMapPin size={13}/></div>
-              <LocationSearchInput value={manualLocationInput} onChange={setManualLocationInput} onSelect={handleManualLocationSelect} placeholder="Change location..." disabled={savingLocation} className="!pl-12" />
-          </div>
         </div>
+      </header>
 
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div initial={{ height: 0, opacity: 0, filter: "blur(4px)" }} animate={{ height: "auto", opacity: 1, filter: "blur(0px)" }} exit={{ height: 0, opacity: 0, filter: "blur(4px)" }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
-              <div className="mt-6 pt-6 border-t border-[var(--color-border)] grid md:grid-cols-3 gap-8">
-                
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black tracking-widest text-[var(--color-primary)] uppercase bg-[var(--color-primary)]/10 px-2 py-1 rounded inline-block">{t("search.sort")}</label>
-                  <div className="flex flex-col gap-2">
-                    {SORT_OPTIONS.map((opt) => (
-                      <button key={opt.value} onClick={() => updateParam("sort", opt.value)} className={`text-left px-4 py-2.5 rounded-lg text-sm font-bold transition-colors ${sort === opt.value ? "bg-[var(--color-primary)] text-white shadow-md" : "hover:bg-[var(--color-bg)] border border-transparent hover:border-[var(--color-border)] text-[var(--color-muted)]"}`}>{t(opt.labelKey)}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black tracking-widest text-[var(--color-primary)] uppercase bg-[var(--color-primary)]/10 px-2 py-1 rounded inline-block">Proximity Radius</label>
-                  <div className="flex gap-2">
-                    {RADIUS_OPTIONS.map((km) => (
-                      <button key={km} onClick={() => updateParam("radius_km", km)} className={`px-5 py-2.5 rounded-lg text-sm font-bold border transition-colors ${radiusKm === km ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md" : "bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]"}`}>{km} km</button>
-                    ))}
-                  </div>
-                  
-                  <div className="pt-4">
-                      <label className="text-[10px] font-black tracking-widest text-[var(--color-primary)] uppercase bg-[var(--color-primary)]/10 px-2 py-1 rounded inline-block mb-3">Attributes</label>
-                      <div className="flex flex-col gap-3 text-sm font-bold text-[var(--color-heading)]">
-                      {[
-                          { key: "verified", checked: verified, label: "Verified Only" },
-                          { key: "featured", checked: featured, label: "Featured Contractors" },
-                          { key: "labour_group", checked: labour, label: "Agencies / Groups" }
-                      ].map((item) => (
-                          <label key={item.key} className="flex items-center gap-3 cursor-pointer group">
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${item.checked ? "bg-[var(--color-primary)] border-[var(--color-primary)] text-white" : "border-[var(--color-muted)] text-transparent group-hover:border-[var(--color-primary)]"}`}>
-                              ✓
-                          </div>
-                          <input type="checkbox" checked={item.checked} onChange={(e) => updateParam(item.key, e.target.checked || "")} className="hidden" />
-                          {item.label}
-                          </label>
-                      ))}
-                      </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black tracking-widest text-[var(--color-primary)] uppercase bg-[var(--color-primary)]/10 px-2 py-1 rounded inline-block mb-1">{lang === "hi" ? "श्रेणी" : "Specialization"}</label>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => updateParam("category", "")} className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${!category ? "bg-[var(--color-heading)] text-[var(--color-bg)] border-[var(--color-heading)]" : "bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]"}`}>{lang === "hi" ? "सभी" : "All Services"}</button>
-                    {CATEGORIES.map((cat) => (
-                      <button key={cat.id} onClick={() => updateParam("category", cat.id)} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${category === cat.id ? "bg-[var(--color-heading)] text-[var(--color-bg)] border-[var(--color-heading)]" : "bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-primary)]"}`}>
-                          <Icon name={cat.icon} className="w-3.5 h-3.5" /> {t(cat.key)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.section>
-
-      <section className="mt-8">
-        {hasSearchLocation && <div className="mb-8 rounded-2xl overflow-hidden glass-card p-0 shadow-lg"><ContractorMapPanel center={{ lat: Number(effectiveLat), lng: Number(effectiveLng) }} currentLocationLabel={searchLocationLabel} contractors={contractors} /></div>}
+      {/* ═══════ MAIN CONTENT ═══════ */}
+      <main className="pt-[156px] flex h-screen overflow-hidden bg-[#090B19]">
         
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <p className="text-[var(--color-primary)] text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Results</p>
-            <h2 className="font-display text-2xl text-[var(--color-heading)] font-extrabold tracking-tight">
-              {loading ? (
-                  <span className="w-32 h-7 skeleton inline-block rounded-lg"></span>
-              ) : contractors.length > 0 ? (
-                  `${contractors.length} ${t("search.title")}`
-              ) : (
-                  t("search.title")
-              )}
-            </h2>
-          </div>
-          {searchLocationLabel && <p className="text-xs text-[var(--color-muted)] font-medium flex items-center gap-1.5"><FiMapPin size={11} className="text-[var(--color-primary)]" /> {searchLocationLabel}</p>}
-        </div>
-
-        {loading && (
-          <div className="grid lg:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="glass-card p-6">
-                <div className="flex gap-6">
-                  <div className="skeleton w-24 h-24 rounded-2xl shrink-0" />
-                  <div className="flex-1 space-y-4 pt-1">
-                    <div className="skeleton h-6 w-3/4 rounded-md" />
-                    <div className="skeleton h-5 w-1/2 rounded-md" />
-                    <div className="flex gap-3"><div className="skeleton h-8 w-24 rounded-full" /><div className="skeleton h-8 w-20 rounded-full" /></div>
-                  </div>
-                </div>
-              </div>
+        {/* LEFT PANEL — LISTING */}
+        <section 
+          className={`flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 pb-24 lg:pb-12 transition-all duration-500 ${effectiveViewMode === "map" ? "hidden lg:block lg:max-w-md" : ""}`}
+          data-lenis-prevent
+        >
+          
+          {/* Quick Filter Strip */}
+          <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
+            {[
+              { id: "verified", label: "Verified", active: verified, icon: <FiCheckCircle/> },
+              { id: "featured", label: "Top Choice", active: featured, icon: <FiStar/> },
+              { id: "near", label: "Nearby", active: radiusKm <= 5, icon: <FiNavigation/> },
+            ].map(f => (
+              <button 
+                key={f.id}
+                onClick={() => {
+                  if (f.id === "verified") updateParam("verified", !verified);
+                  if (f.id === "featured") updateParam("featured", !featured);
+                  if (f.id === "near") updateParam("radius_km", radiusKm === 5 ? 25 : 5);
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-wider transition-all shrink-0 ${f.active ? "bg-indigo-500 border-indigo-500 text-white" : "bg-white/[0.03] border-white/10 text-slate-400 hover:border-white/30"}`}
+              >
+                {f.icon} {f.label}
+              </button>
             ))}
           </div>
-        )}
 
-        {error && !loading && <div className="glass-card p-12"><EmptyState icon="warning" title={error} action={<button onClick={runSearch} className="btn-primary">{t("app.retry")}</button>} /></div>}
-        
-        {!loading && !error && contractors.length === 0 && (
-            <div className="glass-card p-16 flex flex-col items-center justify-center border-dashed">
-                <div className="w-20 h-20 rounded-full bg-[var(--color-bg)] flex items-center justify-center mb-6 shadow-sm border border-[var(--color-border)]">
-                    <FiSearch className="text-[var(--color-primary)] w-8 h-8" />
-                </div>
-                <h3 className="font-display text-2xl font-bold text-[var(--color-heading)] mb-2">No contractors found</h3>
-                <p className="text-[var(--color-muted)] font-medium max-w-sm text-center mb-6">Expand your radius or select a different category to see more options.</p>
-                <button onClick={() => updateParam("radius_km", 10)} className="btn-secondary">Increase Radius to 10km</button>
+          {/* Results Summary */}
+          <div className="mb-6 flex items-end justify-between">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight">{loading ? "Finding..." : `${contractors.length} Pros nearby`}</h1>
+              <p className="text-xs text-slate-500 font-medium mt-1">Showing best matches in {searchLocationLabel || "your area"}</p>
             </div>
+            <div className="flex items-center gap-2">
+               <select 
+                value={sort} 
+                onChange={(e) => updateParam("sort", e.target.value)}
+                className="bg-transparent text-[10px] font-black uppercase tracking-widest text-indigo-400 outline-none cursor-pointer"
+               >
+                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value} className="bg-[#090B19]">{t(o.labelKey)}</option>)}
+               </select>
+            </div>
+          </div>
+
+          {/* Listing Grid */}
+          <div className="space-y-4">
+            {loading && page === 1 ? (
+              [1,2,3,4].map(i => (
+                <div key={i} className="h-40 w-full rounded-3xl bg-white/[0.02] border border-white/5 animate-pulse" />
+              ))
+            ) : contractors.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {contractors.map((c) => (
+                  <div key={c.id} onMouseEnter={() => setHoveredContractorId(c.id)} onMouseLeave={() => setHoveredContractorId(null)}>
+                    <ContractorCard 
+                      contractor={c} 
+                      showCompare 
+                      isCompared={compareList.some(item => item.id === c.id)} 
+                      onCompare={handleCompare} 
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : !loading && (
+              <div className="py-20 text-center">
+                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
+                  <FiSearch className="text-slate-600" size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-2">No results found</h3>
+                <p className="text-slate-500 text-sm max-w-xs mx-auto mb-8">Try expanding your radius or checking a different category.</p>
+                <button onClick={() => updateParam("radius_km", 25)} className="px-6 py-3 rounded-xl bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest">Expand to 25km</button>
+              </div>
+            )}
+
+            {contractors.length >= page * PAGE_SIZE && (
+              <button onClick={loadMore} className="w-full py-4 rounded-2xl border border-dashed border-white/10 text-slate-500 font-bold text-xs uppercase tracking-widest hover:border-indigo-500/50 hover:text-indigo-400 transition-all mt-6">
+                {loading ? "Loading..." : "Load More Pros"}
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* RIGHT PANEL — MAP */}
+        <section className={`transition-all duration-500 relative ${effectiveViewMode === "list" ? "w-0 overflow-hidden" : effectiveViewMode === "map" ? "flex-1" : "flex-1 hidden lg:block"}`}>
+           <ContractorMapPanel 
+              center={{ lat: Number(effectiveLat), lng: Number(effectiveLng) }} 
+              currentLocationLabel={searchLocationLabel} 
+              contractors={contractors} 
+              highlightedId={hoveredContractorId}
+           />
+           
+           {/* Map Floating UI — Center on mobile */}
+           <div className="absolute bottom-10 left-6 right-6 pointer-events-none lg:bottom-6 lg:left-6">
+             <div className="flex justify-center lg:justify-start">
+                <button 
+                  onClick={() => setViewMode(effectiveViewMode === "map" ? "list" : "map")}
+                  className="pointer-events-auto flex lg:hidden items-center gap-3 px-8 py-4 rounded-full bg-[#0D1021] border border-white/10 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl backdrop-blur-2xl"
+                >
+                  <FiGrid className="text-indigo-400" /> Show List
+                </button>
+             </div>
+           </div>
+        </section>
+
+        {/* Global Mobile View Toggle — Visible when in List mode on phone */}
+        {isMobile && effectiveViewMode === "list" && (
+          <div className="fixed bottom-10 left-0 right-0 z-[150] pointer-events-none flex justify-center">
+            <button 
+              onClick={() => setViewMode("map")}
+              className="pointer-events-auto flex items-center gap-3 px-8 py-4 rounded-full bg-[#0D1021] border border-white/10 text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5"
+            >
+              <FiMap className="text-indigo-400" /> View Map
+            </button>
+          </div>
         )}
-        
-        {!loading && !error && contractors.length > 0 && (
+      </main>
+
+      {/* ═══════ FILTER OVERLAY — SLIDE OUT ═══════ */}
+      <AnimatePresence>
+        {showFilters && (
           <>
-            <motion.div initial="hidden" animate="show" variants={stagger} className="grid lg:grid-cols-2 gap-6">
-              {contractors.map((contractor) => (
-                <motion.div variants={cardVariant} key={contractor.id}>
-                  <ContractorCard contractor={contractor} showCompare isCompared={compareList.some((item) => item.id === contractor.id)} onCompare={handleCompare} />
-                </motion.div>
-              ))}
-            </motion.div>
-            {contractors.length >= page * PAGE_SIZE && <div className="pt-12 pb-6 flex justify-center"><button onClick={loadMore} className="btn-primary shadow-glow px-8 py-3 font-bold">{lang === "hi" ? "और दिखाएँ" : "Load More Contractors"}</button></div>}
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setShowFilters(false)}
+              className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm"
+            />
+            <motion.aside 
+              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 z-[10001] w-full max-w-md bg-[#0D1021] border-l border-white/10 shadow-2xl flex flex-col"
+            >
+              {/* Filter Header — Fixed */}
+              <div className="flex items-center justify-between p-8 border-b border-white/5">
+                <h2 className="text-2xl font-black uppercase tracking-tighter">Refine Search</h2>
+                <button onClick={() => setShowFilters(false)} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              {/* Filter Content — Scrollable (Hidden Scrollbar) */}
+              <div 
+                className="flex-1 overflow-y-auto p-8 no-scrollbar scroll-smooth"
+                data-lenis-prevent
+              >
+                <div className="space-y-12 pb-12">
+                  {/* Categories */}
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Service Category</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => updateParam("category", "")}
+                        className={`px-4 py-3 rounded-xl border text-[11px] font-bold transition-all text-left ${!category ? "bg-indigo-500 border-indigo-500 text-white" : "bg-white/5 border-white/5 text-slate-400"}`}
+                      >
+                        All Services
+                      </button>
+                      {CATEGORIES.map(cat => (
+                        <button 
+                          key={cat.id}
+                          onClick={() => updateParam("category", cat.id)}
+                          className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-[11px] font-bold transition-all text-left ${category === cat.id ? "bg-indigo-500 border-indigo-500 text-white" : "bg-white/5 border-white/5 text-slate-400 hover:border-white/10"}`}
+                        >
+                          <Icon name={cat.icon} className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{t(cat.key)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sort Order */}
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Sort By</label>
+                    <div className="flex flex-col gap-2">
+                      {SORT_OPTIONS.map((opt) => (
+                        <button 
+                          key={opt.value} 
+                          onClick={() => updateParam("sort", opt.value)}
+                          className={`text-left px-4 py-3 rounded-xl text-xs font-bold transition-all ${sort === opt.value ? "bg-indigo-500 text-white shadow-lg" : "bg-white/5 text-slate-400 hover:border-white/10 border border-transparent"}`}
+                        >
+                          {t(opt.labelKey)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Proximity */}
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Search Radius</label>
+                    <div className="flex flex-wrap gap-2">
+                      {RADIUS_OPTIONS.map(km => (
+                        <button 
+                          key={km}
+                          onClick={() => updateParam("radius_km", km)}
+                          className={`flex-1 min-w-[60px] py-3 rounded-xl border text-xs font-bold transition-all ${radiusKm === km ? "bg-indigo-500 border-indigo-500 text-white" : "bg-white/5 border-white/5 text-slate-400"}`}
+                        >
+                          {km}km
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Trust & Preferences */}
+                  <div className="space-y-6">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 block">Trust & Preferences</label>
+                    
+                    <div className="space-y-4">
+                      {[
+                        { key: "verified", checked: verified, label: "Verified Only" },
+                        { key: "featured", checked: featured, label: "Top Choices" },
+                        { key: "labour_group", checked: searchParams.get("labour_group") === "true", label: "Agencies & Teams" },
+                        { key: "available", checked: searchParams.get("available") === "true", label: "Available Now" },
+                        { key: "min_rating", checked: rating >= 4, label: "Top Rated (4+ Stars)" }
+                      ].map((item) => (
+                        <label key={item.key} className="flex items-center justify-between group cursor-pointer">
+                          <span className="text-sm font-bold text-slate-300">{item.label}</span>
+                          <div className={`w-12 h-6 rounded-full p-1 transition-colors ${item.checked ? "bg-indigo-500" : "bg-white/10"}`}>
+                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${item.checked ? "translate-x-6" : "translate-x-0"}`} />
+                          </div>
+                          <input 
+                            type="checkbox" 
+                            checked={item.checked} 
+                            onChange={(e) => updateParam(item.key, item.key === "min_rating" ? (e.target.checked ? 4 : 0) : e.target.checked)} 
+                            className="hidden" 
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Experience */}
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Minimum Experience</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: "Any", val: 0 },
+                        { label: "3+ yrs", val: 3 },
+                        { label: "5+ yrs", val: 5 },
+                        { label: "10+ yrs", val: 10 },
+                        { label: "15+ yrs", val: 15 },
+                        { label: "20+ yrs", val: 20 },
+                      ].map(exp => (
+                        <button 
+                          key={exp.val}
+                          onClick={() => updateParam("min_experience", exp.val)}
+                          className={`py-3 rounded-xl border text-[10px] font-bold transition-all ${Number(searchParams.get("min_experience") || 0) === exp.val ? "bg-indigo-500 border-indigo-500 text-white" : "bg-white/5 border-white/5 text-slate-400"}`}
+                        >
+                          {exp.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Price Range */}
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Budget Range (Daily Rate)</label>
+                    <div className="space-y-4">
+                       <div className="flex gap-2">
+                         <input 
+                           type="number" 
+                           placeholder="Min ₹"
+                           className="w-1/2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-indigo-500 transition-colors"
+                           onChange={(e) => updateParam("min_price", e.target.value)}
+                         />
+                         <input 
+                           type="number" 
+                           placeholder="Max ₹"
+                           className="w-1/2 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs outline-none focus:border-indigo-500 transition-colors"
+                           onChange={(e) => updateParam("max_price", e.target.value)}
+                         />
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Footer — Fixed */}
+              <div className="p-8 border-t border-white/5 space-y-4 bg-[#0D1021]">
+                <button 
+                  onClick={() => setShowFilters(false)}
+                  className="w-full py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-500/20 active:scale-95 transition-all"
+                >
+                  Apply Filters
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setSearchParams(new URLSearchParams({ lat: String(effectiveLat), lng: String(effectiveLng) }));
+                    setShowFilters(false);
+                  }}
+                  className="w-full py-4 text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </motion.aside>
           </>
         )}
-      </section>
+      </AnimatePresence>
 
-      <CompareDrawer contractors={compareList} onRemove={(id) => setCompareList((prev) => prev.filter((item) => item.id !== id))} onClear={() => setCompareList([])} />
-    </main>
+      <CompareDrawer 
+        contractors={compareList} 
+        onRemove={(id) => setCompareList(prev => prev.filter(item => item.id !== id))} 
+        onClear={() => setCompareList([])} 
+      />
+    </div>
   );
 }
