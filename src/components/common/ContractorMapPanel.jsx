@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FiMapPin } from "react-icons/fi";
 import { hasGoogleMapsKey, loadGoogleMaps } from "../../utils/googleMaps";
 
 const DARK_MAP_STYLE = [
