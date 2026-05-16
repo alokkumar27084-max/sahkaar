@@ -10,6 +10,29 @@ const db = require('./config/db');
 const swaggerUi = require('swagger-ui-express');
 const fs = require('fs');
 const path = require('path');
+const { bookingController } = require('./controllers/bookingController');
+
+// ── PRODUCTION READINESS CHECKS ──
+const CRITICAL_KEYS = [
+  'DATABASE_URL',
+  'JWT_SECRET',
+  'RAZORPAY_KEY_ID',
+  'RAZORPAY_KEY_SECRET',
+  'RAZORPAY_WEBHOOK_SECRET'
+];
+
+if (process.env.NODE_ENV === 'production') {
+  const missing = CRITICAL_KEYS.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.error(`🛑 CRITICAL ERROR: Missing environment variables for production: ${missing.join(', ')}`);
+    console.error('Platform will NOT function correctly in production without these keys.');
+  }
+} else {
+  const missing = CRITICAL_KEYS.filter(key => !process.env[key]);
+  if (missing.length > 0) {
+    console.warn(`⚠️  DEV WARNING: Missing keys: ${missing.join(', ')}. Some features (Payments, Auth) will run in MOCK mode.`);
+  }
+}
 
 const app = express();
 

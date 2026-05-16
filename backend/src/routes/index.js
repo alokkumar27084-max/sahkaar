@@ -13,9 +13,10 @@ router.use('/reviews', reviewRoutes);
 router.use('/admin', adminRoutes);
 router.use('/services', servicesRoutes);
 router.use('/chat', require('./chat'));
+router.use('/quotes', require('./quotes'));
 router.use('/bookings', require('./bookings'));
 router.use('/notifications', require('./notifications'));
-router.use('/directory', require('./directory'));
 router.use('/profiles', require('./profiles'));
+router.use('/payments', require('./payments'));
 
 module.exports = router;

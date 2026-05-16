@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+const notificationService = require("../services/notificationService");
 
 // ── RAZORPAY INITIALIZATION ──
 // We construct an instance ONLY if keys exist, avoiding crashes for the user who hasn't generated them.
@@ -12,17 +13,40 @@ if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
     });
 }
 
-async function notifyUser(userId, message, type) {
+async function notifyUser(userId, message, type, templateName, templateData) {
     if (!userId) return;
-    await pool.query(
-        "INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)",
-        [userId, message, type]
-    ).catch(() => { });
+    try {
+        const userRes = await pool.query("SELECT email, name FROM users WHERE id = $1", [userId]);
+        const user = userRes.rows[0];
+        const templateArgs = templateData ? [...templateData] : [user?.name || 'User'];
+        if (templateArgs[0] === null) templateArgs[0] = user?.name || 'User';
+
+        await notificationService.notify({ 
+            userId, 
+            message, 
+            type, 
+            email: user?.email, 
+            templateName, 
+            templateData: templateArgs
+        });
+    } catch (err) {
+        console.error("NotifyUser Error:", err);
+    }
 }
 
 async function getContractorOwnerUserId(contractorId) {
     const res = await pool.query("SELECT user_id, business_name, category FROM contractors WHERE id = $1", [contractorId]);
     return res.rows[0] || null;
+}
+
+function idsEqual(left, right) {
+    return String(left) === String(right);
+}
+
+function canCustomerOrAdminAccessBooking(user, booking) {
+    if (!user || !booking) return false;
+    if (user.role === "admin") return true;
+    return user.role === "customer" && idsEqual(booking.customer_id, user.id);
 }
 
 function toMoney(value, fallback = 0) {
@@ -32,43 +56,42 @@ function toMoney(value, fallback = 0) {
 }
 
 function buildPricingQuote({ serviceTier, estimatedProjectValue, contractorDailyRate }) {
-    const normalizedTier = serviceTier === "macro" ? "macro" : "quick";
     const baseProjectValue = toMoney(
         estimatedProjectValue,
-        normalizedTier === "macro" ? Math.max(toMoney(contractorDailyRate, 0), 5000) : Math.max(toMoney(contractorDailyRate, 0), 149)
+        Math.max(toMoney(contractorDailyRate, 0), 5000)
     );
 
-    if (normalizedTier === "macro") {
-        const escrowAmount = toMoney(baseProjectValue * 0.3, 0);
-        const midMilestone = toMoney(baseProjectValue * 0.4, 0);
-        const finalMilestone = toMoney(baseProjectValue - escrowAmount - midMilestone, 0);
+    const escrowAmount = toMoney(baseProjectValue * 0.3, 0);
+    const midMilestone = toMoney(baseProjectValue * 0.4, 0);
+    const finalMilestone = toMoney(baseProjectValue - escrowAmount - midMilestone, 0);
 
-        return {
-            serviceTier: "macro",
-            paymentPlan: "milestone_30_40_30",
-            estimatedProjectValue: baseProjectValue,
-            amount: escrowAmount,
-            escrowAmount,
-            milestoneDetails: [
-                { title: "Booking Advance", percentage: 30, amount: escrowAmount, status: "due_now" },
-                { title: "Mid-project Milestone", percentage: 40, amount: midMilestone, status: "due_later" },
-                { title: "Final Completion", percentage: 30, amount: finalMilestone, status: "due_later" },
-            ],
-            customerCopy: "30% is secured now. Remaining milestones are released as work progresses.",
-        };
-    }
-
-    const quickAmount = toMoney(Math.max(baseProjectValue, 149), 149);
     return {
-        serviceTier: "quick",
-        paymentPlan: "full_escrow",
-        estimatedProjectValue: quickAmount,
-        amount: quickAmount,
-        escrowAmount: quickAmount,
+        serviceTier: "macro",
+        paymentPlan: "milestone_30_40_30",
+        estimatedProjectValue: baseProjectValue,
+        amount: escrowAmount,
+        escrowAmount,
         milestoneDetails: [
-            { title: "Service Escrow", percentage: 100, amount: quickAmount, status: "due_now" },
+            { title: "Booking Advance", percentage: 30, amount: escrowAmount, status: "due_now" },
+            { title: "Mid-project Milestone", percentage: 40, amount: midMilestone, status: "due_later" },
+            { title: "Final Completion", percentage: 30, amount: finalMilestone, status: "due_later" },
         ],
-        customerCopy: "The full service amount stays protected in escrow until the job is completed.",
+        customerCopy: "30% is secured now. Remaining milestones are released as work progresses.",
+    };
+}
+
+function buildQuoteBasedPricing(quote) {
+    const amount = Number(quote.total_amount);
+    return {
+        serviceTier: "custom",
+        paymentPlan: "full_escrow",
+        estimatedProjectValue: amount,
+        amount: amount,
+        escrowAmount: amount,
+        milestoneDetails: [
+            { title: `Quote: ${quote.items.length} items`, percentage: 100, amount: amount, status: "due_now" },
+        ],
+        customerCopy: "The full quoted amount is held securely in escrow.",
     };
 }
 
@@ -102,6 +125,7 @@ const bookingController = {
         const customerId = req.user.id;
         const {
             contractorId,
+            quoteId,
             serviceCategory,
             serviceTier,
             estimatedProjectValue,
@@ -117,34 +141,45 @@ const bookingController = {
         try {
             await client.query("BEGIN");
 
-            const contractorPricingRes = await client.query(
-                "SELECT daily_rate FROM contractors WHERE id = $1 LIMIT 1",
-                [contractorId]
-            );
+            let pricing;
+            if (quoteId) {
+                const quoteRes = await client.query("SELECT * FROM quotes WHERE id = $1", [quoteId]);
+                if (quoteRes.rows.length === 0) {
+                    await client.query("ROLLBACK");
+                    return res.status(404).json({ status: "error", message: "Quote not found" });
+                }
+                pricing = buildQuoteBasedPricing(quoteRes.rows[0]);
+            } else {
+                const contractorPricingRes = await client.query(
+                    "SELECT daily_rate FROM contractors WHERE id = $1 LIMIT 1",
+                    [contractorId]
+                );
 
-            if (!contractorPricingRes.rows[0]) {
-                await client.query("ROLLBACK");
-                return res.status(404).json({ status: "error", message: "Contractor not found" });
+                if (!contractorPricingRes.rows[0]) {
+                    await client.query("ROLLBACK");
+                    return res.status(404).json({ status: "error", message: "Contractor not found" });
+                }
+
+                pricing = buildPricingQuote({
+                    serviceTier,
+                    estimatedProjectValue,
+                    contractorDailyRate: contractorPricingRes.rows[0].daily_rate,
+                });
             }
-
-            const pricing = buildPricingQuote({
-                serviceTier,
-                estimatedProjectValue,
-                contractorDailyRate: contractorPricingRes.rows[0].daily_rate,
-            });
 
             const insertBookingQuery = `
         INSERT INTO bookings (
-          customer_id, contractor_id, service_category, service_tier, payment_plan,
+          customer_id, contractor_id, quote_id, service_category, service_tier, payment_plan,
           amount, estimated_project_value, escrow_amount, milestone_details, scheduled_for,
           address_label, location_address, location_lat, location_lng, notes
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13, $14, $15)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15, $16)
         RETURNING *;
       `;
             const bookingResult = await client.query(insertBookingQuery, [
                 customerId,
                 contractorId,
+                quoteId || null,
                 serviceCategory,
                 pricing.serviceTier,
                 pricing.paymentPlan,
@@ -231,17 +266,32 @@ const bookingController = {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, booking_id } = req.body;
 
         try {
+            if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !booking_id) {
+                return res.status(400).json({ status: "error", message: "Payment verification data is incomplete" });
+            }
+
             if (!process.env.RAZORPAY_KEY_SECRET) {
                 if (process.env.NODE_ENV === "production") {
                     return res.status(503).json({ status: "error", message: "Payment verification is not configured" });
                 }
+                if (razorpay_order_id !== `mock_order_${booking_id}`) {
+                    return res.status(400).json({ status: "error", message: "Invalid mock payment order" });
+                }
+
+                const bookingRes = await pool.query("SELECT customer_id, contractor_id, service_category FROM bookings WHERE id = $1", [booking_id]);
+                const booking = bookingRes.rows[0];
+                if (!booking) {
+                    return res.status(404).json({ status: "error", message: "Booking not found" });
+                }
+                if (!canCustomerOrAdminAccessBooking(req.user, booking)) {
+                    return res.status(403).json({ status: "error", message: "Access Denied" });
+                }
+
                 await pool.query(
                     "UPDATE bookings SET payment_status = $1, status = $2 WHERE id = $3",
                     ["IN_ESCROW", "IN_PROGRESS", booking_id]
                 );
-                const bookingRes = await pool.query("SELECT customer_id, contractor_id, service_category FROM bookings WHERE id = $1", [booking_id]);
-                const booking = bookingRes.rows[0];
-                const contractorMeta = booking ? await getContractorOwnerUserId(booking.contractor_id) : null;
+                const contractorMeta = await getContractorOwnerUserId(booking.contractor_id);
                 await notifyUser(booking?.customer_id, `Payment secured for ${booking?.service_category || 'your booking'}. Work can now begin.`, 'payment');
                 await notifyUser(contractorMeta?.user_id, `Payment secured for ${booking?.service_category || 'a booking'}. You can start the job.`, 'payment');
                 return res.json({ status: "success", message: "MOCK: Escrow Confirmed" });
@@ -258,22 +308,50 @@ const bookingController = {
                 return res.status(400).json({ status: "error", message: "Invalid Payment Signature" });
             }
 
+            const paymentRes = await pool.query(
+                `SELECT p.booking_id, b.customer_id, b.contractor_id, b.service_category
+                 FROM payments p
+                 JOIN bookings b ON b.id = p.booking_id
+                 WHERE p.razorpay_order_id = $1`,
+                [razorpay_order_id]
+            );
+            const linkedBooking = paymentRes.rows[0];
+            if (!linkedBooking) {
+                return res.status(404).json({ status: "error", message: "Payment order not found" });
+            }
+            if (!idsEqual(linkedBooking.booking_id, booking_id)) {
+                return res.status(400).json({ status: "error", message: "Payment order does not match booking" });
+            }
+            if (!canCustomerOrAdminAccessBooking(req.user, linkedBooking)) {
+                return res.status(403).json({ status: "error", message: "Access Denied" });
+            }
+
             // 1. Update Payment Record Tracking
             await pool.query(
-                "UPDATE payments SET razorpay_payment_id = $1, razorpay_signature = $2, status = $3 WHERE razorpay_order_id = $4",
-                [razorpay_payment_id, razorpay_signature, 'SUCCESS', razorpay_order_id]
+                "UPDATE payments SET razorpay_payment_id = $1, razorpay_signature = $2, status = $3 WHERE razorpay_order_id = $4 AND booking_id = $5",
+                [razorpay_payment_id, razorpay_signature, 'SUCCESS', razorpay_order_id, linkedBooking.booking_id]
             );
 
             // 2. Update the Unified Booking row indicating funds are locked in Escrow
             await pool.query(
                 "UPDATE bookings SET payment_status = $1, status = $2 WHERE id = $3",
-                ["IN_ESCROW", "IN_PROGRESS", booking_id]
+                ["IN_ESCROW", "IN_PROGRESS", linkedBooking.booking_id]
             );
-            const bookingRes = await pool.query("SELECT customer_id, contractor_id, service_category FROM bookings WHERE id = $1", [booking_id]);
-            const booking = bookingRes.rows[0];
-            const contractorMeta = booking ? await getContractorOwnerUserId(booking.contractor_id) : null;
-            await notifyUser(booking?.customer_id, `Payment secured for ${booking?.service_category || 'your booking'}. Work can now begin.`, 'payment');
-            await notifyUser(contractorMeta?.user_id, `Payment secured for ${booking?.service_category || 'a booking'}. You can start the job.`, 'payment');
+            const contractorMeta = await getContractorOwnerUserId(linkedBooking.contractor_id);
+            await notifyUser(
+                linkedBooking.customer_id, 
+                `Payment secured for ${linkedBooking.service_category || 'your booking'}. Work can now begin.`, 
+                'payment',
+                'bookingConfirmed',
+                [null, linkedBooking.service_category, linkedBooking.amount] // name will be fetched by notifyUser
+            );
+            await notifyUser(
+                contractorMeta?.user_id, 
+                `Payment secured for ${linkedBooking.service_category || 'a booking'}. You can start the job.`, 
+                'payment',
+                'paymentReceived',
+                [null, linkedBooking.service_category, linkedBooking.amount]
+            );
 
             res.json({ status: "success", message: "Payment safely held in Escrow. Work started!" });
         } catch (error) {
@@ -297,8 +375,8 @@ const bookingController = {
 
             const booking = bRes.rows[0];
 
-            // Customers and Admins can release Escrow
-            if (userRole === "customer" && booking.customer_id !== userId) {
+            // Only the paying customer or an admin can release escrow.
+            if (userRole !== "admin" && (userRole !== "customer" || !idsEqual(booking.customer_id, userId))) {
                 return res.status(403).json({ status: "error", message: "Access Denied" });
             }
 
@@ -358,4 +436,4 @@ const bookingController = {
     }
 };
 
-module.exports = bookingController;
+module.exports = { bookingController, notifyUser, getContractorOwnerUserId };

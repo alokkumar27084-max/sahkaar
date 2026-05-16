@@ -17,7 +17,7 @@ exports.findByEmail = async (email) => {
     `SELECT id, name, phone, email, role, password_hash,
             location_lat, location_lng, location_accuracy_m, location_source, location_captured_at
      FROM users
-     WHERE email = $1`,
+     WHERE LOWER(email) = LOWER($1)`,
     [email]
   );
   return res.rows[0];

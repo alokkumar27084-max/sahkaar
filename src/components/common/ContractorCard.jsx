@@ -1,224 +1,165 @@
-import React, { useRef, useCallback } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FiArrowRight, FiBriefcase, FiCreditCard, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiStar } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 import StarRating from "./StarRating";
 import Badge from "./Badge";
-import Icon from "./Icon";
 import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
 import { getImageUrl } from "../../utils/imageUtils";
-import { FiArrowRight, FiMessageCircle } from "react-icons/fi";
-
-/* ── Physics-based tilt handler (GSAP-enhanced) ── */
-function useTilt(maxTilt = 6) {
-  const ref = useRef(null);
-
-  const handleMove = useCallback((e) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    const rotateX = (0.5 - y) * maxTilt * 2;
-    const rotateY = (x - 0.5) * maxTilt * 2;
-
-    if (window.gsap) {
-      window.gsap.to(ref.current, {
-        rotateX, rotateY, scale: 1.02,
-        duration: 0.2, ease: "power2.out",
-        transformPerspective: 800,
-      });
-    } else {
-      ref.current.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
-    }
-    ref.current.style.setProperty('--mouse-x', `${x * 100}%`);
-    ref.current.style.setProperty('--mouse-y', `${y * 100}%`);
-  }, [maxTilt]);
-
-  const handleLeave = useCallback(() => {
-    if (!ref.current) return;
-    if (window.gsap) {
-      window.gsap.to(ref.current, {
-        rotateX: 0, rotateY: 0, scale: 1,
-        duration: 0.4, ease: "elastic.out(1, 0.5)",
-        transformPerspective: 800,
-      });
-    } else {
-      ref.current.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)';
-    }
-  }, []);
-
-  return { ref, handleMove, handleLeave };
-}
 
 export default function ContractorCard({ contractor, showCompare = false, isCompared = false, onCompare }) {
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
-  const tilt = useTilt(6);
 
   const resolvedName = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";
-  const resolvedCategory = contractor?.category || contractor?.categories?.[0] || "general";
+  const resolvedCategory = (contractor?.category || contractor?.categories?.[0] || "general").replace(/_/g, " ");
   const resolvedReviewCount = contractor?.review_count ?? contractor?.reviews_count ?? 0;
-
-  const {
-    id,
-    photo_url,
-    rating = 0,
-    distance_km,
-    daily_rate,
-    is_verified,
-    is_featured,
-    is_labour_group,
-    is_responsibility_model,
-    is_available,
-    team_size,
-    experience_years,
-  } = contractor;
+  const rating = Number(contractor?.rating || 0);
+  const distanceKm = contractor?.distance_km;
+  const dailyRate = contractor?.daily_rate;
 
   async function handleMessageTap(e) {
+    e.preventDefault();
     e.stopPropagation();
-    try { await contractorAPI.recordLead(id); } catch { /* no-op */ }
-    trackEvent("in_app_message_tap", { contractor_id: id, category: resolvedCategory, source: "card" });
-    navigate("/chat", { state: { initChatWith: id } });
-  }
-
-  function handleCompareToggle(e) {
-    e.stopPropagation();
-    onCompare?.(contractor, !isCompared);
+    try {
+      await contractorAPI.recordLead(contractor.id);
+    } catch { /* ignore */ }
+    trackEvent("in_app_message_tap", { contractor_id: contractor.id, category: resolvedCategory, source: "card" });
+    navigate("/chat", { state: { initChatWith: contractor.id } });
   }
 
   return (
-    <article
-      ref={tilt.ref}
-      onMouseMove={tilt.handleMove}
-      onMouseLeave={tilt.handleLeave}
-      className={`tilt-card glass-card overflow-hidden group ${is_featured ? "ring-1 ring-amber-400/20" : ""} ${isCompared ? "ring-2 ring-primary/50" : ""}`}
+    <article 
+      className={`group relative overflow-hidden rounded-3xl border transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 ${
+        isCompared 
+          ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/50" 
+          : "border-white/10 bg-white/[0.02] hover:border-white/20"
+      }`}
     >
-      {/* Tilt shine overlay */}
-      <div className="tilt-shine" />
+      <div className="p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-5">
+            {/* Avatar Section */}
+            <div className="relative shrink-0">
+              {contractor.photo_url ? (
+                <img
+                  src={getImageUrl(contractor.photo_url)}
+                  alt={resolvedName}
+                  className="h-20 w-20 rounded-2xl object-cover ring-1 ring-white/10 transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 text-2xl font-black text-indigo-300 border border-indigo-500/30">
+                  {resolvedName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              {contractor.is_available && (
+                <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-[#090B19] bg-emerald-500" title="Available Now" />
+              )}
+            </div>
 
-      <div className="p-5 md:p-6">
-        {/* Top row: badges + compare */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-indigo-500/15 to-cyan-500/15 text-indigo-400 dark:text-indigo-300 border border-indigo-500/10">
-              {resolvedCategory?.replace("_", " ")}
-            </span>
-            {is_verified && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/10">
-                ✓ Verified
-              </span>
-            )}
+            {/* Name & Title Section */}
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="truncate font-display text-xl font-black text-white">{resolvedName}</h3>
+                {contractor.is_verified && (
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-500/30" title="Verified">
+                    <FiShield size={10} />
+                  </div>
+                )}
+              </div>
+              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
+                {resolvedCategory}
+              </p>
+              <div className="mt-3 flex items-center gap-3">
+                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/5">
+                   <FiStar className="text-amber-400 fill-amber-400" size={12} />
+                   <span className="text-xs font-black text-white">{rating.toFixed(1)}</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  {resolvedReviewCount} reviews
+                </span>
+              </div>
+            </div>
           </div>
+
           {showCompare && (
             <button
               type="button"
-              onClick={handleCompareToggle}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all ${
+              onClick={() => onCompare?.(contractor, !isCompared)}
+              className={`shrink-0 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
                 isCompared
-                  ? "border-primary bg-primary/10 text-primary dark:text-primary-light"
-                  : "border-[var(--color-border)] text-[var(--color-muted)] hover:border-primary/30 hover:text-primary"
+                  ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"
+                  : "bg-white/5 text-slate-400 border border-white/10 hover:border-white/30"
               }`}
             >
-              <span className={`h-2 w-2 rounded-full transition-colors ${isCompared ? "bg-primary" : "bg-[var(--color-border)]"}`} />
-              {lang === "hi" ? "तुलना" : "Compare"}
+              Compare
             </button>
           )}
         </div>
 
-        {/* Main — Avatar + Info */}
-        <div className="flex items-start gap-4">
-          {/* Avatar */}
-          <div className="relative flex-shrink-0">
-            {photo_url ? (
-              <img
-                src={getImageUrl(photo_url)}
-                alt={resolvedName}
-                className="relative w-16 h-16 rounded-xl object-cover ring-2 ring-[var(--color-border)] group-hover:ring-primary/40 transition-all duration-500"
-                loading="lazy"
-                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-              />
-            ) : null}
-            <div
-              className="relative w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 ring-2 ring-[var(--color-border)] items-center justify-center text-white text-lg font-bold"
-              style={{ display: photo_url ? 'none' : 'flex' }}
-            >
-              {resolvedName.charAt(0).toUpperCase()}
-            </div>
-            <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--color-surface)] ${is_available ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" : "bg-[var(--color-muted)]"}`} />
+        {/* Info Grid */}
+        <div className="mt-6 grid grid-cols-3 gap-4 border-t border-white/5 pt-6">
+          <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Proximity</p>
+            <p className="text-sm font-bold text-white flex items-center gap-1">
+               <FiMapPin size={12} className="text-cyan-400" />
+               {distanceKm != null ? `${Number(distanceKm).toFixed(1)}km` : "Local"}
+            </p>
           </div>
-
-          {/* Name + Rating */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-display text-base text-[var(--color-heading)] leading-tight truncate font-bold">
-              {resolvedName}
-            </h3>
-            <div className="flex items-center gap-2 mt-2">
-              <StarRating value={Math.round(Number(rating) || 0)} readonly size="text-sm" />
-              <span className="text-[11px] text-[var(--color-muted)] font-medium">
-                {(Number(rating) || 0).toFixed(1)} ({resolvedReviewCount})
-              </span>
-            </div>
+          <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Starting Rate</p>
+            <p className="text-sm font-bold text-white">
+              {dailyRate ? `₹${Number(dailyRate).toLocaleString("en-IN")}` : "Custom"}
+            </p>
           </div>
-
-          {/* Price */}
-          {daily_rate && (
-            <div className="text-right flex-shrink-0 pl-2 self-center">
-              <p className="font-display text-xl text-[var(--color-heading)] leading-none font-bold">
-                ₹{Number(daily_rate || 0).toLocaleString("en-IN")}
-              </p>
-              <p className="text-[9px] text-[var(--color-muted)] uppercase tracking-wider mt-0.5 font-semibold">
-                {t("profile.per_day")}
-              </p>
-            </div>
-          )}
+          <div className="space-y-1">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Exp</p>
+            <p className="text-sm font-bold text-white">
+              {contractor.experience_years ? `${contractor.experience_years}y` : "New Pro"}
+            </p>
+          </div>
         </div>
 
-        {/* Info pills */}
-        <div className="flex flex-wrap gap-1.5 mt-4">
-          {distance_km != null && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--color-body)] bg-[var(--color-bg-elevated)] rounded-lg px-2.5 py-1.5 border border-[var(--color-border)]">
-              <Icon name="location" className="w-3 h-3 text-primary" />
-              {(Number(distance_km) || 0).toFixed(1)} {t("search.km_away")}
-            </span>
-          )}
-          {experience_years > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--color-body)] bg-[var(--color-bg-elevated)] rounded-lg px-2.5 py-1.5 border border-[var(--color-border)]">
-              <Icon name="trophy" className="w-3 h-3 text-amber-500" />
-              {experience_years} {t("profile.years")}
-            </span>
-          )}
-          {is_labour_group && team_size > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[var(--color-body)] bg-[var(--color-bg-elevated)] rounded-lg px-2.5 py-1.5 border border-[var(--color-border)]">
-              <Icon name="worker" className="w-3 h-3 text-accent" />
-              {team_size} {t("profile.workers")}
-            </span>
-          )}
+        {/* Badges */}
+        <div className="mt-6 flex flex-wrap gap-2">
+           {contractor.is_labour_group && (
+             <div className="flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">
+               <FiUsers size={12} className="text-indigo-400" /> Team of {contractor.team_size || 'Expert'}
+             </div>
+           )}
+           {contractor.is_featured && (
+             <div className="flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-400">
+               Top Rated
+             </div>
+           )}
         </div>
-
-        {/* Extra Badges */}
-        {(is_labour_group || is_responsibility_model) && (
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
-            {is_labour_group && <Badge type="labour_group" lang={lang} />}
-            {is_responsibility_model && <Badge type="responsibility" lang={lang} />}
-          </div>
-        )}
       </div>
 
-      {/* Action bar with gradient border top */}
-      <div className="grid grid-cols-2 border-t border-[var(--color-border)]">
+      {/* Footer Actions */}
+      <div className="grid grid-cols-11 border-t border-white/5">
         <button
-          className="inline-flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-emerald-400 bg-transparent hover:bg-emerald-500/5 transition-colors border-r border-[var(--color-border)]"
           onClick={handleMessageTap}
+          className="col-span-3 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 transition-all hover:bg-emerald-500/5"
         >
-          <FiMessageCircle size={15} className="shrink-0" />
-          <span>{lang === "hi" ? "मेसेज" : "Message"}</span>
+          <FiMessageCircle size={16} />
+          <span className="hidden sm:inline">Chat</span>
         </button>
         <Link
-          to={`/contractor/${id}`}
-          className="inline-flex items-center justify-center gap-2 py-3.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 transition-all group/link"
+          to={`/contractor/${contractor.id}`}
+          className="col-span-4 flex items-center justify-center gap-2 border-x border-white/5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white/5"
         >
-          <span>{t("search.view_profile")}</span>
-          <FiArrowRight size={14} className="shrink-0 group-hover/link:translate-x-1 transition-transform" />
+          View Profile
+          <FiArrowRight size={14} className="text-indigo-400" />
+        </Link>
+        <Link
+          to={`/checkout/${contractor.id}`}
+          state={{ contractor }}
+          className="col-span-4 flex items-center justify-center gap-2 bg-indigo-600 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-indigo-700 shadow-inner"
+        >
+          <FiCreditCard size={14} />
+          Book
         </Link>
       </div>
     </article>

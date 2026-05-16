@@ -8,12 +8,13 @@ import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
 import Icon from "../../components/common/Icon";
 import { useAuth } from "../../context/AuthContext";
-import { FiTrendingUp, FiSearch, FiArrowRight, FiStar, FiMapPin, FiMap } from "react-icons/fi";
+import { FiTrendingUp, FiSearch, FiArrowRight, FiStar, FiMapPin, FiMap, FiBriefcase, FiCheckCircle, FiUser, FiLayers } from "react-icons/fi";
+import SEOHead from "../../components/common/SEOHead";
 
 /* ══════════════════════════════════════════════
    GSAP SCROLL-TRIGGERED ANIMATIONS
    ══════════════════════════════════════════════ */
-function useGSAPAnimations() {
+function useGSAPAnimations(dependency) {
   useEffect(() => {
     if (!window.gsap || !window.ScrollTrigger) return;
     const gsap = window.gsap;
@@ -22,41 +23,26 @@ function useGSAPAnimations() {
     // Fade-up sections on scroll
     document.querySelectorAll('.gsap-fade-up').forEach((el) => {
       gsap.fromTo(el,
-        { y: 50, opacity: 0 },
+        { y: 30, opacity: 0 },
         {
           y: 0, opacity: 1,
-          duration: 0.6,
-          ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 88%", once: true }
+          duration: 0.5,
+          ease: "power2.out",
+          scrollTrigger: { trigger: el, start: "top 95%", once: true }
         }
       );
     });
 
-    // Card entrance with subtle rotation
+    // Card entrance
     document.querySelectorAll('.gsap-card-enter').forEach((el, i) => {
       gsap.fromTo(el,
-        { y: 60, opacity: 0, rotation: 1.5 },
+        { y: 40, opacity: 0, rotation: 1 },
         {
           y: 0, opacity: 1, rotation: 0,
-          duration: 0.6,
+          duration: 0.5,
           ease: "expo.out",
-          delay: i * 0.1,
-          scrollTrigger: { trigger: el, start: "top 90%", once: true }
-        }
-      );
-    });
-
-    // Stat counter animation
-    document.querySelectorAll('.gsap-counter').forEach((el) => {
-      const target = parseInt(el.dataset.target) || 0;
-      gsap.fromTo(el,
-        { innerText: 0 },
-        {
-          innerText: target,
-          duration: 1.5,
-          ease: "power2.out",
-          snap: { innerText: 1 },
-          scrollTrigger: { trigger: el, start: "top 85%", once: true }
+          delay: i * 0.05,
+          scrollTrigger: { trigger: el, start: "top 95%", once: true }
         }
       );
     });
@@ -64,7 +50,54 @@ function useGSAPAnimations() {
     return () => {
       window.ScrollTrigger?.getAll().forEach(t => t.kill());
     };
-  }, []);
+  }, [dependency]);
+}
+
+/* ── Reactive Stat Counter ── */
+function StatCounter({ target, percentage, label }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const nodeRef = useRef(null);
+
+  useEffect(() => {
+    if (!window.gsap || !window.ScrollTrigger) return;
+    const gsap = window.gsap;
+    
+    let targetNum = parseFloat(target) || 0;
+    if (typeof target === 'string' && target.toLowerCase().includes('k')) {
+      targetNum = parseFloat(target) * 1000;
+    }
+
+    gsap.fromTo(nodeRef.current, 
+      { innerText: 0 },
+      {
+        innerText: targetNum,
+        duration: 2.5,
+        ease: "power4.out",
+        snap: { innerText: 1 },
+        scrollTrigger: { trigger: nodeRef.current, start: "top 95%", once: true },
+        onUpdate: function() {
+          let val = Math.floor(this.targets()[0].innerText);
+          if (val >= 1000 && !percentage) {
+            setDisplayValue((val / 1000).toFixed(1).replace('.0', '') + 'k+');
+          } else {
+            setDisplayValue(val + (percentage ? '%' : '+'));
+          }
+        }
+      }
+    );
+  }, [target, percentage]);
+
+  return (
+    <div className="flex flex-col md:flex-row items-center md:items-center gap-1 md:gap-3 text-center md:text-left">
+      <span 
+        ref={nodeRef}
+        className="font-display font-bold text-white text-xl md:text-2xl tracking-tight leading-none"
+      >
+        {displayValue}
+      </span>
+      <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{label}</span>
+    </div>
+  );
 }
 
 /* ── Magnetic hover for buttons (GSAP) ── */
@@ -111,11 +144,12 @@ export default function HomePage() {
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [showTrending, setShowTrending] = useState(false);
+  const [realStats, setRealStats] = useState(null);
   const { request: getLocation, lat, lng } = useGeolocation();
 
   const trendingSearches = ["Plumber", "Electrician", "Civil Contractor", "Carpenter", "Painter"];
 
-  useGSAPAnimations();
+  useGSAPAnimations(realStats);
 
   useEffect(() => {
     if (user?.role === "admin") navigate("/admin/dashboard", { replace: true });
@@ -126,6 +160,10 @@ export default function HomePage() {
       .then((res) => setFeatured(res.data.contractors || []))
       .catch(() => setFeatured([]))
       .finally(() => setFeaturedLoading(false));
+
+    contractorAPI.getPublicStats()
+      .then(res => setRealStats(res.data.stats))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -144,11 +182,11 @@ export default function HomePage() {
     navigate(`/search?category=${categoryId}`);
   }
 
-  const stats = [
-    { value: 500, suffix: "+", label: "Contractors" },
-    { value: 10, suffix: "k+", label: "Projects Done" },
-    { value: 98, suffix: "%", label: "Satisfaction" },
-    { value: 50, suffix: "+", label: "Cities" }
+  const displayStats = [
+    { val: realStats?.contractors || "500+", label: "Verified Partners" },
+    { val: realStats?.projects || "10k+", label: "Projects Done" },
+    { val: (realStats?.satisfaction || 98) + "%", label: "Satisfaction" },
+    { val: realStats?.cities || "50+", label: "Cities" }
   ];
 
   const testimonials = useMemo(() => [
@@ -174,6 +212,18 @@ export default function HomePage() {
 
   return (
     <main id="main-content" className="overflow-hidden">
+      <SEOHead
+        title="Thekedaar — Premium Verified Contractors in India"
+        description="Find and hire verified contractors for construction, renovation, interior design, electrical, plumbing, and more. Secure escrow payments. Trusted by thousands across India."
+        canonical="https://thekedaar.com"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Thekedaar",
+          url: "https://thekedaar.com",
+          potentialAction: { "@type": "SearchAction", target: "https://thekedaar.com/search?q={search_term_string}", "query-input": "required name=search_term_string" },
+        }}
+      />
 
       {/* ═══════ HERO — DARK PREMIUM ═══════ */}
       <section
@@ -193,14 +243,14 @@ export default function HomePage() {
 
 
         {/* Hero Content */}
-        <div className="relative z-30 w-full max-w-[1400px] mx-auto px-5 md:px-10 pt-16 md:pt-24 pb-10">
-          <div className="max-w-[900px]">
+        <div className="relative z-30 w-full max-w-[1400px] mx-auto px-6 pt-32 md:pt-40 pb-20">
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
             {/* Status badge */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] backdrop-blur-md mb-10"
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] backdrop-blur-md mb-8 md:mb-10"
             >
               <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
               <span className="text-indigo-200/60 text-[10px] font-semibold uppercase tracking-[0.3em]">
@@ -209,16 +259,16 @@ export default function HomePage() {
             </motion.div>
 
             {/* ✦ ELITE CONTRACTORS VERIFIED RESULTS ✦ */}
-            <div className="mb-6 space-y-0">
+            <div className="mb-8 space-y-0">
               {["ELITE", "CONTRACTORS", "VERIFIED", "RESULTS"].map((word, i) => (
                 <motion.h1
                   key={word}
                   initial={{ opacity: 0, y: 60, filter: "blur(10px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   transition={{ delay: 0.15 + i * 0.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="font-display font-extrabold uppercase leading-[0.9] tracking-[-0.04em]"
+                  className="font-display font-extrabold uppercase leading-[0.85] md:leading-[0.9] tracking-[-0.04em]"
                   style={{
-                    fontSize: 'clamp(2.2rem, 10vw, 8rem)',
+                    fontSize: 'clamp(1.8rem, 10vw, 8rem)',
                     color: i === 1
                       ? '#818CF8'
                       : i === 2
@@ -255,18 +305,18 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.7 }}
-              className="flex flex-wrap gap-4"
+              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 w-full sm:w-auto"
             >
               <MagneticButton
                 onClick={() => navigate("/search")}
-                className="h-14 px-10 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-sm font-bold uppercase tracking-[0.1em] shadow-[0_4px_30px_rgba(99,102,241,0.3)] btn-shimmer animate-pulse-glow items-center justify-center gap-2"
+                className="w-full sm:w-auto h-14 px-10 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-sm font-bold uppercase tracking-[0.1em] shadow-[0_4px_30px_rgba(99,102,241,0.3)] btn-shimmer animate-pulse-glow items-center justify-center gap-2"
               >
                 Explore Services
                 <FiArrowRight className="inline ml-1 -mt-0.5" />
               </MagneticButton>
               <MagneticButton
                 onClick={() => navigate("/register/contractor")}
-                className="h-14 px-10 rounded-xl border-2 border-white/20 text-white/90 text-sm font-bold uppercase tracking-[0.1em] hover:bg-white/5 hover:border-white/30 transition-all items-center justify-center"
+                className="w-full sm:w-auto h-14 px-10 rounded-xl border-2 border-white/20 text-white/90 text-sm font-bold uppercase tracking-[0.1em] hover:bg-white/5 hover:border-white/30 transition-all items-center justify-center"
               >
                 Become a Partner
               </MagneticButton>
@@ -279,44 +329,41 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
             onSubmit={handleSearch}
-            className="mt-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl max-w-4xl relative z-50 shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
+            className="mt-12 md:mt-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl w-full max-w-4xl mx-auto relative z-50 shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
           >
             <div className="grid md:grid-cols-[1fr_auto_auto]">
               <div className="relative">
-                <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px]" />
+                <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                 <input
-                  type="search"
+                  type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onFocus={() => setShowTrending(true)}
                   onBlur={() => setTimeout(() => setShowTrending(false), 200)}
-                  placeholder="Search contractors, services, or location..."
-                  className="w-full h-[58px] bg-transparent text-white placeholder-slate-500 border-0 outline-none text-[15px]"
-                  style={{ paddingLeft: '52px', paddingRight: '16px' }}
+                  placeholder="What are you looking for?"
+                  className="w-full h-16 bg-transparent border-none outline-none pl-14 pr-6 text-white text-sm"
                 />
                 <AnimatePresence>
                   {showTrending && !query && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 8 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-[#13151D] rounded-xl shadow-xl border border-white/[0.08] z-[999] max-h-[280px] overflow-y-auto"
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute top-full left-0 right-0 mt-2 bg-[#13151D] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100]"
                     >
-                      <div className="px-4 py-3 border-b border-white/[0.05]">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                          <FiTrendingUp size={11} /> Trending Searches
+                      <div className="p-4 border-b border-white/5">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                          <FiTrendingUp size={12} /> Trending Searches
                         </p>
                       </div>
-                      <div className="p-1.5">
+                      <div className="p-2">
                         {trendingSearches.map(term => (
                           <button
                             key={term}
-                            type="button"
                             onClick={() => { setQuery(term); setShowTrending(false); }}
-                            className="w-full text-left px-3 py-2.5 text-sm text-slate-300 hover:bg-white/[0.04] rounded-lg transition-colors flex items-center gap-3"
+                            className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3"
                           >
-                            <FiSearch className="w-3.5 h-3.5 text-slate-500" />
+                            <FiSearch size={14} className="text-slate-500" />
                             {term}
                           </button>
                         ))}
@@ -325,87 +372,176 @@ export default function HomePage() {
                   )}
                 </AnimatePresence>
               </div>
-              <button type="button" onClick={getLocation} className="h-[58px] px-5 border-t md:border-t-0 md:border-l border-white/[0.06] text-slate-400 hover:text-white font-medium flex items-center justify-center gap-2 transition-colors text-sm">
-                <FiMapPin className="w-4 h-4" />
-                <span className="hidden sm:inline">Location</span>
+              <button
+                type="button"
+                onClick={getLocation}
+                className="h-16 px-6 border-t md:border-t-0 md:border-l border-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
+              >
+                <FiMapPin size={16} />
+                {lat && lng ? "Location Set" : "Get Location"}
               </button>
-              <button type="submit" className="h-[58px] px-8 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold rounded-r-2xl md:rounded-l-none hover:from-indigo-600 hover:to-indigo-700 transition-all text-sm uppercase tracking-wider">
+              <button
+                type="submit"
+                className="h-16 px-10 bg-indigo-600 text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-indigo-700 transition-colors"
+              >
                 {t("app.search")}
               </button>
             </div>
           </motion.form>
-
-          {/* Scroll indicator - Removed absolute positioning to prevent overlap */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }} className="mt-14 w-full flex justify-center z-50">
-            <a href="/#services" className="inline-flex flex-col items-center text-slate-500 text-[10px] uppercase tracking-[0.3em] hover:text-slate-300 transition-colors">
-              Scroll
-              <span className="mt-2 w-5 h-8 rounded-full border border-slate-700/50 inline-flex items-start justify-center p-1">
-                <span className="hero-scroll-dot bg-indigo-400" />
-              </span>
-            </a>
-          </motion.div>
         </div>
       </section>
 
-      {/* ═══════ MARQUEE TICKER — NEW ═══════ */}
-      <MarqueeTicker />
+      {/* ═══════ ELITE PROOF STRIP — Minimalist Trust Signal ═══════ */}
+      <section className="relative z-40 -mt-14 md:-mt-10 mb-20 md:mb-32 px-5">
+        <motion.div
+          key={realStats ? "loaded" : "loading"} // Force re-render and re-animation when data arrives
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-[1000px] mx-auto rounded-[32px] md:rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-3xl py-6 md:py-5 px-8 md:px-12 shadow-2xl"
+        >
+          <div className="grid grid-cols-2 md:flex md:flex-nowrap items-center justify-center gap-y-8 gap-x-4 md:gap-x-12">
+            {displayStats.map((stat, i) => (
+              <React.Fragment key={i}>
+                <StatCounter 
+                  target={stat.val} 
+                  percentage={String(stat.val).includes('%')} 
+                  label={stat.label} 
+                />
+                {i < displayStats.length - 1 && (
+                  <div className={`hidden md:block w-1 h-1 rounded-full bg-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.6)]`} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </motion.div>
+      </section>
 
-      {/* ═══════ STATS — GSAP animated counters ═══════ */}
-      <section className="hidden md:block max-w-[1400px] mx-auto px-5 md:px-10 py-28 text-center">
-        <div className="gsap-fade-up flex flex-col md:flex-row items-center justify-between gap-10 md:gap-0">
-          {stats.map((stat, i) => (
-            <React.Fragment key={i}>
-              <div className="text-center px-8">
-                <p className="font-display font-extrabold text-[var(--color-heading)] leading-none tracking-[-0.03em]" style={{ fontSize: 'clamp(3rem, 6vw, 4.5rem)' }}>
-                  <span className="gsap-counter" data-target={stat.value}>{stat.value}</span>{stat.suffix}
-                </p>
-                <p className="text-[12px] font-semibold text-[var(--color-muted)] uppercase tracking-[0.15em] mt-3">{stat.label}</p>
+
+      {/* ═══════ HIGH-IMPACT FEATURE — THE THEKEDAAR PROMISE (BENTO GRID) ═══════ */}
+      <section className="relative py-24 md:py-40 bg-[#0A0C16] overflow-hidden">
+        {/* Background Blueprints — Thin 1px lines */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-px h-full bg-indigo-500" />
+          <div className="absolute top-0 left-2/4 w-px h-full bg-indigo-500" />
+          <div className="absolute top-0 left-3/4 w-px h-full bg-indigo-500" />
+          <div className="absolute top-1/4 left-0 w-full h-px bg-indigo-500" />
+          <div className="absolute top-2/4 left-0 w-full h-px bg-indigo-500" />
+        </div>
+
+        <div className="max-w-[1400px] mx-auto px-5 md:px-10 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+            
+            {/* ✦ BENTO CELL 1: MAIN CINEMATIC (COL 1-8) ✦ */}
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="md:col-span-8 relative group rounded-[40px] overflow-hidden border border-white/5 shadow-2xl aspect-[16/9] md:aspect-auto md:h-[600px]"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
+                alt="Elite Construction"
+                className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C16] via-transparent to-transparent opacity-90" />
+              
+              {/* Overlay Content */}
+              <div className="absolute bottom-10 left-10 right-10">
+                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 mb-6">
+                  <FiBriefcase className="text-indigo-400" size={14} />
+                  <span className="text-white text-[10px] font-black uppercase tracking-[0.2em]">Scale & Precision</span>
+                </div>
+                <h2 className="font-display text-4xl md:text-7xl font-black text-white leading-[0.9] tracking-[-0.03em] max-w-2xl">
+                  EXPERTISE FOR YOUR <br/>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">BIGGEST DREAMS.</span>
+                </h2>
               </div>
-              {i < stats.length - 1 && (
-                <div className="hidden md:block w-px bg-[var(--color-border)] self-stretch" />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </section>
+            </motion.div>
 
-      {/* ═══════ SERVICE PATHS ═══════ */}
-      <section className="max-w-[1400px] mx-auto px-5 md:px-10 pb-20">
-        <div className="grid md:grid-cols-3 gap-5">
-          {/* Quick Services */}
-          <div onClick={() => navigate("/quick-services")} className="gsap-card-enter glass-card p-8 cursor-pointer group border-l-4 border-indigo-500/60">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/15 to-indigo-500/5 text-indigo-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
-            </div>
-            <h3 className="font-display text-lg font-bold text-[var(--color-heading)] group-hover:text-indigo-400 transition-colors">Quick Services</h3>
-            <p className="text-[var(--color-muted)] text-sm mt-2 leading-relaxed">AC repair, plumbing, electrician — instant booking for everyday needs.</p>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 mt-4 opacity-0 group-hover:opacity-100 group-hover:gap-2 transition-all">
-              Browse Services <FiArrowRight size={12} />
-            </span>
-          </div>
+            {/* ✦ BENTO CELL 2: THE PROMISE (COL 9-12) ✦ */}
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="md:col-span-4 bg-white/[0.02] border border-white/5 rounded-[40px] p-10 flex flex-col justify-between"
+            >
+              <div className="space-y-6">
+                <div className="w-16 h-1 bg-indigo-500" />
+                <p className="text-xl md:text-2xl text-white/60 leading-relaxed font-medium">
+                  Whether you're building from scratch or renovating a full floor, our Thekedaar Services connect you with top-tier contractors.
+                </p>
+              </div>
+              
+              <div className="space-y-8 pt-10">
+                <div className="flex gap-5">
+                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                      <FiStar size={20} />
+                   </div>
+                   <div>
+                      <p className="text-white font-black uppercase tracking-widest text-[11px] mb-1">Milestone Billing</p>
+                      <p className="text-white/40 text-xs">Pay only when work is physically done.</p>
+                   </div>
+                </div>
+                <div className="flex gap-5">
+                   <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 flex-shrink-0">
+                      <FiCheckCircle size={20} />
+                   </div>
+                   <div>
+                      <p className="text-white font-black uppercase tracking-widest text-[11px] mb-1">Verified Assets</p>
+                      <p className="text-white/40 text-xs">Every contractor is audited & verified.</p>
+                   </div>
+                </div>
+              </div>
+            </motion.div>
 
-          {/* Macro Services */}
-          <div onClick={() => navigate("/macro-services")} className="gsap-card-enter glass-card p-8 cursor-pointer group border-l-4 border-cyan-500/60">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/15 to-cyan-500/5 text-cyan-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
-            </div>
-            <h3 className="font-display text-lg font-bold text-[var(--color-heading)] group-hover:text-cyan-400 transition-colors">Macro Services</h3>
-            <p className="text-[var(--color-muted)] text-sm mt-2 leading-relaxed">Construction, renovation, interior — trusted contractors for big projects.</p>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 mt-4 opacity-0 group-hover:opacity-100 group-hover:gap-2 transition-all">
-              Find Contractors <FiArrowRight size={12} />
-            </span>
-          </div>
+            {/* ✦ BENTO CELL 3: CTA (COL 1-4) ✦ */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="md:col-span-4 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[40px] p-8 flex items-center justify-between group cursor-pointer"
+              onClick={() => navigate("/macro-services")}
+            >
+              <div>
+                <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Next Level</p>
+                <p className="text-white text-2xl font-black uppercase leading-tight">Thekedaar <br/>Services</p>
+              </div>
+              <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-45">
+                <FiArrowRight size={24} />
+              </div>
+            </motion.div>
 
-          {/* Local Directory */}
-          <div onClick={() => navigate("/directory")} className="gsap-card-enter glass-card p-8 cursor-pointer group border-l-4 border-amber-500/60">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 text-amber-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-500">
-              <FiMap size={24} />
-            </div>
-            <h3 className="font-display text-lg font-bold text-[var(--color-heading)] group-hover:text-amber-400 transition-colors">Local Directory</h3>
-            <p className="text-[var(--color-muted)] text-sm mt-2 leading-relaxed">Discover nearby doctors, shops, tutors — your neighborhood at a glance.</p>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-400 mt-4 opacity-0 group-hover:opacity-100 group-hover:gap-2 transition-all">
-              Explore Nearby <FiArrowRight size={12} />
-            </span>
+            {/* ✦ BENTO CELL 4: PORTFOLIO (COL 5-12) ✦ */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="md:col-span-8 bg-white/[0.02] border border-white/5 rounded-[40px] p-8 flex flex-wrap items-center justify-between gap-6"
+            >
+              <div className="flex -space-x-4">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="w-12 h-12 rounded-full border-4 border-[#0A0C16] bg-slate-800 flex items-center justify-center text-white text-[10px] font-black overflow-hidden">
+                    <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="User" />
+                  </div>
+                ))}
+                <div className="w-12 h-12 rounded-full border-4 border-[#0A0C16] bg-indigo-500 flex items-center justify-center text-white text-[10px] font-black uppercase">
+                  500+
+                </div>
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-white/80 font-bold uppercase tracking-tight">Trusted by India's top THEKEDAARS.</p>
+                <p className="text-white/40 text-xs">Join our network of elite construction partners.</p>
+              </div>
+              <button 
+                onClick={() => navigate("/search")}
+                className="px-8 py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-[10px] hover:bg-white/90 transition-all active:scale-95"
+              >
+                Find Contractors
+              </button>
+            </motion.div>
+
           </div>
         </div>
       </section>
@@ -466,7 +602,7 @@ export default function HomePage() {
             ))}
           </div>
         ) : featured.length > 0 ? (
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {featured.slice(0, 4).map((c) => (
               <div key={c.id} className="gsap-card-enter">
                 <ContractorCard contractor={c} />
@@ -534,62 +670,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ═══════ FOOTER ═══════ */}
-      <footer id="contact" className="border-t border-[var(--color-border)] relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0C0F1D, #13151D)' }}>
-        <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 font-display font-extrabold uppercase text-white/[0.02] whitespace-nowrap pointer-events-none leading-none tracking-[-0.04em]" style={{ fontSize: 'clamp(6rem, 15vw, 14rem)' }}>
-          THEKEDAAR
-        </div>
-
-        <div className="max-w-[1400px] mx-auto px-5 md:px-10 py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-10 relative z-10">
-          <div>
-            <p className="font-display text-xl font-bold text-white mb-2">Thekedaar</p>
-            <p className="text-sm text-slate-500 leading-relaxed">India's trusted contractor discovery platform for businesses and homeowners.</p>
-          </div>
-          <div>
-            <p className="font-display font-semibold text-[11px] text-slate-400 mb-4 uppercase tracking-[0.2em]">Quick Links</p>
-            <div className="grid gap-2.5 text-sm">
-              {["Home", "Services", "About", "Contact"].map(l => (
-                <a key={l} href={`/#${l.toLowerCase()}`} className="text-slate-500 hover:text-indigo-400 transition-colors">{l}</a>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="font-display font-semibold text-[11px] text-slate-400 mb-4 uppercase tracking-[0.2em]">Contact</p>
-            <div className="grid gap-2.5 text-sm text-slate-500">
-              <p>apkathekedaar@gmail.com</p>
-              <p>+91 8303959728</p>
-              <p>Manit Bhopal, Madhya Pradesh</p>
-              <p>Mon – Sat, 9 AM – 7 PM</p>
-            </div>
-          </div>
-          <div>
-            <p className="font-display font-semibold text-[11px] text-slate-400 mb-4 uppercase tracking-[0.2em]">Social</p>
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { label: "LinkedIn", href: "https://www.linkedin.com" },
-                { label: "X", href: "https://x.com" },
-                { label: "Instagram", href: "https://www.instagram.com" },
-                { label: "WhatsApp", href: "https://wa.me/919000000000" },
-              ].map((s) => (
-                <a key={s.label} href={s.href} className="px-3 py-2 rounded-lg border border-white/[0.06] text-xs text-slate-500 hover:border-indigo-500/30 hover:text-indigo-400 transition-all">{s.label}</a>
-              ))}
-            </div>
-            <a href="/login?admin=1" className="inline-flex items-center px-3 py-2 mt-4 rounded-lg border border-indigo-500/20 text-xs text-indigo-400 font-semibold hover:bg-indigo-500 hover:text-white transition-all">
-              Admin Login
-            </a>
-          </div>
-        </div>
-        <div className="border-t border-white/[0.04] relative z-10">
-          <div className="max-w-[1400px] mx-auto px-5 md:px-10 py-5 text-[11px] flex flex-wrap items-center justify-between gap-3">
-            <p className="text-slate-600">© 2026 Thekedaar. All rights reserved.</p>
-            <div className="flex items-center gap-5">
-              <a href="/privacy-policy" className="text-slate-600 hover:text-indigo-400 transition-colors">Privacy</a>
-              <a href="/terms" className="text-slate-600 hover:text-indigo-400 transition-colors">Terms</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </main>
   );
 }

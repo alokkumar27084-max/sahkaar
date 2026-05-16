@@ -3,15 +3,16 @@ import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-do
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import Navbar from "./components/common/Navbar";
+import Footer from "./components/common/Footer";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import Icon from "./components/common/Icon";
 import LocationPromptModal from "./components/common/LocationPromptModal";
-import QuickServiceRequest from "./components/common/QuickServiceRequest";
 import SplashScreen from "./components/common/SplashScreen";
 import PageWrapper from "./components/common/PageWrapper";
 import ErrorBoundary from "./components/common/ErrorBoundary";
@@ -27,7 +28,6 @@ const ContractorRegisterPage = lazy(() => import("./pages/contractor/ContractorR
 const ContractorDashboard = lazy(() => import("./pages/contractor/ContractorDashboard"));
 const ContractorEditPage = lazy(() => import("./pages/contractor/ContractorEditPage"));
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
-const QuickServicesPage = lazy(() => import("./pages/customer/QuickServicesPage"));
 const MacroServicesPage = lazy(() => import("./pages/customer/MacroServicesPage"));
 const ServiceDetailPage = lazy(() => import("./pages/customer/ServiceDetailPage"));
 const ChatLayout = lazy(() => import("./pages/chat/ChatLayout"));
@@ -35,8 +35,10 @@ const BookingCheckoutPage = lazy(() => import("./pages/customer/BookingCheckoutP
 const CustomerDashboard = lazy(() => import("./pages/customer/CustomerDashboard"));
 const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage"));
-const LocalDirectoryPage = lazy(() => import("./pages/customer/LocalDirectoryPage"));
 const MyProfilePage = lazy(() => import("./pages/customer/MyProfilePage"));
+const PrivacyPolicy = lazy(() => import("./pages/customer/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/customer/TermsOfService"));
+const RefundPolicy = lazy(() => import("./pages/customer/RefundPolicy"));
 
 function PageFallback() {
   return (
@@ -107,6 +109,38 @@ function ThemedToaster() {
   );
 }
 
+function FooterWrapper() {
+  const location = useLocation();
+  const hideFooterOn = [
+    "/dashboard",
+    "/chat",
+    "/login",
+    "/register",
+    "/checkout",
+    "/search"
+  ];
+
+  const shouldHide = hideFooterOn.some(path => location.pathname.includes(path));
+
+  if (shouldHide) return null;
+  return <Footer />;
+}
+
+function NavbarWrapper() {
+  const location = useLocation();
+  const [showSplash] = useState(() => !!sessionStorage.getItem('hasShownSplash'));
+  
+  const hideNavbarOn = [
+    // "/search", // User wants navbar back
+    // "/chat"
+  ];
+
+  const shouldHide = hideNavbarOn.some(path => location.pathname.includes(path));
+  
+  if (shouldHide) return null;
+  return <Navbar />;
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
 
@@ -144,10 +178,11 @@ function AnimatedRoutes() {
         <Route path="/register/contractor" element={<PageWrapper><ContractorRegisterPage /></PageWrapper>} />
         <Route path="/forgot-password" element={<PageWrapper><ForgotPasswordPage /></PageWrapper>} />
         <Route path="/reset-password" element={<PageWrapper><ResetPasswordPage /></PageWrapper>} />
-        <Route path="/quick-services" element={<PageWrapper><QuickServicesPage /></PageWrapper>} />
+        <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
+        <Route path="/terms" element={<PageWrapper><TermsOfService /></PageWrapper>} />
+        <Route path="/refund-policy" element={<PageWrapper><RefundPolicy /></PageWrapper>} />
         <Route path="/macro-services" element={<PageWrapper><MacroServicesPage /></PageWrapper>} />
         <Route path="/services/:slug" element={<PageWrapper><ServiceDetailPage /></PageWrapper>} />
-        <Route path="/directory" element={<PageWrapper><LocalDirectoryPage /></PageWrapper>} />
         <Route
           path="/profile"
           element={
@@ -234,6 +269,7 @@ export default function App() {
   };
 
   return (
+    <HelmetProvider>
     <BrowserRouter>
       <PageTracker />
       <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
@@ -251,14 +287,16 @@ export default function App() {
                 <div className="luxury-noise" />
                 <div className="content-layer">
                   <LocationPromptModal />
-                  <QuickServiceRequest />
-                  {!showSplash && <Navbar />}
+                  <NavbarWrapper />
 
                   <Suspense fallback={<PageFallback />}>
                     <ErrorBoundary>
                       <AnimatedRoutes />
                     </ErrorBoundary>
                   </Suspense>
+                  
+                  {/* Conditionally show footer only on landing/info pages */}
+                  {!showSplash && <FooterWrapper />}
                 </div>
               </div>
             </AuthProvider>
@@ -266,5 +304,6 @@ export default function App() {
         </ThemeProvider>
       </GoogleOAuthProvider>
     </BrowserRouter>
+    </HelmetProvider>
   );
 }

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiUser, FiX, FiMoon, FiSun, FiMap, FiBriefcase, FiMessageCircle } from "react-icons/fi";
+import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiUser, FiX, FiMoon, FiSun, FiMap, FiBriefcase, FiMessageCircle, FiStar } from "react-icons/fi";
 import { ThekedaarLogo } from "./ThekedaarLogo";
 import toast from "react-hot-toast";
 
@@ -29,8 +29,9 @@ export default function Navbar() {
     let lastY = window.scrollY || 0;
     const onScroll = () => {
       const y = window.scrollY || 0;
+      const isExternalOpen = document.body.classList.contains("external-panel-open");
       setScrolled(y > 20);
-      setHideNav(y > lastY && y > 100 && !panelVisible);
+      setHideNav((y > lastY && y > 100 && !panelVisible) || isExternalOpen);
       lastY = y;
     };
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -45,9 +46,20 @@ export default function Navbar() {
       document.body.style.overflow = "";
       if (window.lenis) window.lenis.start();
     }
-    return () => { 
-      document.body.style.overflow = ""; 
+
+    // MutationObserver to watch for external panels (like Search filters)
+    const observer = new MutationObserver(() => {
+      const isExternalOpen = document.body.classList.contains("external-panel-open");
+      if (isExternalOpen) setHideNav(true);
+      else if (!panelVisible && window.scrollY < 100) setHideNav(false);
+    });
+
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+
+    return () => {
+      document.body.style.overflow = "";
       if (window.lenis) window.lenis.start();
+      observer.disconnect();
     };
   }, [panelVisible]);
 
@@ -67,9 +79,7 @@ export default function Navbar() {
 
   const navLinks = useMemo(() => [
     { href: "/#home", label: "Home" },
-    { href: "/quick-services", label: "Quick Services" },
-    { href: "/macro-services", label: "Macro Services" },
-    { href: "/directory", label: "Directory" },
+    { href: "/macro-services", label: "Thekedaar Services" },
     { href: "/#about", label: "About" },
   ], []);
 
@@ -115,57 +125,82 @@ export default function Navbar() {
     <>
       <a href="#main-content" className="skip-link">Skip to main content</a>
 
-      <header className={`sticky top-0 z-50 px-3 md:px-5 py-2 navbar-shell ${hideNav ? "nav-hidden" : ""}`}>
-        <nav className={`glass-nav mx-auto max-w-[1400px] px-4 md:px-6 py-2.5 ${scrolled ? "shadow-glass-lg" : ""}`}>
-          <div className="flex items-center justify-between gap-4">
-            {/* Logo + Brand */}
-            <Link to="/" className="flex items-center gap-2.5 min-w-[56px] group">
-              <ThekedaarLogo className="h-9 w-9 md:h-10 md:w-10 transition-transform group-hover:scale-105" />
-              <span className="hidden sm:block font-display text-lg text-[var(--color-heading)] tracking-[-0.03em] font-extrabold uppercase">
-                THEKEDAAR
-              </span>
-            </Link>
-
-            {/* Desktop Nav Links */}
-            <div className="hidden lg:flex items-center gap-7">
-              {navLinks.map((item) => (
-                <a key={item.href} href={item.href} className="nav-link text-[14px]">
-                  {item.label}
-                </a>
-              ))}
+      <header className={`fixed top-0 inset-x-0 z-50 px-4 md:px-8 py-5 transition-all duration-700 ${hideNav ? "-translate-y-full" : "translate-y-0"}`}>
+        <nav className={`mx-auto max-w-[1400px] px-6 py-2.5 rounded-[22px] border transition-all duration-700 ${scrolled ? "bg-[var(--color-bg)]/60 backdrop-blur-2xl border-white/10 shadow-2xl" : "bg-transparent border-transparent"}`}>
+          <div className="flex items-center justify-between lg:grid lg:grid-cols-3 lg:items-center">
+            
+            {/* Logo — Left */}
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center gap-3 group">
+                <ThekedaarLogo className="h-9 w-9 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3" />
+                <span className={`hidden sm:block font-display text-[15px] tracking-[0.2em] font-black uppercase leading-none transition-all duration-500 ${scrolled ? "text-[var(--color-heading)]" : "text-white opacity-90"}`}>
+                  THEKEDAAR
+                </span>
+              </Link>
             </div>
 
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-2">
-              {user ? (
-                <>
-                  <ThemeToggleBtn />
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="btn-ghost text-sm px-4 py-2">{t("nav.login")}</Link>
-                  <Link
-                    to="/register/contractor"
-                    ref={ctaRef}
-                    onMouseMove={handleCtaMove}
-                    onMouseLeave={handleCtaLeave}
-                    className="btn-primary text-sm btn-shimmer px-5 py-2.5"
-                  >
-                    {t("nav.register")}
+            {/* Nav Pill — Center (Hidden on Mobile) */}
+            <div className="hidden lg:flex justify-center">
+              <div className={`flex items-center gap-1 p-1 rounded-full border transition-all duration-500 ${scrolled ? "bg-[var(--color-surface)]/50 backdrop-blur-md border-[var(--color-border)] shadow-sm" : "bg-white/5 border-white/5"}`}>
+                {navLinks.map((item) => {
+                  const isActive = location.hash === item.href.substring(1) || (location.pathname === item.href && !location.hash);
+                  return (
+                    <a 
+                      key={item.href} 
+                      href={item.href} 
+                      className={`relative px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${isActive ? "text-white" : scrolled ? "text-[var(--color-muted)] hover:text-[var(--color-heading)]" : "text-white/40 hover:text-white"}`}
+                    >
+                      {isActive && (
+                        <motion.div 
+                          layoutId="nav-pill-bg"
+                          className="absolute inset-0 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/20"
+                          transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
+                        />
+                      )}
+                      <span className="relative z-10">{item.label}</span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Actions — Right */}
+            <div className="flex items-center justify-end gap-3 md:gap-5">
+              <div className="hidden md:flex items-center gap-6">
+                {!user && (
+                  <Link to="/login" className={`text-[11px] font-black uppercase tracking-[0.2em] transition-colors ${scrolled ? "text-[var(--color-muted)] hover:text-[var(--color-heading)]" : "text-white/50 hover:text-white"}`}>
+                    Sign In
                   </Link>
-                  <ThemeToggleBtn />
-                </>
+                )}
+                <ThemeToggleBtn className={`!bg-transparent !border-none !w-auto !h-auto transition-all ${scrolled ? "text-[var(--color-heading)] opacity-80 hover:opacity-100" : "text-white opacity-50 hover:opacity-100"}`} />
+              </div>
+
+              {user ? (
+                <Link to={dashboardPath} className={`h-10 px-6 rounded-full border transition-all text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center ${scrolled ? "bg-[var(--color-primary)] text-white border-transparent" : "bg-white/5 border-white/10 text-white hover:bg-white/10"}`}>
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  to="/register/contractor"
+                  ref={ctaRef}
+                  onMouseMove={handleCtaMove}
+                  onMouseLeave={handleCtaLeave}
+                  className="hidden md:flex h-10 px-8 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/30 items-center justify-center hover:shadow-indigo-500/50 transition-all active:scale-95 btn-shimmer"
+                >
+                  Join as Partner
+                </Link>
               )}
+
+              {/* Mobile Menu Trigger */}
+              <button
+                className={`w-10 h-10 rounded-xl border transition-all flex items-center justify-center hover:scale-105 active:scale-95 lg:hidden ${scrolled ? "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-heading)]" : "bg-white/5 border-white/10 text-white"}`}
+                onClick={togglePanel}
+                aria-label="Toggle menu"
+              >
+                {panelVisible ? <FiX size={18} /> : <FiMenu size={18} />}
+              </button>
             </div>
 
-            {/* Hamburger — always visible for menu access */}
-            <button
-              className={`w-9 h-9 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-body)] flex items-center justify-center transition-colors hover:border-[var(--color-primary)]/30 ${!user ? 'md:hidden' : ''}`}
-              onClick={togglePanel}
-              aria-label="Toggle menu"
-            >
-              {panelVisible ? <FiX size={17} /> : <FiMenu size={17} />}
-            </button>
           </div>
         </nav>
       </header>
@@ -192,7 +227,8 @@ export default function Navbar() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="side-panel"
+            className="side-panel overflow-y-auto overscroll-contain"
+            data-lenis-prevent
           >
             {/* Panel Header */}
             <div className="flex items-center justify-between mb-4">
@@ -219,11 +255,14 @@ export default function Navbar() {
             <a href="/#home" className="panel-link" onClick={closePanel}>
               <FiHome size={15} /> Home <FiChevronRight className="ml-auto opacity-30" />
             </a>
+            <Link to="/macro-services" className="panel-link" onClick={closePanel}>
+              <FiBriefcase size={15} /> Macro Services <FiChevronRight className="ml-auto opacity-30" />
+            </Link>
+            <a href="/#about" className="panel-link" onClick={closePanel}>
+              <FiStar size={15} /> About <FiChevronRight className="ml-auto opacity-30" />
+            </a>
             <Link to="/search" className="panel-link" onClick={closePanel}>
               <FiSearch size={15} /> {t("nav.search") || "Search"} <FiChevronRight className="ml-auto opacity-30" />
-            </Link>
-            <Link to="/directory" className="panel-link" onClick={closePanel}>
-              <FiMap size={15} /> Local Directory <FiChevronRight className="ml-auto opacity-30" />
             </Link>
 
             {/* Dashboard — available to ALL logged-in users */}

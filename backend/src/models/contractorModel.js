@@ -33,9 +33,10 @@ exports.create = async (data) => {
     `INSERT INTO contractors (
       user_id, business_name, category, categories, description, services,
       daily_rate, experience_years, team_size, is_labour_group,
-      is_responsibility_model, location_text, lat, lng, latitude, longitude
+      is_responsibility_model, location_text, lat, lng, latitude, longitude,
+      onboarding_data
     )
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
      RETURNING *`,
     [
       data.user_id,
@@ -54,6 +55,7 @@ exports.create = async (data) => {
       lng,
       lat,
       lng,
+      data.onboarding_data ? JSON.stringify(data.onboarding_data) : '{}',
     ]
   );
   return res.rows[0];
@@ -148,6 +150,7 @@ exports.update = async (id, data) => {
          lng = COALESCE($14, lng),
          latitude = COALESCE($13, latitude),
          longitude = COALESCE($14, longitude),
+         onboarding_data = COALESCE($15, onboarding_data),
          updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -166,6 +169,7 @@ exports.update = async (id, data) => {
       data.location_text,
       lat,
       lng,
+      data.onboarding_data ? JSON.stringify(data.onboarding_data) : undefined,
     ]
   );
   return res.rows[0];
@@ -278,7 +282,7 @@ exports.search = async ({
   return res.rows;
 };
 
-exports.addReview = async (contractorId, userId, rating, comment) => {
+exports.addReview = async (contractorId, userId, rating, comment, data = {}) => {
   const existing = await db.query(
     `SELECT id FROM reviews WHERE contractor_id = $1 AND user_id = $2 LIMIT 1`,
     [contractorId, userId]
@@ -290,10 +294,10 @@ exports.addReview = async (contractorId, userId, rating, comment) => {
   }
 
   const res = await db.query(
-    `INSERT INTO reviews (contractor_id, user_id, rating, comment)
-     VALUES ($1,$2,$3,$4)
+    `INSERT INTO reviews (contractor_id, user_id, rating, comment, booking_id, is_verified)
+     VALUES ($1,$2,$3,$4,$5,$6)
      RETURNING *`,
-    [contractorId, userId, rating, comment]
+    [contractorId, userId, rating, comment, data.bookingId || null, !!data.bookingId]
   );
 
   const agg = await db.query(
