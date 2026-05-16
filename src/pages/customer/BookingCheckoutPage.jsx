@@ -151,7 +151,7 @@ export default function BookingCheckoutPage() {
     return () => {
       active = false;
     };
-  }, [contractor, projectValue, serviceTier]);
+  }, [contractor, projectValue, serviceTier, state?.quoteId]);
 
   const stepProgress = useMemo(() => {
     if (pricing && !pricingLoading) return 3;

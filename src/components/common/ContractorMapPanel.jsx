@@ -73,7 +73,7 @@ export default function ContractorMapPanel({
     mapInstanceRef.current = map;
 
     const bounds = new google.maps.LatLngBounds();
-    
+
     // User Location Marker
     const currentMarker = new google.maps.Marker({
       map,
@@ -100,7 +100,7 @@ export default function ContractorMapPanel({
         lat: Number(contractor.lat ?? contractor.latitude),
         lng: Number(contractor.lng ?? contractor.longitude),
       };
-      
+
       const marker = new google.maps.Marker({
         map,
         position,
@@ -196,7 +196,7 @@ export default function ContractorMapPanel({
           anchor: isHighlighted ? new google.maps.Point(30, 60) : new google.maps.Point(22, 44),
         }
       });
-      
+
       if (isHighlighted && mapInstanceRef.current) {
         mapInstanceRef.current.panTo(marker.getPosition());
       }

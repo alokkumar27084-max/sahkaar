@@ -57,16 +57,16 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
   return (
     <div className="fixed inset-x-0 bottom-6 z-[250] px-6">
       <div className="mx-auto max-w-5xl overflow-hidden rounded-[32px] border border-white/10 bg-[#0D1021]/90 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] backdrop-blur-3xl animate-in fade-in slide-in-from-bottom-10 duration-500">
-        
+
         {/* Compact Header */}
         <div className="flex flex-col gap-4 px-8 py-5 md:flex-row md:items-center md:justify-between border-b border-white/5">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex -space-x-3">
-               {contractors.map(c => (
-                 <div key={c.id} className="w-10 h-10 rounded-full border-4 border-[#0D1021] bg-slate-800 overflow-hidden ring-1 ring-white/10">
-                    <img src={c.photo_url || `https://ui-avatars.com/api/?name=${c.name || 'C'}`} alt="Pro" className="w-full h-full object-cover" />
-                 </div>
-               ))}
+              {contractors.map(c => (
+                <div key={c.id} className="w-10 h-10 rounded-full border-4 border-[#0D1021] bg-slate-800 overflow-hidden ring-1 ring-white/10">
+                  <img src={c.photo_url || `https://ui-avatars.com/api/?name=${c.name || 'C'}`} alt="Pro" className="w-full h-full object-cover" />
+                </div>
+              ))}
             </div>
             <div className="ml-2">
               <span className="text-sm font-black text-white uppercase tracking-widest">
@@ -76,9 +76,9 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
-              type="button" 
-              onClick={onClear} 
+            <button
+              type="button"
+              onClick={onClear}
               className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors"
             >
               Clear
@@ -126,18 +126,18 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
                     {contractors.map((c) => (
                       <td key={`${c.id}-actions`} className="px-6 py-6 border-l border-white/5">
                         <div className="flex gap-2">
-                           <button
+                          <button
                             onClick={() => navigate("/chat", { state: { initChatWith: c.id } })}
                             className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all"
-                           >
-                             <FiMessageCircle size={16} />
-                           </button>
-                           <Link 
-                            to={`/contractor/${c.id}`} 
+                          >
+                            <FiMessageCircle size={16} />
+                          </button>
+                          <Link
+                            to={`/contractor/${c.id}`}
                             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 text-[10px] font-black uppercase tracking-widest text-white border border-white/10 hover:border-white/30 transition-all"
-                           >
-                             Profile <FiArrowUpRight size={14} />
-                           </Link>
+                          >
+                            Profile <FiArrowUpRight size={14} />
+                          </Link>
                         </div>
                       </td>
                     ))}

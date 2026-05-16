@@ -9,9 +9,7 @@ import {
   FiCamera,
   FiCheck,
   FiCheckCircle,
-  FiClock,
   FiFileText,
-  FiHome,
   FiLock,
   FiMail,
   FiMapPin,
@@ -114,7 +112,7 @@ export default function ContractorRegisterPage() {
   const { t } = useLanguage();
   const { login } = useAuth();
   const navigate = useNavigate();
-  const { lat, lng, address, accuracy, request: requestGps, loading: gpsLoading, error: gpsError } = useGeolocation();
+  const { lat, lng, address, accuracy, request: requestGps, loading: gpsLoading } = useGeolocation();
 
   const [step, setStep] = useState(1);
   const [subStepIndex, setSubStepIndex] = useState(0);

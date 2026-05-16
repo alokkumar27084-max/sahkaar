@@ -128,15 +128,14 @@ function FooterWrapper() {
 
 function NavbarWrapper() {
   const location = useLocation();
-  const [showSplash] = useState(() => !!sessionStorage.getItem('hasShownSplash'));
-  
+
   const hideNavbarOn = [
     // "/search", // User wants navbar back
     // "/chat"
   ];
 
   const shouldHide = hideNavbarOn.some(path => location.pathname.includes(path));
-  
+
   if (shouldHide) return null;
   return <Navbar />;
 }
@@ -270,40 +269,40 @@ export default function App() {
 
   return (
     <HelmetProvider>
-    <BrowserRouter>
-      <PageTracker />
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <ThemeProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              <ThemedToaster />
+      <BrowserRouter>
+        <PageTracker />
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <ThemeProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <ThemedToaster />
 
-              <AnimatePresence>
-                {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-              </AnimatePresence>
+                <AnimatePresence>
+                  {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+                </AnimatePresence>
 
-              <div className="app-shell">
-                <CustomCursor />
-                <div className="luxury-noise" />
-                <div className="content-layer">
-                  <LocationPromptModal />
-                  <NavbarWrapper />
+                <div className="app-shell">
+                  <CustomCursor />
+                  <div className="luxury-noise" />
+                  <div className="content-layer">
+                    <LocationPromptModal />
+                    <NavbarWrapper />
 
-                  <Suspense fallback={<PageFallback />}>
-                    <ErrorBoundary>
-                      <AnimatedRoutes />
-                    </ErrorBoundary>
-                  </Suspense>
-                  
-                  {/* Conditionally show footer only on landing/info pages */}
-                  {!showSplash && <FooterWrapper />}
+                    <Suspense fallback={<PageFallback />}>
+                      <ErrorBoundary>
+                        <AnimatedRoutes />
+                      </ErrorBoundary>
+                    </Suspense>
+
+                    {/* Conditionally show footer only on landing/info pages */}
+                    {!showSplash && <FooterWrapper />}
+                  </div>
                 </div>
-              </div>
-            </AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </GoogleOAuthProvider>
-    </BrowserRouter>
+              </AuthProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </GoogleOAuthProvider>
+      </BrowserRouter>
     </HelmetProvider>
   );
 }

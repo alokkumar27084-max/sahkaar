@@ -21,15 +21,15 @@ import { DetailModal, BtnPrimary } from "./panels/AdminShared";
 
 /* ──────────── Sidebar config ──────────── */
 const SIDEBAR = [
-  { id: "overview",     label: "Overview",     icon: FiBarChart2 },
-  { id: "users",        label: "Users",        icon: FiUsers },
-  { id: "contractors",  label: "Contractors",  icon: FiUserCheck },
-  { id: "services",     label: "Services",     icon: FiGrid },
-  { id: "reviews",      label: "Reviews",      icon: FiStar },
-  { id: "moderation",   label: "Moderation",   icon: FiAlertTriangle },
-  { id: "analytics",    label: "Analytics",    icon: FiTrendingUp },
-  { id: "activity",     label: "Activity",     icon: FiActivity },
-  { id: "settings",     label: "Settings",     icon: FiSettings },
+  { id: "overview", label: "Overview", icon: FiBarChart2 },
+  { id: "users", label: "Users", icon: FiUsers },
+  { id: "contractors", label: "Contractors", icon: FiUserCheck },
+  { id: "services", label: "Services", icon: FiGrid },
+  { id: "reviews", label: "Reviews", icon: FiStar },
+  { id: "moderation", label: "Moderation", icon: FiAlertTriangle },
+  { id: "analytics", label: "Analytics", icon: FiTrendingUp },
+  { id: "activity", label: "Activity", icon: FiActivity },
+  { id: "settings", label: "Settings", icon: FiSettings },
 ];
 
 const emptyCatForm = { name: "", name_hi: "", slug: "", icon: "", description: "" };
@@ -140,10 +140,10 @@ export default function AdminDashboardPage() {
   }, [loadOverview, loadUsers, loadContractors, loadActivity, loadReviews, loadAnalytics, loadSettings, loadSvcCategories, loadSvcServices, loadSvcRequests]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
-  useEffect(() => { loadUsers().catch(() => {}); }, [loadUsers]);
-  useEffect(() => { loadContractors().catch(() => {}); }, [loadContractors]);
-  useEffect(() => { loadOverview().catch(() => {}); }, [loadOverview]);
-  useEffect(() => { loadReviews().catch(() => {}); }, [loadReviews]);
+  useEffect(() => { loadUsers().catch(() => { }); }, [loadUsers]);
+  useEffect(() => { loadContractors().catch(() => { }); }, [loadContractors]);
+  useEffect(() => { loadOverview().catch(() => { }); }, [loadOverview]);
+  useEffect(() => { loadReviews().catch(() => { }); }, [loadReviews]);
 
   // ── Actions ─────────────────────────────────────────────
   async function withBusy(fn) {

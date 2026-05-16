@@ -68,13 +68,13 @@ export default function Footer() {
             <Link to="/privacy-policy" className="text-slate-400 hover:text-indigo-400 transition-colors">Privacy Policy</Link>
             <Link to="/refund-policy" className="text-slate-400 hover:text-indigo-400 transition-colors">Refund & Cancellation</Link>
           </div>
-          
+
           <div className="flex gap-3">
             {["LinkedIn", "X", "Instagram"].map((s) => (
-              <a 
-                key={s} 
-                href={`https://${s.toLowerCase()}.com`} 
-                target="_blank" 
+              <a
+                key={s}
+                href={`https://${s.toLowerCase()}.com`}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-xl border border-white/[0.08] flex items-center justify-center text-slate-500 hover:border-indigo-500/30 hover:text-indigo-400 hover:bg-indigo-500/5 transition-all"
                 title={s}
@@ -100,7 +100,7 @@ export default function Footer() {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={handleLogout}
                 className="w-full group flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] hover:bg-rose-500/10 hover:border-rose-500/30 transition-all duration-500"
               >

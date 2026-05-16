@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiMapPin, FiSearch, FiSliders, FiFilter, FiStar, FiCheckCircle, FiX, FiGrid, FiMap, FiArrowRight, FiNavigation } from "react-icons/fi";
+import { FiMapPin, FiSearch, FiSliders, FiStar, FiCheckCircle, FiX, FiGrid, FiMap, FiNavigation } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI, contractorAPI } from "../../services/api";
@@ -9,7 +9,6 @@ import { CATEGORIES, SORT_OPTIONS } from "../../utils/constants";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import ContractorCard from "../../components/common/ContractorCard";
 import CompareDrawer from "../../components/common/CompareDrawer";
-import EmptyState from "../../components/common/EmptyState";
 import Icon from "../../components/common/Icon";
 import LocationSearchInput from "../../components/common/LocationSearchInput";
 import ContractorMapPanel from "../../components/common/ContractorMapPanel";
@@ -21,7 +20,7 @@ const RADIUS_OPTIONS = [2, 3, 5, 10, 15, 25];
 const PAGE_SIZE = 20;
 
 export default function SearchPage() {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,8 +28,6 @@ export default function SearchPage() {
   
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [savingLocation, setSavingLocation] = useState(false);
-  const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [autoSaveRequested, setAutoSaveRequested] = useState(false);
   const [compareList, setCompareList] = useState([]);

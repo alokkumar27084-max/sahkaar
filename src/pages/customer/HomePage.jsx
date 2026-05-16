@@ -8,7 +8,7 @@ import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
 import Icon from "../../components/common/Icon";
 import { useAuth } from "../../context/AuthContext";
-import { FiTrendingUp, FiSearch, FiArrowRight, FiStar, FiMapPin, FiMap, FiBriefcase, FiCheckCircle, FiUser, FiLayers } from "react-icons/fi";
+import { FiTrendingUp, FiSearch, FiArrowRight, FiShield, FiCheckCircle, FiClock, FiStar, FiZap, FiTarget, FiActivity } from "react-icons/fi";
 import SEOHead from "../../components/common/SEOHead";
 
 /* ══════════════════════════════════════════════

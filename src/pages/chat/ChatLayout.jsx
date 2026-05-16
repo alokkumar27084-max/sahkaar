@@ -31,7 +31,7 @@ export default function ChatLayout() {
     const [isSendingQuote, setIsSendingQuote] = useState(false);
     const [quotes, setQuotes] = useState({}); // Map of quoteId -> quoteData
     const [showProjectInfo, setShowProjectInfo] = useState(true);
-    const [isTyping, setIsTyping] = useState(false); 
+    const [isTyping, setIsTyping] = useState(false);
     const [showVisitModal, setShowVisitModal] = useState(false);
     const [visitDate, setVisitDate] = useState("");
     const [visitTime, setVisitTime] = useState("");
@@ -190,7 +190,7 @@ export default function ChatLayout() {
     };
 
     const handleQuickAction = (action) => {
-        switch(action) {
+        switch (action) {
             case 'location':
                 toast.success("Location shared with pro!");
                 handleSendMessage(null, "📍 Shared Location: [Project Site]");
@@ -234,7 +234,7 @@ export default function ChatLayout() {
     const handleBookVisit = async (e) => {
         e.preventDefault();
         if (!visitDate || !visitTime) return toast.error("Please select date and time.");
-        
+
         toast.success("Visit request sent!");
         handleSendMessage(null, `📅 Site Visit Requested: ${visitDate} at ${visitTime}`);
         setShowVisitModal(false);
@@ -286,8 +286,8 @@ export default function ChatLayout() {
         if (messages.length > 0 && threadRef.current) {
             const lastMsg = threadRef.current.querySelector(".message-bubble:last-child");
             if (lastMsg) {
-                gsap.fromTo(lastMsg, 
-                    { opacity: 0, y: 10, scale: 0.95 }, 
+                gsap.fromTo(lastMsg,
+                    { opacity: 0, y: 10, scale: 0.95 },
                     { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "back.out(1.7)" }
                 );
             }
@@ -362,16 +362,16 @@ export default function ChatLayout() {
 
     return (
         <div className="min-h-screen bg-[#090B19] pt-24 pb-12 px-4 md:px-6">
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileSelect} 
-                className="hidden" 
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
                 accept="image/*,application/pdf"
             />
-            
+
             <div className="max-w-[1600px] mx-auto h-[calc(100vh-140px)] flex gap-4">
-                
+
                 {/* --- Left: Conversations List --- */}
                 {showList && (
                     <div className={`w-full lg:w-80 xl:w-96 flex flex-col glass-card border-white/10 bg-[#0D1126] overflow-hidden shrink-0 ${isMobile && showThreadOnlyMobile ? 'hidden' : 'flex'}`}>
@@ -398,8 +398,8 @@ export default function ChatLayout() {
                                         <button
                                             key={chat.id}
                                             onClick={() => handleSelectChat(chat.id)}
-                                            className={`w-full text-left p-4 rounded-2xl transition-all duration-300 flex items-start gap-4 group ${activeChatId === chat.id 
-                                                ? 'bg-indigo-500/20 border border-indigo-500/30 shadow-lg shadow-black/20' 
+                                            className={`w-full text-left p-4 rounded-2xl transition-all duration-300 flex items-start gap-4 group ${activeChatId === chat.id
+                                                ? 'bg-indigo-500/20 border border-indigo-500/30 shadow-lg shadow-black/20'
                                                 : 'hover:bg-white/5 border border-transparent'}`}
                                         >
                                             <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0 relative overflow-hidden group-hover:border-indigo-500/50 transition-all">
@@ -471,9 +471,9 @@ export default function ChatLayout() {
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex items-center gap-2">
-                                        <button 
+                                        <button
                                             onClick={() => setShowProjectInfo(!showProjectInfo)}
                                             className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all shadow-lg ${showProjectInfo ? 'bg-indigo-500 text-white shadow-indigo-500/20' : 'bg-white/10 text-slate-400 hover:bg-white/20 hover:text-white'}`}
                                             title="Toggle Project Hub"
@@ -484,7 +484,7 @@ export default function ChatLayout() {
                                 </div>
 
                                 {/* Messages Area */}
-                                <div 
+                                <div
                                     ref={threadRef}
                                     className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar scroll-smooth bg-white/[0.01]"
                                 >
@@ -524,7 +524,7 @@ export default function ChatLayout() {
                                                                 ? 'bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-tr-none border border-white/20'
                                                                 : 'bg-[#1C213B] text-white rounded-tl-none border border-white/10 shadow-black/40'
                                                                 }`}>
-                                                                
+
                                                                 {isMedia ? (
                                                                     <div className="space-y-3">
                                                                         <div className="rounded-xl overflow-hidden border border-white/10 bg-black/20">
@@ -544,14 +544,13 @@ export default function ChatLayout() {
                                                                                 <p className="font-black text-[10px] uppercase tracking-[0.2em] text-indigo-200">Project Proposal</p>
                                                                                 <p className="text-sm font-black text-white tracking-tight">Rev: 0.12</p>
                                                                             </div>
-                                                                            <div className={`ml-auto text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-lg ${
-                                                                                quote.status === 'ACCEPTED' ? 'bg-emerald-500 text-white' :
-                                                                                quote.status === 'REJECTED' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-black'
-                                                                            }`}>
+                                                                            <div className={`ml-auto text-[10px] font-black px-3 py-1.5 rounded-xl uppercase tracking-widest shadow-lg ${quote.status === 'ACCEPTED' ? 'bg-emerald-500 text-white' :
+                                                                                    quote.status === 'REJECTED' ? 'bg-rose-500 text-white' : 'bg-amber-500 text-black'
+                                                                                }`}>
                                                                                 {quote.status}
                                                                             </div>
                                                                         </div>
-                                                                        
+
                                                                         <div className="space-y-3">
                                                                             {quote.items.map((item, i) => (
                                                                                 <div key={i} className="flex justify-between text-xs p-3 rounded-xl bg-black/20 border border-white/5">
@@ -560,7 +559,7 @@ export default function ChatLayout() {
                                                                                 </div>
                                                                             ))}
                                                                         </div>
-                                                                        
+
                                                                         <div className="flex justify-between items-center font-black border-t border-white/20 pt-5 text-xl tracking-tighter">
                                                                             <span className="text-[11px] uppercase tracking-[0.2em] text-indigo-300">Final Estimate</span>
                                                                             <span className="text-2xl">₹{Number(quote.total_amount).toLocaleString()}</span>
@@ -568,13 +567,13 @@ export default function ChatLayout() {
 
                                                                         {!isMe && quote.status === 'PENDING' && (
                                                                             <div className="flex gap-3 pt-3">
-                                                                                <button 
+                                                                                <button
                                                                                     onClick={() => handleUpdateQuoteStatus(quote.id, 'ACCEPTED')}
                                                                                     className="flex-1 bg-white text-indigo-700 font-black py-4 rounded-2xl text-[11px] uppercase tracking-[0.2em] hover:bg-indigo-50 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-2xl"
                                                                                 >
                                                                                     <FiCheck size={16} /> Accept & Pay
                                                                                 </button>
-                                                                                <button 
+                                                                                <button
                                                                                     onClick={() => handleUpdateQuoteStatus(quote.id, 'REJECTED')}
                                                                                     className="px-5 bg-rose-500 text-white font-black rounded-2xl hover:bg-rose-600 active:scale-95 transition-all flex items-center justify-center shadow-lg"
                                                                                 >
@@ -585,7 +584,7 @@ export default function ChatLayout() {
 
                                                                         {!isMe && quote.status === 'ACCEPTED' && (
                                                                             <div className="pt-3">
-                                                                                <button 
+                                                                                <button
                                                                                     onClick={() => navigate(`/checkout/${activeChatData.contractor_id}`, { state: { quoteId: quote.id } })}
                                                                                     className="w-full bg-indigo-400 text-white font-black py-5 rounded-2xl text-[12px] uppercase tracking-[0.25em] hover:bg-indigo-300 active:scale-95 transition-all flex items-center justify-center gap-4 shadow-[0_10px_40px_rgba(129,140,248,0.3)]"
                                                                                 >
@@ -632,26 +631,26 @@ export default function ChatLayout() {
 
                                 {/* Premium Quick Action Bar */}
                                 <div className="px-6 py-5 bg-[#0D1126] border-t border-white/10 flex items-center gap-4 overflow-x-auto no-scrollbar">
-                                    <button 
+                                    <button
                                         onClick={() => handleQuickAction('location')}
                                         className="whitespace-nowrap px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-[0.15em] hover:bg-white/10 hover:border-indigo-500/50 transition-all flex items-center gap-3 shadow-lg active:scale-95"
                                     >
                                         <FiMapPin size={16} className="text-indigo-400" /> Share Location
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleQuickAction('visit')}
                                         className="whitespace-nowrap px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-[0.15em] hover:bg-white/10 hover:border-indigo-500/50 transition-all flex items-center gap-3 shadow-lg active:scale-95"
                                     >
                                         <FiCalendar size={16} className="text-indigo-400" /> Book Visit
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => handleQuickAction('plans')}
                                         className="whitespace-nowrap px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-[0.15em] hover:bg-white/10 hover:border-indigo-500/50 transition-all flex items-center gap-3 shadow-lg active:scale-95"
                                     >
                                         <FiImage size={16} className="text-indigo-400" /> Attach Plans
                                     </button>
                                     <div className="w-px h-8 bg-white/10 mx-2 shrink-0" />
-                                    <button 
+                                    <button
                                         onClick={() => handleQuickAction('quote')}
                                         className="whitespace-nowrap px-6 py-3 rounded-2xl bg-indigo-500 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-400 transition-all flex items-center gap-3 shadow-[0_10px_30px_rgba(99,102,241,0.2)] active:scale-95"
                                     >
@@ -660,14 +659,14 @@ export default function ChatLayout() {
                                 </div>
 
                                 {/* Input Area */}
-                                <form 
+                                <form
                                     onSubmit={(e) => handleSendMessage(e)}
                                     className="p-8 bg-[#0B0E21] border-t border-white/20 z-10"
                                 >
                                     <div className="flex gap-5 max-w-5xl mx-auto items-center">
                                         <div className="flex-1 flex items-center bg-white/5 border border-white/20 rounded-3xl px-6 py-2 group focus-within:border-indigo-500/80 focus-within:ring-4 focus-within:ring-indigo-500/10 focus-within:bg-white/10 transition-all shadow-inner">
                                             {user?.role === 'contractor' && (
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={() => setShowQuoteModal(true)}
                                                     className="w-12 h-12 rounded-2xl bg-indigo-500 hover:bg-indigo-400 text-white flex items-center justify-center shrink-0 transition-all active:scale-90 mr-4 shadow-xl"
@@ -722,7 +721,7 @@ export default function ChatLayout() {
                             <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8 flex items-center gap-3">
                                 <FiInfo size={16} /> Partner Insights
                             </h4>
-                            
+
                             <div className="space-y-8">
                                 <div className="flex items-center gap-5">
                                     <div className="w-20 h-20 rounded-3xl bg-white/5 border border-white/20 flex items-center justify-center overflow-hidden shadow-2xl">
@@ -764,7 +763,7 @@ export default function ChatLayout() {
 
                             <div className="space-y-10 relative">
                                 <div className="absolute left-[13px] top-2 bottom-2 w-[2px] bg-white/10" />
-                                
+
                                 {[
                                     { label: "Phase 1: Discussion", status: "completed", icon: <FiMessageCircle size={12} /> },
                                     { label: "Phase 2: Quotation", status: "current", icon: <FiFileText size={12} /> },
@@ -773,10 +772,9 @@ export default function ChatLayout() {
                                     { label: "Phase 5: Execution", status: "pending", icon: <FiPlus size={12} /> },
                                 ].map((step, i) => (
                                     <div key={i} className="flex gap-6 items-center relative z-10">
-                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xl transition-all duration-500 ${
-                                            step.status === 'completed' ? 'bg-emerald-500 text-white' :
-                                            step.status === 'current' ? 'bg-indigo-500 text-white scale-125 ring-4 ring-indigo-500/20' : 'bg-white/10 text-slate-600'
-                                        }`}>
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xl transition-all duration-500 ${step.status === 'completed' ? 'bg-emerald-500 text-white' :
+                                                step.status === 'current' ? 'bg-indigo-500 text-white scale-125 ring-4 ring-indigo-500/20' : 'bg-white/10 text-slate-600'
+                                            }`}>
                                             {step.icon}
                                         </div>
                                         <div>
@@ -803,15 +801,15 @@ export default function ChatLayout() {
                                 <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mt-1">Coordinate on-site inspection</p>
                             </div>
                             <button onClick={() => setShowVisitModal(false)} className="w-10 h-10 rounded-2xl bg-white/5 hover:bg-rose-500 text-white flex items-center justify-center transition-all">
-                                <FiX size={20}/>
+                                <FiX size={20} />
                             </button>
                         </div>
                         <form onSubmit={handleBookVisit} className="p-8 space-y-6">
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Preferred Date</label>
-                                    <input 
-                                        type="date" 
+                                    <input
+                                        type="date"
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-indigo-500 transition-all outline-none"
                                         value={visitDate}
                                         onChange={(e) => setVisitDate(e.target.value)}
@@ -820,8 +818,8 @@ export default function ChatLayout() {
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">Time Slot</label>
-                                    <input 
-                                        type="time" 
+                                    <input
+                                        type="time"
                                         className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-indigo-500 transition-all outline-none"
                                         value={visitTime}
                                         onChange={(e) => setVisitTime(e.target.value)}
@@ -830,8 +828,8 @@ export default function ChatLayout() {
                                 </div>
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 className="w-full bg-indigo-500 hover:bg-indigo-400 text-white py-5 rounded-[1.5rem] font-black text-[12px] uppercase tracking-[0.25em] shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all mt-4"
                             >
                                 Send Request to Pro
@@ -847,16 +845,16 @@ export default function ChatLayout() {
                     <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl border border-white/10">
                         <div className="p-6 border-b border-slate-100 dark:border-white/5 flex justify-between items-center">
                             <h3 className="text-xl font-black font-['Space_Grotesk'] text-slate-800 dark:text-white">Create Itemized Quote</h3>
-                            <button onClick={() => setShowQuoteModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><FiX size={24}/></button>
+                            <button onClick={() => setShowQuoteModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white"><FiX size={24} /></button>
                         </div>
                         <form onSubmit={handleSendQuote} className="p-6 space-y-4">
                             <div className="space-y-3">
                                 {quoteItems.map((item, index) => (
                                     <div key={index} className="flex gap-2">
-                                        <input 
-                                            className="flex-1 input-field !py-2.5 !text-sm" 
-                                            placeholder="Item title (e.g. Wiring material)" 
-                                            value={item.title} 
+                                        <input
+                                            className="flex-1 input-field !py-2.5 !text-sm"
+                                            placeholder="Item title (e.g. Wiring material)"
+                                            value={item.title}
                                             onChange={(e) => {
                                                 const newItems = [...quoteItems];
                                                 newItems[index].title = e.target.value;
@@ -864,11 +862,11 @@ export default function ChatLayout() {
                                             }}
                                             required
                                         />
-                                        <input 
-                                            className="w-28 input-field !py-2.5 !text-sm" 
-                                            type="number" 
-                                            placeholder="Amount" 
-                                            value={item.amount} 
+                                        <input
+                                            className="w-28 input-field !py-2.5 !text-sm"
+                                            type="number"
+                                            placeholder="Amount"
+                                            value={item.amount}
                                             onChange={(e) => {
                                                 const newItems = [...quoteItems];
                                                 newItems[index].amount = e.target.value;
@@ -877,8 +875,8 @@ export default function ChatLayout() {
                                             required
                                         />
                                         {quoteItems.length > 1 && (
-                                            <button 
-                                                type="button" 
+                                            <button
+                                                type="button"
                                                 onClick={() => setQuoteItems(quoteItems.filter((_, i) => i !== index))}
                                                 className="text-rose-500 p-2"
                                             >
@@ -888,30 +886,30 @@ export default function ChatLayout() {
                                     </div>
                                 ))}
                             </div>
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onClick={() => setQuoteItems([...quoteItems, { title: "", amount: "" }])}
                                 className="text-indigo-500 text-sm font-bold flex items-center gap-1 hover:underline"
                             >
                                 <FiPlus /> Add another item
                             </button>
-                            
+
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Total Amount: ₹{quoteItems.reduce((acc, i) => acc + (Number(i.amount) || 0), 0)}</label>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Notes (Optional)</label>
-                                <textarea 
-                                    className="input-field !py-2.5 !text-sm min-h-[80px]" 
-                                    placeholder="Any additional terms or details..." 
+                                <textarea
+                                    className="input-field !py-2.5 !text-sm min-h-[80px]"
+                                    placeholder="Any additional terms or details..."
                                     value={quoteNotes}
                                     onChange={(e) => setQuoteNotes(e.target.value)}
                                 />
                             </div>
 
-                            <button 
-                                type="submit" 
+                            <button
+                                type="submit"
                                 disabled={isSendingQuote}
                                 className="btn-primary w-full py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/20"
                             >

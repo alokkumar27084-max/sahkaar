@@ -128,7 +128,7 @@ export default function Navbar() {
       <header className={`fixed top-0 inset-x-0 z-50 px-4 md:px-8 py-5 transition-all duration-700 ${hideNav ? "-translate-y-full" : "translate-y-0"}`}>
         <nav className={`mx-auto max-w-[1400px] px-6 py-2.5 rounded-[22px] border transition-all duration-700 ${scrolled ? "bg-[var(--color-bg)]/60 backdrop-blur-2xl border-white/10 shadow-2xl" : "bg-transparent border-transparent"}`}>
           <div className="flex items-center justify-between lg:grid lg:grid-cols-3 lg:items-center">
-            
+
             {/* Logo — Left */}
             <div className="flex items-center">
               <Link to="/" className="flex items-center gap-3 group">
@@ -145,13 +145,13 @@ export default function Navbar() {
                 {navLinks.map((item) => {
                   const isActive = location.hash === item.href.substring(1) || (location.pathname === item.href && !location.hash);
                   return (
-                    <a 
-                      key={item.href} 
-                      href={item.href} 
+                    <a
+                      key={item.href}
+                      href={item.href}
                       className={`relative px-6 py-2 rounded-full text-[11px] font-black uppercase tracking-[0.1em] transition-all duration-300 ${isActive ? "text-white" : scrolled ? "text-[var(--color-muted)] hover:text-[var(--color-heading)]" : "text-white/40 hover:text-white"}`}
                     >
                       {isActive && (
-                        <motion.div 
+                        <motion.div
                           layoutId="nav-pill-bg"
                           className="absolute inset-0 bg-indigo-500 rounded-full shadow-lg shadow-indigo-500/20"
                           transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}

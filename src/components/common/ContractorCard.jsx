@@ -30,12 +30,11 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
   }
 
   return (
-    <article 
-      className={`group relative overflow-hidden rounded-3xl border transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 ${
-        isCompared 
-          ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/50" 
+    <article
+      className={`group relative overflow-hidden rounded-3xl border transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 ${isCompared
+          ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/50"
           : "border-white/10 bg-white/[0.02] hover:border-white/20"
-      }`}
+        }`}
     >
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">
@@ -74,8 +73,8 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
               </p>
               <div className="mt-3 flex items-center gap-3">
                 <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/5">
-                   <FiStar className="text-amber-400 fill-amber-400" size={12} />
-                   <span className="text-xs font-black text-white">{rating.toFixed(1)}</span>
+                  <FiStar className="text-amber-400 fill-amber-400" size={12} />
+                  <span className="text-xs font-black text-white">{rating.toFixed(1)}</span>
                 </div>
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                   {resolvedReviewCount} reviews
@@ -88,11 +87,10 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
             <button
               type="button"
               onClick={() => onCompare?.(contractor, !isCompared)}
-              className={`shrink-0 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
-                isCompared
+              className={`shrink-0 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${isCompared
                   ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"
                   : "bg-white/5 text-slate-400 border border-white/10 hover:border-white/30"
-              }`}
+                }`}
             >
               Compare
             </button>
@@ -104,8 +102,8 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
           <div className="space-y-1">
             <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Proximity</p>
             <p className="text-sm font-bold text-white flex items-center gap-1">
-               <FiMapPin size={12} className="text-cyan-400" />
-               {distanceKm != null ? `${Number(distanceKm).toFixed(1)}km` : "Local"}
+              <FiMapPin size={12} className="text-cyan-400" />
+              {distanceKm != null ? `${Number(distanceKm).toFixed(1)}km` : "Local"}
             </p>
           </div>
           <div className="space-y-1">
@@ -124,16 +122,16 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
 
         {/* Badges */}
         <div className="mt-6 flex flex-wrap gap-2">
-           {contractor.is_labour_group && (
-             <div className="flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">
-               <FiUsers size={12} className="text-indigo-400" /> Team of {contractor.team_size || 'Expert'}
-             </div>
-           )}
-           {contractor.is_featured && (
-             <div className="flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-400">
-               Top Rated
-             </div>
-           )}
+          {contractor.is_labour_group && (
+            <div className="flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">
+              <FiUsers size={12} className="text-indigo-400" /> Team of {contractor.team_size || 'Expert'}
+            </div>
+          )}
+          {contractor.is_featured && (
+            <div className="flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-400">
+              Top Rated
+            </div>
+          )}
         </div>
       </div>
 
