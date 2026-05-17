@@ -110,25 +110,6 @@ export const adminAPI = {
   deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
   getSettings: () => api.get("/admin/settings"),
   updateSettings: (data) => api.put("/admin/settings", data),
-  getServiceCategories: (params) => api.get("/admin/service-categories", { params }),
-  createServiceCategory: (data) => api.post("/admin/service-categories", data),
-  updateServiceCategory: (id, data) => api.patch(`/admin/service-categories/${id}`, data),
-  deleteServiceCategory: (id) => api.delete(`/admin/service-categories/${id}`),
-  getAdminServices: (params) => api.get("/admin/services", { params }),
-  createAdminService: (data) => api.post("/admin/services", data),
-  updateAdminService: (id, data) => api.patch(`/admin/services/${id}`, data),
-  deleteAdminService: (id) => api.delete(`/admin/services/${id}`),
-  getServiceRequests: (params) => api.get("/admin/service-requests", { params }),
-  updateServiceRequest: (id, data) => api.patch(`/admin/service-requests/${id}`, data),
-};
-
-export const servicesAPI = {
-  getCategories: (type) => api.get("/services/categories", { params: { type } }),
-  getCategory: (slug) => api.get(`/services/categories/${slug}`),
-  getService: (slug) => api.get(`/services/${slug}`),
-  searchServices: (params) => api.get("/services/search", { params }),
-  submitRequest: (data) => api.post("/services/request", data),
-  getMyRequests: () => api.get("/services/requests/me"),
 };
 
 export const chatAPI = {

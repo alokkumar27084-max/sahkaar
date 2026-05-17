@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiStar, FiArrowRight, FiMail, FiPhone, FiMapPin, FiLogOut, FiUser } from "react-icons/fi";
+import { FiArrowRight, FiMail, FiPhone, FiMapPin, FiLogOut, FiUser } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 
 const SITE_NAME = "Thekedaar";
@@ -35,7 +35,6 @@ export default function Footer() {
           <p className="font-display font-bold text-[11px] text-slate-500 mb-6 uppercase tracking-[0.2em]">Explore</p>
           <div className="grid gap-3.5 text-sm">
             <Link to="/" className="text-slate-400 hover:text-indigo-400 transition-colors">Home</Link>
-            <Link to="/macro-services" className="text-slate-400 hover:text-indigo-400 transition-colors">Thekedaar Services</Link>
             <Link to="/search" className="text-slate-400 hover:text-indigo-400 transition-colors">Find Contractors</Link>
             <Link to="/register/contractor" className="text-slate-400 hover:text-indigo-400 transition-colors">Join as Contractor</Link>
           </div>

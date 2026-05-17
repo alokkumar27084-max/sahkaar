@@ -436,4 +436,7 @@ const bookingController = {
     }
 };
 
-module.exports = { bookingController, notifyUser, getContractorOwnerUserId };
+module.exports = bookingController;
+module.exports.bookingController = bookingController;
+module.exports.notifyUser = notifyUser;
+module.exports.getContractorOwnerUserId = getContractorOwnerUserId;

@@ -1,15 +1,11 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiArrowRight, FiBriefcase, FiCreditCard, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiStar } from "react-icons/fi";
-import { useLanguage } from "../../context/LanguageContext";
-import StarRating from "./StarRating";
-import Badge from "./Badge";
+import { FiArrowRight, FiCreditCard, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiStar } from "react-icons/fi";
 import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
 import { getImageUrl } from "../../utils/imageUtils";
 
 export default function ContractorCard({ contractor, showCompare = false, isCompared = false, onCompare }) {
-  const { t, lang } = useLanguage();
   const navigate = useNavigate();
 
   const resolvedName = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";

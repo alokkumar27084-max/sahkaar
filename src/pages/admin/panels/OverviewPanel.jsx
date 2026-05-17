@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 import {
   FiUsers, FiUserCheck, FiCheckCircle, FiAlertTriangle, FiStar, FiAward,
 } from "react-icons/fi";

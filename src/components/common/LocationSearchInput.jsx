@@ -33,41 +33,100 @@ export default function LocationSearchInput({
     };
   }, [canUseGoogleMaps]);
 
+  // Robust OpenStreetMap Nominatim Prediction Fetcher
+  const fetchNominatimPredictions = async (query) => {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=in&format=json&addressdetails=1&limit=5`;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "Accept-Language": "en,hi",
+          "User-Agent": "ThekedaarWebApp/1.0 (https://thekedaar.com)",
+        },
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data || []).map((item) => ({
+        place_id: String(item.place_id),
+        description: item.display_name,
+        lat: Number(item.lat),
+        lng: Number(item.lon),
+        source: "nominatim",
+      }));
+    } catch (err) {
+      console.error("Nominatim suggestion fetch failed", err);
+      return [];
+    }
+  };
+
   useEffect(() => {
     let active = true;
-    if (!mapsReady || !value || value.trim().length < 3) {
+    if (!value || value.trim().length < 3) {
       setPredictions([]);
       return undefined;
     }
 
     const timer = window.setTimeout(async () => {
-      try {
-        setLoadingPredictions(true);
-        const service = new window.google.maps.places.AutocompleteService();
-        service.getPlacePredictions(
-          {
-            input: value,
-            componentRestrictions: { country: "in" },
-            types: ["geocode"],
-          },
-          (results, status) => {
-            if (!active) return;
-            if (status !== window.google.maps.places.PlacesServiceStatus.OK || !results) {
-              setPredictions([]);
+      setLoadingPredictions(true);
+      
+      // 1. Try Google Autocomplete if maps ready
+      if (mapsReady && typeof window !== "undefined" && window.google?.maps?.places) {
+        try {
+          // Check if modern AutocompleteSuggestion fetcher exists (Places API New)
+          if (window.google.maps.places.Place && typeof window.google.maps.places.Place.findAutocompletePredictions === "function") {
+            const { predictions: newPredictions } = await window.google.maps.places.Place.findAutocompletePredictions({
+              input: value,
+              includedCountries: ["in"],
+            });
+            if (active && newPredictions && newPredictions.length > 0) {
+              setPredictions(
+                newPredictions.slice(0, 5).map((pred) => ({
+                  place_id: pred.placeId,
+                  description: pred.text.toString(),
+                  source: "google_new",
+                }))
+              );
               setLoadingPredictions(false);
               return;
             }
-            setPredictions(results.slice(0, 5));
-            setLoadingPredictions(false);
           }
-        );
-      } catch {
-        if (active) {
-          setPredictions([]);
-          setLoadingPredictions(false);
+
+          // Fallback to legacy AutocompleteService
+          const service = new window.google.maps.places.AutocompleteService();
+          service.getPlacePredictions(
+            {
+              input: value,
+              componentRestrictions: { country: "in" },
+              types: ["geocode"],
+            },
+            async (results, status) => {
+              if (!active) return;
+              if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+                setPredictions(results.slice(0, 5));
+                setLoadingPredictions(false);
+              } else {
+                // If legacy AutocompleteService fails, use Nominatim as a robust fallback
+                const osmPredictions = await fetchNominatimPredictions(value);
+                if (active) {
+                  setPredictions(osmPredictions);
+                  setLoadingPredictions(false);
+                }
+              }
+            }
+          );
+          return;
+        } catch (err) {
+          console.error("Google maps prediction error, falling back to Nominatim", err);
         }
       }
-    }, 250);
+
+      // 2. OpenStreetMap Nominatim fallback (if maps not ready, restricted or failed)
+      const osmPredictions = await fetchNominatimPredictions(value);
+      if (active) {
+        setPredictions(osmPredictions);
+        setLoadingPredictions(false);
+      }
+    }, 300);
 
     return () => {
       active = false;
@@ -76,30 +135,90 @@ export default function LocationSearchInput({
   }, [mapsReady, value]);
 
   async function handlePredictionClick(prediction) {
+    if (prediction.source === "nominatim") {
+      onChange?.(prediction.description);
+      setPredictions([]);
+      onSelect?.({
+        address: prediction.description,
+        lat: prediction.lat,
+        lng: prediction.lng,
+      });
+      return;
+    }
+
     const result = await geocodePlaceSelection({
       placeId: prediction.place_id,
       address: prediction.description,
     });
-    if (!result) return;
-    onChange?.(result.address);
-    setPredictions([]);
-    onSelect?.(result);
+    
+    if (result) {
+      onChange?.(result.address);
+      setPredictions([]);
+      onSelect?.(result);
+      return;
+    }
+
+    // Geocoding fallback if Google Geocoding fails
+    const osmResults = await fetchNominatimPredictions(prediction.description);
+    if (osmResults.length > 0) {
+      const first = osmResults[0];
+      onChange?.(first.description);
+      setPredictions([]);
+      onSelect?.({
+        address: first.description,
+        lat: first.lat,
+        lng: first.lng,
+      });
+    }
   }
 
+  const handleKeyDown = async (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      // If we have predictions, select the first prediction immediately
+      if (predictions.length > 0) {
+        handlePredictionClick(predictions[0]);
+      } else if (value && value.trim().length > 0) {
+        // Otherwise, geocode the exact raw text typed by the user
+        setLoadingPredictions(true);
+        try {
+          if (mapsReady && typeof window !== "undefined" && window.google?.maps) {
+            const result = await geocodePlaceSelection({ address: value });
+            if (result) {
+              onChange?.(result.address);
+              onSelect?.(result);
+              setPredictions([]);
+              return;
+            }
+          }
+          const osmResults = await fetchNominatimPredictions(value);
+          if (osmResults.length > 0) {
+            handlePredictionClick(osmResults[0]);
+          }
+        } catch (err) {
+          console.error("Geocoding failed", err);
+        } finally {
+          setLoadingPredictions(false);
+        }
+      }
+    }
+  };
+
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <FiMapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
       <input
         type="text"
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}
         className={`input-field !pl-10 ${className}`}
       />
 
-      {canUseGoogleMaps && predictions.length > 0 && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl">
+      {predictions.length > 0 && (
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[110] overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xl max-h-60 overflow-y-auto">
           {predictions.map((prediction) => (
             <button
               key={prediction.place_id}
@@ -112,12 +231,6 @@ export default function LocationSearchInput({
             </button>
           ))}
         </div>
-      )}
-
-      {!canUseGoogleMaps && (
-        <p className="mt-2 text-xs text-[var(--color-muted)]">
-          Add `REACT_APP_GOOGLE_MAPS_KEY` to enable live address suggestions.
-        </p>
       )}
 
       {loadingPredictions && (

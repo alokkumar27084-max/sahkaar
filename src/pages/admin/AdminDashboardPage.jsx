@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { adminAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  FiUsers, FiUserCheck, FiShield, FiTrendingUp, FiSettings, FiStar,
-  FiAlertTriangle, FiActivity, FiRefreshCw, FiBarChart2, FiGrid, FiMenu,
+  FiUsers, FiUserCheck, FiTrendingUp, FiSettings, FiStar,
+  FiAlertTriangle, FiActivity, FiRefreshCw, FiBarChart2, FiMenu,
 } from "react-icons/fi";
 
 // Panels
@@ -15,7 +15,6 @@ import ContractorsPanel from "./panels/ContractorsPanel";
 import ReviewsPanel from "./panels/ReviewsPanel";
 import ModerationPanel from "./panels/ModerationPanel";
 import AnalyticsPanel from "./panels/AnalyticsPanel";
-import ServicesPanel from "./panels/ServicesPanel";
 import SettingsPanel from "./panels/SettingsPanel";
 import { DetailModal, BtnPrimary } from "./panels/AdminShared";
 
@@ -24,16 +23,12 @@ const SIDEBAR = [
   { id: "overview", label: "Overview", icon: FiBarChart2 },
   { id: "users", label: "Users", icon: FiUsers },
   { id: "contractors", label: "Contractors", icon: FiUserCheck },
-  { id: "services", label: "Services", icon: FiGrid },
   { id: "reviews", label: "Reviews", icon: FiStar },
   { id: "moderation", label: "Moderation", icon: FiAlertTriangle },
   { id: "analytics", label: "Analytics", icon: FiTrendingUp },
   { id: "activity", label: "Activity", icon: FiActivity },
   { id: "settings", label: "Settings", icon: FiSettings },
 ];
-
-const emptyCatForm = { name: "", name_hi: "", slug: "", icon: "", description: "" };
-const emptySvcForm = { name: "", name_hi: "", slug: "", category_id: "", price_starts_at: "", icon: "", description: "" };
 
 export default function AdminDashboardPage() {
   const [tab, setTab] = useState("overview");
@@ -62,12 +57,6 @@ export default function AdminDashboardPage() {
   const [reviewQuery, setReviewQuery] = useState("");
   const [analytics, setAnalytics] = useState(null);
   const [settings, setSettings] = useState({});
-  const [svcCategories, setSvcCategories] = useState([]);
-  const [svcServices, setSvcServices] = useState([]);
-  const [svcRequests, setSvcRequests] = useState([]);
-  const [svcSubTab, setSvcSubTab] = useState("categories");
-  const [svcCatForm, setSvcCatForm] = useState(emptyCatForm);
-  const [svcServiceForm, setSvcServiceForm] = useState(emptySvcForm);
   const [selectedDetail, setSelectedDetail] = useState(null);
 
   // ── Loaders ─────────────────────────────────────────────
@@ -109,35 +98,19 @@ export default function AdminDashboardPage() {
     setSettings(res.data.settings || {});
   }, []);
 
-  const loadSvcCategories = useCallback(async () => {
-    const res = await adminAPI.getServiceCategories();
-    setSvcCategories(res.data.categories || []);
-  }, []);
-
-  const loadSvcServices = useCallback(async () => {
-    const res = await adminAPI.getAdminServices();
-    setSvcServices(res.data.services || []);
-  }, []);
-
-  const loadSvcRequests = useCallback(async () => {
-    const res = await adminAPI.getServiceRequests();
-    setSvcRequests(res.data.requests || []);
-  }, []);
-
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
       await Promise.all([
         loadOverview(), loadUsers(), loadContractors(), loadActivity(),
         loadReviews(), loadAnalytics(), loadSettings(),
-        loadSvcCategories(), loadSvcServices(), loadSvcRequests(),
       ]);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load admin data");
     } finally {
       setLoading(false);
     }
-  }, [loadOverview, loadUsers, loadContractors, loadActivity, loadReviews, loadAnalytics, loadSettings, loadSvcCategories, loadSvcServices, loadSvcRequests]);
+  }, [loadOverview, loadUsers, loadContractors, loadActivity, loadReviews, loadAnalytics, loadSettings]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
   useEffect(() => { loadUsers().catch(() => { }); }, [loadUsers]);
@@ -180,20 +153,6 @@ export default function AdminDashboardPage() {
   async function handleResolveReport(id, status) { await withBusy(async () => { await adminAPI.resolveReport(id, status); toast.success(`Report ${status}`); await Promise.all([loadOverview(), loadActivity()]); }); }
   async function handleDeleteReview(id) { if (!window.confirm("Delete this review?")) return; await withBusy(async () => { await adminAPI.deleteReview(id); toast.success("Review deleted"); await Promise.all([loadReviews(), loadOverview()]); }); }
   async function handleSaveSettings() { await withBusy(async () => { const res = await adminAPI.updateSettings(settings); setSettings(res.data.settings); toast.success("Settings saved"); }); }
-
-  async function handleCreateSvcCategory(e) {
-    e.preventDefault();
-    await withBusy(async () => { await adminAPI.createServiceCategory(svcCatForm); setSvcCatForm(emptyCatForm); toast.success("Category created"); await loadSvcCategories(); });
-  }
-  async function handleDeleteSvcCategory(id) { if (!window.confirm("Delete this category and all its services?")) return; await withBusy(async () => { await adminAPI.deleteServiceCategory(id); toast.success("Deleted"); await Promise.all([loadSvcCategories(), loadSvcServices()]); }); }
-  async function handleToggleSvcCategory(cat) { await withBusy(async () => { await adminAPI.updateServiceCategory(cat.id, { is_active: !cat.is_active }); toast.success("Updated"); await loadSvcCategories(); }); }
-  async function handleCreateSvcService(e) {
-    e.preventDefault();
-    await withBusy(async () => { await adminAPI.createAdminService({ ...svcServiceForm, price_starts_at: parseInt(svcServiceForm.price_starts_at) || null }); setSvcServiceForm(emptySvcForm); toast.success("Service created"); await loadSvcServices(); });
-  }
-  async function handleDeleteSvcService(id) { if (!window.confirm("Delete this service?")) return; await withBusy(async () => { await adminAPI.deleteAdminService(id); toast.success("Deleted"); await loadSvcServices(); }); }
-  async function handleToggleSvcService(svc) { await withBusy(async () => { await adminAPI.updateAdminService(svc.id, { is_active: !svc.is_active }); toast.success("Updated"); await loadSvcServices(); }); }
-  async function handleUpdateSvcRequest(id, status) { await withBusy(async () => { await adminAPI.updateServiceRequest(id, { status }); toast.success(`Status → ${status}`); await loadSvcRequests(); }); }
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]"><LoadingSpinner size="lg" /></div>;
 
@@ -283,19 +242,6 @@ export default function AdminDashboardPage() {
                   onView={showContractorDetail}
                   contractorQuery={contractorQuery} setContractorQuery={setContractorQuery}
                   verifiedFilter={verifiedFilter} setVerifiedFilter={setVerifiedFilter}
-                />
-              )}
-
-              {tab === "services" && (
-                <ServicesPanel
-                  svcCategories={svcCategories} svcServices={svcServices} svcRequests={svcRequests}
-                  svcSubTab={svcSubTab} setSvcSubTab={setSvcSubTab}
-                  svcCatForm={svcCatForm} setSvcCatForm={setSvcCatForm}
-                  svcServiceForm={svcServiceForm} setSvcServiceForm={setSvcServiceForm}
-                  busy={busy}
-                  onCreateCategory={handleCreateSvcCategory} onDeleteCategory={handleDeleteSvcCategory} onToggleCategory={handleToggleSvcCategory}
-                  onCreateService={handleCreateSvcService} onDeleteService={handleDeleteSvcService} onToggleService={handleToggleSvcService}
-                  onUpdateRequest={handleUpdateSvcRequest}
                 />
               )}
 

@@ -28,8 +28,6 @@ const ContractorRegisterPage = lazy(() => import("./pages/contractor/ContractorR
 const ContractorDashboard = lazy(() => import("./pages/contractor/ContractorDashboard"));
 const ContractorEditPage = lazy(() => import("./pages/contractor/ContractorEditPage"));
 const AdminDashboardPage = lazy(() => import("./pages/admin/AdminDashboardPage"));
-const MacroServicesPage = lazy(() => import("./pages/customer/MacroServicesPage"));
-const ServiceDetailPage = lazy(() => import("./pages/customer/ServiceDetailPage"));
 const ChatLayout = lazy(() => import("./pages/chat/ChatLayout"));
 const BookingCheckoutPage = lazy(() => import("./pages/customer/BookingCheckoutPage"));
 const CustomerDashboard = lazy(() => import("./pages/customer/CustomerDashboard"));
@@ -180,8 +178,6 @@ function AnimatedRoutes() {
         <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
         <Route path="/terms" element={<PageWrapper><TermsOfService /></PageWrapper>} />
         <Route path="/refund-policy" element={<PageWrapper><RefundPolicy /></PageWrapper>} />
-        <Route path="/macro-services" element={<PageWrapper><MacroServicesPage /></PageWrapper>} />
-        <Route path="/services/:slug" element={<PageWrapper><ServiceDetailPage /></PageWrapper>} />
         <Route
           path="/profile"
           element={

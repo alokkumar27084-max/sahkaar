@@ -32,18 +32,4 @@ router.delete('/reviews/:id', controller.deleteReview);
 router.get('/settings', controller.getSettings);
 router.put('/settings', controller.updateSettings);
 
-// Service management
-router.get('/service-categories', controller.listServiceCategories);
-router.post('/service-categories', controller.createServiceCategory);
-router.patch('/service-categories/:id', controller.updateServiceCategory);
-router.delete('/service-categories/:id', controller.deleteServiceCategory);
-
-router.get('/services', controller.listAdminServices);
-router.post('/services', controller.createAdminService);
-router.patch('/services/:id', controller.updateAdminService);
-router.delete('/services/:id', controller.deleteAdminService);
-
-router.get('/service-requests', controller.listServiceRequests);
-router.patch('/service-requests/:id', controller.updateServiceRequest);
-
 module.exports = router;

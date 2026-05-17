@@ -8,7 +8,7 @@ import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
 import Icon from "../../components/common/Icon";
 import { useAuth } from "../../context/AuthContext";
-import { FiTrendingUp, FiSearch, FiArrowRight, FiShield, FiCheckCircle, FiClock, FiStar, FiZap, FiTarget, FiActivity, FiMapPin, FiBriefcase } from "react-icons/fi";
+import { FiTrendingUp, FiSearch, FiArrowRight, FiCheckCircle, FiStar, FiMapPin, FiBriefcase } from "react-icons/fi";
 import SEOHead from "../../components/common/SEOHead";
 
 /* ══════════════════════════════════════════════
@@ -470,7 +470,7 @@ export default function HomePage() {
               <div className="space-y-6">
                 <div className="w-16 h-1 bg-indigo-500" />
                 <p className="text-xl md:text-2xl text-white/60 leading-relaxed font-medium">
-                  Whether you're building from scratch or renovating a full floor, our Thekedaar Services connect you with top-tier contractors.
+                  Whether you're building from scratch or renovating a full floor, Thekedaar connects you with verified local contractors.
                 </p>
               </div>
               
@@ -502,11 +502,11 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="md:col-span-4 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[40px] p-8 flex items-center justify-between group cursor-pointer"
-              onClick={() => navigate("/macro-services")}
+              onClick={() => navigate("/search")}
             >
               <div>
-                <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Next Level</p>
-                <p className="text-white text-2xl font-black uppercase leading-tight">Thekedaar <br/>Services</p>
+                <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Verified Network</p>
+                <p className="text-white text-2xl font-black uppercase leading-tight">Find Local <br/>Contractors</p>
               </div>
               <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-45">
                 <FiArrowRight size={24} />

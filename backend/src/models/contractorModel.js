@@ -212,7 +212,15 @@ exports.search = async ({
   if (q) {
     params.push(`%${q}%`);
     const i = params.length;
-    where.push(`(COALESCE(c.business_name, '') ILIKE $${i} OR COALESCE(c.description, '') ILIKE $${i})`);
+    where.push(`(
+      COALESCE(c.business_name, '') ILIKE $${i}
+      OR COALESCE(c.description, '') ILIKE $${i}
+      OR EXISTS (
+        SELECT 1
+        FROM unnest(COALESCE(c.services, '{}')) AS service_name
+        WHERE service_name ILIKE $${i}
+      )
+    )`);
   }
 
   if (category) {
@@ -257,7 +265,11 @@ exports.search = async ({
         ll_to_earth(COALESCE(c.lat, c.latitude)::float8, COALESCE(c.lng, c.longitude)::float8)
       ) BETWEEN $${minRadiusIdx} AND $${maxRadiusIdx}
     `);
-    orderBy = 'distance_km ASC, c.rating DESC NULLS LAST, c.created_at DESC';
+    orderBy = sort === 'price'
+      ? 'c.daily_rate ASC NULLS LAST, distance_km ASC, c.rating DESC NULLS LAST, c.created_at DESC'
+      : 'distance_km ASC, c.rating DESC NULLS LAST, c.created_at DESC';
+  } else if (sort === 'price') {
+    orderBy = 'c.daily_rate ASC NULLS LAST, c.rating DESC NULLS LAST, c.created_at DESC';
   }
 
   params.push(safeLimit, offset);

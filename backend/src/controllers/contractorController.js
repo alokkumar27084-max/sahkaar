@@ -6,19 +6,20 @@ const path = require('path');
 // Public stats for home page "Trust Strip"
 exports.getPublicStats = async (req, res, next) => {
   try {
-    const [contractors, bookings, cities] = await Promise.all([
+    const [contractors, bookings, cities, reviews] = await Promise.all([
       db.query(`SELECT COUNT(*)::int AS count FROM contractors WHERE is_verified = true`),
       db.query(`SELECT COUNT(*)::int AS count FROM bookings WHERE status = 'completed'`),
       db.query(`SELECT COUNT(DISTINCT location_text)::int AS count FROM contractors`),
+      db.query(`SELECT AVG(rating)::numeric(3,1) AS avg FROM reviews WHERE rating IS NOT NULL`),
     ]);
 
     return res.json({
       ok: true,
       stats: {
-        contractors: (contractors.rows[0].count || 0) + 142, // Add offset for initial growth feel
-        projects: (bookings.rows[0].count || 0) + 1240,
-        cities: (cities.rows[0].count || 0) + 24,
-        satisfaction: 98 // Static high satisfaction
+        contractors: contractors.rows[0].count || 0,
+        projects: bookings.rows[0].count || 0,
+        cities: cities.rows[0].count || 0,
+        satisfaction: reviews.rows[0].avg ? Math.round((Number(reviews.rows[0].avg) / 5) * 100) : null,
       }
     });
   } catch (err) {

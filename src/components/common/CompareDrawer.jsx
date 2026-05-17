@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiMessageCircle, FiTrash2, FiX, FiActivity } from "react-icons/fi";
+import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiMessageCircle } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 
 function formatPrice(value) {

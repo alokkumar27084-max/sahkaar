@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiBell, FiCheckCircle, FiClock, FiMapPin, FiBriefcase, FiArrowRight, FiSettings, FiStar } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
-import { bookingAPI, notificationAPI, servicesAPI } from "../../services/api";
+import { bookingAPI, notificationAPI } from "../../services/api";
 import toast from "react-hot-toast";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
@@ -12,7 +12,6 @@ const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { stag
 export default function CustomerDashboard() {
     const { user } = useAuth();
     const [bookings, setBookings] = useState([]);
-    const [requests, setRequests] = useState([]);
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -22,13 +21,11 @@ export default function CustomerDashboard() {
 
     const fetchBookings = async () => {
         try {
-            const [bookingsRes, requestsRes, notificationsRes] = await Promise.all([
+            const [bookingsRes, notificationsRes] = await Promise.all([
                 bookingAPI.getMyBookings(),
-                servicesAPI.getMyRequests(),
                 notificationAPI.getMine(),
             ]);
             setBookings(bookingsRes.data.data.bookings || []);
-            setRequests(requestsRes.data.requests || []);
             setNotifications(notificationsRes.data.notifications || []);
         } catch (err) {
             toast.error("Failed to load your dashboard");
@@ -180,52 +177,6 @@ export default function CustomerDashboard() {
 
                     {/* RIGHT COLUMN: Bookings & Requests */}
                     <div className="space-y-8">
-
-                        {/* Recent Service Requests (Small cards) */}
-                        <motion.section initial="hidden" animate="show" variants={stagger}>
-                            <div className="flex items-center justify-between mb-5">
-                                <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight">Recent Requests</h2>
-                                <Link to="/search" className="text-sm font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] flex items-center gap-1 transition-colors">
-                                    Book New <FiArrowRight size={14} />
-                                </Link>
-                            </div>
-
-                            {loading ? (
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                    {[1, 2].map(i => <div key={i} className="skeleton h-28 rounded-2xl" />)}
-                                </div>
-                            ) : requests.length === 0 ? (
-                                <div className="glass-card p-10 text-center flex flex-col items-center justify-center border-dashed">
-                                    <div className="w-12 h-12 rounded-full bg-[var(--color-border)] flex items-center justify-center mb-4"><FiClock className="text-[var(--color-muted)]" size={20} /></div>
-                                    <p className="text-[var(--color-heading)] font-semibold mb-1">No service requests</p>
-                                    <p className="text-[var(--color-muted)] text-sm mb-4">Request services from premium contractors.</p>
-                                </div>
-                            ) : (
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                    {requests.slice(0, 4).map((request) => (
-                                        <div key={request.id} className="glass-card p-5 group hover:border-[var(--color-primary)]/40 transition-colors">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <h3 className="font-bold text-[var(--color-heading)] text-base">{request.service_name || request.category_name || "Service"}</h3>
-                                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${
-                                                    request.status === "completed" ? "bg-emerald-500/10 text-emerald-600"
-                                                    : request.status === "confirmed" ? "bg-indigo-500/10 text-indigo-600"
-                                                    : request.status === "cancelled" ? "bg-rose-500/10 text-rose-600"
-                                                    : "bg-amber-500/10 text-amber-600"
-                                                }`}>
-                                                    {request.status}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-[var(--color-muted)] flex items-start gap-1.5 line-clamp-1 mb-2">
-                                                <FiMapPin className="shrink-0 mt-0.5" /> {request.customer_address || "No address"}
-                                            </p>
-                                            <div className="text-xs font-medium text-[var(--color-body)] bg-[var(--color-bg)] inline-flex px-2 py-1 rounded border border-[var(--color-border)]">
-                                                By: {request.preferred_date || "Anytime"}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.section>
 
                         {/* Major Bookings */}
                         <motion.section initial="hidden" animate="show" variants={stagger}>

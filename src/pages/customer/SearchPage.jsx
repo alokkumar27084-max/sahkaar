@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiMapPin, FiSearch, FiSliders, FiStar, FiCheckCircle, FiX, FiGrid, FiMap, FiNavigation } from "react-icons/fi";
+import { FiSearch, FiSliders, FiStar, FiCheckCircle, FiX, FiGrid, FiMap, FiNavigation } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { authAPI, contractorAPI } from "../../services/api";
@@ -15,16 +15,33 @@ import ContractorMapPanel from "../../components/common/ContractorMapPanel";
 import { trackEvent } from "../../utils/analytics";
 import { readSavedLocation, saveLocationSnapshot } from "../../utils/locationStorage";
 import SEOHead from "../../components/common/SEOHead";
+import { toast } from "react-hot-toast";
 
 const RADIUS_OPTIONS = [2, 3, 5, 10, 15, 25];
 const PAGE_SIZE = 20;
+
+function useIsMobileSearchLayout() {
+  const getIsMobile = () => typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
+  const [isMobile, setIsMobile] = useState(getIsMobile);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const media = window.matchMedia("(max-width: 1023px)");
+    const handleChange = () => setIsMobile(media.matches);
+    handleChange();
+    media.addEventListener?.("change", handleChange);
+    return () => media.removeEventListener?.("change", handleChange);
+  }, []);
+
+  return isMobile;
+}
 
 export default function SearchPage() {
   const { t } = useLanguage();
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { lat, lng, address, accuracy, request: getLocation, loading: geoLoading } = useGeolocation();
+  const { lat, lng, address, accuracy, error: geoError, request: getLocation, loading: geoLoading, clearError: clearGeoError } = useGeolocation();
   
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +56,7 @@ export default function SearchPage() {
   const [hoveredContractorId, setHoveredContractorId] = useState(null);
   
   // Adaptive View Handling for Mobile
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const isMobile = useIsMobileSearchLayout();
   const effectiveViewMode = isMobile && viewMode === "split" ? "list" : viewMode;
 
   // Search Params
@@ -63,6 +80,20 @@ export default function SearchPage() {
   const [qInput, setQInput] = useState(query);
   useEffect(() => setQInput(query), [query]);
 
+  // GPS Manual Detection
+  const handleDetectLocation = useCallback(() => {
+    toast.loading("Detecting your location...", { id: "geo-toast" });
+    getLocation();
+    setAutoSaveRequested(true);
+  }, [getLocation]);
+
+  useEffect(() => {
+    if (geoError) {
+      toast.error(geoError, { id: "geo-toast" });
+      clearGeoError();
+    }
+  }, [geoError, clearGeoError]);
+
   // Persist Location
   const persistSearchLocation = useCallback(async (selection, source = "browser_gps", nextAccuracy = null) => {
     if (!selection?.lat || !selection?.lng) return;
@@ -83,8 +114,14 @@ export default function SearchPage() {
       setSearchLocationLabel(selection.address || "");
       setManualLocationInput(selection.address || "");
       saveLocationSnapshot(selection);
+      if (source === "browser_gps") {
+        toast.success(`Location set: ${selection.address || "Current Location"}`, { id: "geo-toast" });
+      } else {
+        toast.success(`Area changed: ${selection.address}`, { id: "geo-toast" });
+      }
     } catch (err) {
       console.error("Location save error", err);
+      toast.error("Failed to update search location.", { id: "geo-toast" });
     } finally {
       setSavingLocation(false);
     }
@@ -197,62 +234,100 @@ export default function SearchPage() {
       <SEOHead title={seoTitle} description="Find the best verified contractors in your area." />
       
       {/* ═══════ SEARCH HEADER — Sticky ═══════ */}
-      <header className="fixed top-[76px] left-0 right-0 z-[100] h-20 bg-[#090B19]/90 backdrop-blur-3xl border-b border-white/[0.05] flex items-center px-4 md:px-6">
-        <div className="flex-1 flex items-center gap-6 max-w-[1600px] mx-auto">
-          {/* Logo shorthand / Back */}
-          <button onClick={() => navigate("/")} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-            <FiX size={20} />
-          </button>
+      <header className="fixed top-[76px] left-0 right-0 z-[100] min-h-20 bg-[#090B19]/90 backdrop-blur-3xl border-b border-white/[0.05] flex items-center py-3 md:py-4 px-4 md:px-6">
+        <div className="flex-1 flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4 max-w-[1600px] mx-auto w-full">
+          
+          {/* Row 1 / Left block: Back Button & Service Search Input */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button 
+              onClick={() => navigate("/")} 
+              className="w-10 h-10 shrink-0 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+              title="Go Back"
+            >
+              <FiX size={20} />
+            </button>
 
-          {/* Search Inputs */}
-          <div className="flex-1 flex items-center gap-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl h-12 px-4 shadow-inner min-w-0">
-            <FiSearch className="text-slate-500 shrink-0" />
-            <input 
-              type="text" 
-              value={qInput}
-              onChange={(e) => setQInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && updateParam("q", qInput)}
-              placeholder="What do you need?" 
-              className="bg-transparent border-none outline-none text-sm w-full min-w-0"
-            />
-            <div className="w-px h-6 bg-white/10 mx-2 hidden sm:block" />
-            <div className="hidden sm:flex items-center gap-2 min-w-[120px] md:min-w-[200px]">
-              <FiMapPin className="text-indigo-400 shrink-0" size={14} />
+            {/* Query Search */}
+            <div className="flex-1 flex items-center gap-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl h-12 px-4 shadow-inner min-w-0">
+              <FiSearch className="text-slate-500 shrink-0" size={16} />
+              <input 
+                type="text" 
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && updateParam("q", qInput)}
+                placeholder="What do you need?" 
+                className="bg-transparent border-none outline-none text-sm w-full min-w-0 text-white placeholder-slate-500"
+              />
+              {qInput && (
+                <button 
+                  onClick={() => { setQInput(""); updateParam("q", ""); }}
+                  className="text-slate-500 hover:text-white transition-colors"
+                >
+                  <FiX size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Row 2 / Right block: Location Autocomplete, GPS Locate, View Toggle & Filters */}
+          <div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
+            
+            {/* Location Autocomplete Search */}
+            <div className="flex-1 md:flex-initial flex items-center bg-white/[0.03] border border-white/[0.08] rounded-2xl h-12 px-4 shadow-inner min-w-[200px] md:min-w-[260px] relative">
               <LocationSearchInput 
                 value={manualLocationInput} 
                 onChange={setManualLocationInput} 
                 onSelect={(sel) => persistSearchLocation(sel, "manual")}
-                placeholder="Change area..."
-                className="!bg-transparent !border-none !p-0 !h-auto !text-[11px] !font-bold"
+                placeholder="Search location or area..."
+                className="!bg-transparent !border-none !h-full !text-xs !font-bold text-white placeholder-slate-500 w-full focus:outline-none !pl-0"
               />
             </div>
-          </div>
 
-          {/* View Toggles */}
-          <div className="hidden lg:flex items-center bg-white/[0.03] border border-white/[0.08] rounded-xl p-1 gap-1">
-            <button 
-              onClick={() => setViewMode("split")}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "split" ? "bg-indigo-500 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
+            {/* Geolocation Button */}
+            <button
+              onClick={handleDetectLocation}
+              disabled={geoLoading}
+              title="Detect my current location"
+              className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center border transition-all ${
+                geoLoading 
+                  ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400 animate-pulse" 
+                  : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20 active:scale-95"
+              }`}
             >
-              <FiGrid size={14} /> Split
+              <FiNavigation 
+                size={18} 
+                className={`${geoLoading ? "animate-spin text-indigo-400" : "hover:text-indigo-400 transition-colors"}`} 
+              />
             </button>
-            <button 
-              onClick={() => setViewMode("map")}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "map" ? "bg-indigo-500 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
-            >
-              <FiMap size={14} /> Map
+
+            {/* View Toggles */}
+            <div className="hidden lg:flex items-center bg-white/[0.03] border border-white/[0.08] rounded-xl p-1 gap-1">
+              <button 
+                onClick={() => setViewMode("split")}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "split" ? "bg-indigo-500 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
+              >
+                <FiGrid size={14} /> Split
+              </button>
+              <button 
+                onClick={() => setViewMode("map")}
+                className={`px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "map" ? "bg-indigo-500 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
+              >
+                <FiMap size={14} /> Map
+              </button>
+            </div>
+
+            {/* Filters Button */}
+            <button onClick={() => setShowFilters(true)} className="h-12 px-4 rounded-2xl bg-indigo-500 text-white flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
+              <FiSliders size={18} />
+              <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">Filters</span>
             </button>
           </div>
-
-          <button onClick={() => setShowFilters(true)} className="h-12 w-12 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20 lg:w-auto lg:px-6 lg:gap-2 active:scale-95 transition-all">
-            <FiSliders size={18} />
-            <span className="hidden lg:inline text-xs font-bold uppercase tracking-widest">Filters</span>
-          </button>
+          
         </div>
       </header>
 
       {/* ═══════ MAIN CONTENT ═══════ */}
-      <main className="pt-[156px] flex h-screen overflow-hidden bg-[#090B19]">
+      <main className="pt-[220px] md:pt-[156px] flex h-[100dvh] overflow-hidden bg-[#090B19]">
         
         {/* LEFT PANEL — LISTING */}
         <section 
@@ -285,7 +360,10 @@ export default function SearchPage() {
           <div className="mb-6 flex items-end justify-between">
             <div>
               <h1 className="text-2xl font-black tracking-tight">{loading ? "Finding..." : `${contractors.length} Pros nearby`}</h1>
-              <p className="text-xs text-slate-500 font-medium mt-1">Showing best matches in {searchLocationLabel || "your area"}</p>
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                {savingLocation ? "Saving search area..." : `Showing best matches in ${searchLocationLabel || "your area"}`}
+              </p>
+              {error && <p className="text-xs text-rose-400 font-semibold mt-2">{error}</p>}
             </div>
             <div className="flex items-center gap-2">
                <select 
@@ -360,7 +438,7 @@ export default function SearchPage() {
 
         {/* Global Mobile View Toggle — Visible when in List mode on phone */}
         {isMobile && effectiveViewMode === "list" && (
-          <div className="fixed bottom-10 left-0 right-0 z-[150] pointer-events-none flex justify-center">
+          <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] left-0 right-0 z-[150] pointer-events-none flex justify-center">
             <button 
               onClick={() => setViewMode("map")}
               className="pointer-events-auto flex items-center gap-3 px-8 py-4 rounded-full bg-[#0D1021] border border-white/10 text-white text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5"

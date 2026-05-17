@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiUser, FiX, FiMoon, FiSun, FiMap, FiBriefcase, FiMessageCircle, FiStar } from "react-icons/fi";
+import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiUser, FiX, FiMoon, FiSun, FiBriefcase, FiMessageCircle, FiStar } from "react-icons/fi";
 import { ThekedaarLogo } from "./ThekedaarLogo";
 import toast from "react-hot-toast";
 
@@ -79,7 +79,7 @@ export default function Navbar() {
 
   const navLinks = useMemo(() => [
     { href: "/#home", label: "Home" },
-    { href: "/macro-services", label: "Thekedaar Services" },
+    { href: "/search", label: "Find Contractors" },
     { href: "/#about", label: "About" },
   ], []);
 
@@ -255,8 +255,8 @@ export default function Navbar() {
             <a href="/#home" className="panel-link" onClick={closePanel}>
               <FiHome size={15} /> Home <FiChevronRight className="ml-auto opacity-30" />
             </a>
-            <Link to="/macro-services" className="panel-link" onClick={closePanel}>
-              <FiBriefcase size={15} /> Macro Services <FiChevronRight className="ml-auto opacity-30" />
+            <Link to="/search" className="panel-link" onClick={closePanel}>
+              <FiBriefcase size={15} /> Find Contractors <FiChevronRight className="ml-auto opacity-30" />
             </Link>
             <a href="/#about" className="panel-link" onClick={closePanel}>
               <FiStar size={15} /> About <FiChevronRight className="ml-auto opacity-30" />
