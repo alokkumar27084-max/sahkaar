@@ -38,6 +38,15 @@ const PrivacyPolicy = lazy(() => import("./pages/customer/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/customer/TermsOfService"));
 const RefundPolicy = lazy(() => import("./pages/customer/RefundPolicy"));
 
+// New pages for Platform Pivot
+const QuickBookingPage = lazy(() => import("./pages/customer/QuickBookingPage"));
+const MeetingBookingPage = lazy(() => import("./pages/customer/MeetingBookingPage"));
+const LabourSearchPage = lazy(() => import("./pages/customer/LabourSearchPage"));
+const LabourProfilePage = lazy(() => import("./pages/customer/LabourProfilePage"));
+const ServiceSelectPage = lazy(() => import("./pages/customer/ServiceSelectPage"));
+const ProjectDashboard = lazy(() => import("./pages/project/ProjectDashboard"));
+const ProjectListPage = lazy(() => import("./pages/project/ProjectListPage"));
+
 function PageFallback() {
   return (
     <div className="min-h-[62vh] flex items-center justify-center">
@@ -115,7 +124,10 @@ function FooterWrapper() {
     "/login",
     "/register",
     "/checkout",
-    "/search"
+    "/search",
+    "/select-service",
+    "/project",
+    "/labour"
   ];
 
   const shouldHide = hideFooterOn.some(path => location.pathname.includes(path));
@@ -145,6 +157,14 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+        <Route
+          path="/select-service"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><ServiceSelectPage /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/search"
           element={
@@ -191,6 +211,56 @@ function AnimatedRoutes() {
           element={
             <ProtectedRoute>
               <PageWrapper><ChatLayout /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Pivot Routes */}
+        <Route
+          path="/quick-booking/:contractorId"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><QuickBookingPage /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/meeting/:id"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><MeetingBookingPage /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/labour"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><LabourSearchPage /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/labour/:id"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><LabourProfilePage /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><ProjectListPage /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/project/:id"
+          element={
+            <ProtectedRoute>
+              <PageWrapper><ProjectDashboard /></PageWrapper>
             </ProtectedRoute>
           }
         />

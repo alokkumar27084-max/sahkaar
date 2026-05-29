@@ -151,3 +151,53 @@ export const quoteAPI = {
   getQuoteById: (id) => api.get(`/quotes/${id}`),
   updateQuoteStatus: (quoteId, status) => api.put(`/quotes/${quoteId}/status`, { status }),
 };
+
+export const meetingAPI = {
+  book: (data) => api.post("/meetings", data),
+  verify: (data) => api.post("/meetings/verify", data),
+  getMyMeetings: (role) => api.get("/meetings/me", { params: { role } }),
+  updateStatus: (id, status, note) => api.put(`/meetings/${id}/status`, { status, note }),
+  reschedule: (id, proposed_date, proposed_time_slot, note) => api.put(`/meetings/${id}/reschedule`, { proposed_date, proposed_time_slot, note }),
+};
+
+export const quickBookingAPI = {
+  create: (data) => api.post("/quick-bookings", data),
+  verify: (data) => api.post("/quick-bookings/verify", data),
+  getMyBookings: () => api.get("/quick-bookings/me"),
+  getContractorBookings: () => api.get("/quick-bookings/contractor/me"),
+  updateStatus: (id, status) => api.put(`/quick-bookings/${id}/status`, { status }),
+  addReview: (id, rating, review_text) => api.post(`/quick-bookings/${id}/review`, { rating, review_text }),
+};
+
+export const projectAPI = {
+  create: (data) => api.post("/projects", data),
+  getMyProjects: (role) => api.get("/projects/me", { params: { role } }),
+  getProject: (id) => api.get(`/projects/${id}`),
+  updateProject: (id, data) => api.put(`/projects/${id}`, data),
+  addMilestone: (id, data) => api.post(`/projects/${id}/milestones`, data),
+  updateMilestone: (id, mid, data) => api.put(`/projects/${id}/milestones/${mid}`, data),
+  deleteMilestone: (id, mid) => api.delete(`/projects/${id}/milestones/${mid}`),
+  addMaterial: (id, data) => api.post(`/projects/${id}/materials`, data),
+  updateMaterial: (id, mid, data) => api.put(`/projects/${id}/materials/${mid}`, data),
+  deleteMaterial: (id, mid) => api.delete(`/projects/${id}/materials/${mid}`),
+  addManpower: (id, data) => api.post(`/projects/${id}/manpower`, data),
+  updateManpower: (id, wid, data) => api.put(`/projects/${id}/manpower/${wid}`, data),
+  deleteManpower: (id, wid) => api.delete(`/projects/${id}/manpower/${wid}`),
+  addExpense: (id, data) => api.post(`/projects/${id}/expenses`, data),
+  deleteExpense: (id, eid) => api.delete(`/projects/${id}/expenses/${eid}`),
+  getSummary: (id) => api.get(`/projects/${id}/summary`),
+};
+
+export const labourAPI = {
+  search: (params) => api.get("/labour/search", { params }),
+  getDetails: (id) => api.get(`/labour/${id}`),
+};
+
+export const subscriptionAPI = {
+  purchase: (plan_type) => api.post("/subscriptions/purchase", { plan_type }),
+  verify: (data) => api.post("/subscriptions/verify", data),
+  getStatus: () => api.get("/subscriptions/status"),
+  getHistory: () => api.get("/subscriptions/history"),
+  fileDispute: (data) => api.post("/subscriptions/disputes", data),
+  getMyDisputes: () => api.get("/subscriptions/disputes/me"),
+};

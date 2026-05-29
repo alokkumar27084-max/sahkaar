@@ -34,9 +34,9 @@ exports.create = async (data) => {
       user_id, business_name, category, categories, description, services,
       daily_rate, experience_years, team_size, is_labour_group,
       is_responsibility_model, location_text, lat, lng, latitude, longitude,
-      onboarding_data
+      onboarding_data, labour_crew
     )
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
      RETURNING *`,
     [
       data.user_id,
@@ -56,6 +56,7 @@ exports.create = async (data) => {
       lat,
       lng,
       data.onboarding_data ? JSON.stringify(data.onboarding_data) : '{}',
+      data.labour_crew ? JSON.stringify(data.labour_crew) : '[]',
     ]
   );
   return res.rows[0];
@@ -151,6 +152,7 @@ exports.update = async (id, data) => {
          latitude = COALESCE($13, latitude),
          longitude = COALESCE($14, longitude),
          onboarding_data = COALESCE($15, onboarding_data),
+         labour_crew = COALESCE($16, labour_crew),
          updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -170,6 +172,7 @@ exports.update = async (id, data) => {
       lat,
       lng,
       data.onboarding_data ? JSON.stringify(data.onboarding_data) : undefined,
+      data.labour_crew ? JSON.stringify(data.labour_crew) : undefined,
     ]
   );
   return res.rows[0];

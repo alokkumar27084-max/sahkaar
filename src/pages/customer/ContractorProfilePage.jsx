@@ -60,6 +60,24 @@ export default function ContractorProfilePage() {
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
 
+  // Labour Chowk crew selection state
+  const [selectedWorkers, setSelectedWorkers] = useState({});
+
+  useEffect(() => {
+    if (contractor?.labour_crew) {
+      const init = {};
+      contractor.labour_crew.forEach((c) => {
+        init[c.role] = c.count || 0; // Default to maximum size
+      });
+      setSelectedWorkers(init);
+    }
+  }, [contractor]);
+
+  const totalDailyCost = Object.entries(selectedWorkers).reduce((acc, [role, qty]) => {
+    const crewItem = contractor?.labour_crew?.find((c) => c.role === role);
+    return acc + (qty * (crewItem?.rate || 0));
+  }, 0);
+
   useEffect(() => {
     let active = true;
     async function load() {
@@ -341,6 +359,83 @@ export default function ContractorProfilePage() {
                             {service}
                           </span>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {contractor.is_labour_group && contractor.labour_crew && contractor.labour_crew.length > 0 && (
+                    <div className="mt-8 pt-8 border-t border-[var(--color-border)] space-y-6">
+                      <div>
+                        <span className="block text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Labour Chowk Crew Composer</span>
+                        <p className="mt-1 text-xs text-slate-400">Select the quantity of each worker category you wish to hire from this group.</p>
+                      </div>
+
+                      <div className="space-y-4">
+                        {contractor.labour_crew.map((crew) => (
+                          <div key={crew.role} className="flex items-center justify-between bg-[var(--color-bg)] p-4 rounded-2xl border border-[var(--color-border)]">
+                            <div>
+                              <span className="block text-sm font-black text-[var(--color-heading)] capitalize">{crew.role}</span>
+                              <span className="block text-[10px] font-semibold text-slate-400 mt-0.5">₹{crew.rate}/day per worker (Max {crew.count} available)</span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedWorkers(prev => ({
+                                    ...prev,
+                                    [crew.role]: Math.max(0, (prev[crew.role] || 0) - 1)
+                                  }));
+                                }}
+                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-all text-lg"
+                              >
+                                -
+                              </button>
+                              <span className="w-12 text-center text-sm font-black text-white">{selectedWorkers[crew.role] ?? 0}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedWorkers(prev => ({
+                                    ...prev,
+                                    [crew.role]: Math.min(crew.count, (prev[crew.role] || 0) + 1)
+                                  }));
+                                }}
+                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-all text-lg"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <span className="block text-[10px] font-black uppercase tracking-widest text-indigo-400">Estimated Daily Workforce Cost</span>
+                          <span className="block text-2xl font-black text-white mt-1">₹{totalDailyCost.toLocaleString("en-IN")}</span>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (totalDailyCost === 0) {
+                              toast.error("Please select at least 1 worker to hire.");
+                              return;
+                            }
+                            navigate(`/checkout/${id}`, {
+                              state: {
+                                contractor: {
+                                  ...contractor,
+                                  daily_rate: totalDailyCost, // dynamically calculated rate!
+                                  selected_crew: selectedWorkers
+                                }
+                              }
+                            });
+                          }}
+                          className="px-6 py-3.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                        >
+                          Book Selected Crew
+                        </button>
                       </div>
                     </div>
                   )}

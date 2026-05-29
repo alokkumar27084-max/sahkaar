@@ -43,3 +43,25 @@ export const STAR_RATINGS = [1, 2, 3, 4, 5];
 
 // User roles
 export const ROLES = { CUSTOMER: "customer", CONTRACTOR: "contractor", ADMIN: "admin" };
+
+// Quick Service Categories (18 total)
+export const QUICK_SERVICE_CATEGORIES = [
+  { id: "ac_repair", label: "AC Repair & Service", icon: "FiWind", price: 499 },
+  { id: "electrician", label: "Electrician", icon: "FiZap", price: 199 },
+  { id: "plumber", label: "Plumber", icon: "FiDroplet", price: 199 },
+  { id: "carpenter", label: "Carpenter", icon: "FiTool", price: 249 },
+  { id: "home_cleaning", label: "Home Deep Cleaning", icon: "FiHome", price: 1499 },
+  { id: "pest_control", label: "Pest Control", icon: "FiShield", price: 799 },
+  { id: "painter", label: "Painter (touch-up/room)", icon: "FiFeather", price: 999 },
+  { id: "mechanic", label: "Car/Bike Mechanic", icon: "FiTruck", price: 399 },
+  { id: "locksmith", label: "Locksmith", icon: "FiKey", price: 299 },
+  { id: "packers_movers", label: "Packers & Movers", icon: "FiPackage", price: 2999 },
+  { id: "salon_women", label: "Salon at Home (Women)", icon: "FiScissors", price: 599 },
+  { id: "grooming_men", label: "Men's Grooming at Home", icon: "FiSmile", price: 399 },
+  { id: "tv_repair", label: "TV Repair", icon: "FiTv", price: 349 },
+  { id: "washing_machine", label: "Washing Machine Repair", icon: "FiCpu", price: 399 },
+  { id: "refrigerator", label: "Refrigerator Repair", icon: "FiThermometer", price: 449 },
+  { id: "ro_service", label: "RO/Water Purifier Service", icon: "FiFilter", price: 299 },
+  { id: "cctv", label: "CCTV Installation", icon: "FiEye", price: 999 },
+  { id: "welding", label: "Welding & Fabrication", icon: "FiSettings", price: 599 },
+];

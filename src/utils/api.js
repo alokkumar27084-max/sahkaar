@@ -1,27 +1,28 @@
 // ─────────────────────────────────────────────────────────
 // api.js — All backend API calls
-//
-// HOW IT WORKS:
-// Every function here talks to your Node.js backend.
-// The base URL comes from your .env file.
-// JWT token is automatically sent with every request.
-// If token expires, user is logged out automatically.
 // ─────────────────────────────────────────────────────────
-
-// This file unifies the app's API surface by delegating to the canonical
-// `services/api.js` instance. That file configures cookies, CORS-friendly
-// settings and interceptors for the frontend. Re-export common APIs here so
-// existing imports to `../utils/api` continue to work.
-import api, { authAPI as svcAuth, contractorAPI as svcContractor, reviewAPI as svcReview } from '../services/api';
+import api, {
+  authAPI as svcAuth,
+  contractorAPI as svcContractor,
+  reviewAPI as svcReview,
+  meetingAPI as svcMeeting,
+  quickBookingAPI as svcQuickBooking,
+  projectAPI as svcProject,
+  labourAPI as svcLabour,
+  subscriptionAPI as svcSubscription
+} from '../services/api';
 
 export default api;
 
 export const authAPI = svcAuth;
 export const contractorAPI = svcContractor;
 export const reviewAPI = svcReview;
+export const meetingAPI = svcMeeting;
+export const quickBookingAPI = svcQuickBooking;
+export const projectAPI = svcProject;
+export const labourAPI = svcLabour;
+export const subscriptionAPI = svcSubscription;
 
-// Additional convenience endpoints used by older codepaths — implement
-// them using the same `api` instance so behavior is consistent.
 export const listingAPI = {
   getPlans: () => api.get('/listings/plans'),
   purchase: (contractorId, planType) => api.post('/listings/purchase', { contractorId, planType }),
