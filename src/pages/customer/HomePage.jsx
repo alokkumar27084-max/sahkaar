@@ -159,16 +159,6 @@ export default function HomePage() {
   const [realStats, setRealStats] = useState(null);
   const { request: getLocation, lat, lng } = useGeolocation();
 
-  // Dispute Portal States
-  const [showDisputeModal, setShowDisputeModal] = useState(false);
-  const [disputeForm, setDisputeForm] = useState({
-    booking_type: "quick_booking",
-    booking_ref_id: "",
-    reason: "Delayed Milestone Release",
-    description: ""
-  });
-  const [disputeLoading, setDisputeLoading] = useState(false);
-
   const trendingSearches = ["Plumber", "Electrician", "Civil Contractor", "Carpenter", "Painter"];
 
   useGSAPAnimations(realStats);
@@ -195,7 +185,7 @@ export default function HomePage() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    const params = new URLSearchParams({ q: query });
+    const params = new URLSearchParams({ q: query, mode: "project" });
     if (lat && lng) { params.set("lat", lat); params.set("lng", lng); }
     navigate(`/search?${params}`);
   };
@@ -205,33 +195,7 @@ export default function HomePage() {
   };
 
   const handleCategoryClick = (categoryId) => {
-    navigate(`/search?category=${categoryId}`);
-  };
-
-  const handleDisputeSubmit = async (e) => {
-    e.preventDefault();
-    if (!disputeForm.booking_ref_id.trim()) {
-      toast.error("Please enter a valid booking Reference ID.");
-      return;
-    }
-    setDisputeLoading(true);
-    try {
-      const res = await subscriptionAPI.fileDispute({
-        booking_type: disputeForm.booking_type,
-        booking_ref_id: disputeForm.booking_ref_id,
-        reason: disputeForm.reason,
-        description: disputeForm.description
-      });
-      if (res.data?.ok) {
-        toast.success("Dispute requested! Our resolution center will respond within 48 hours.");
-        setShowDisputeModal(false);
-        setDisputeForm({ booking_type: "quick_booking", booking_ref_id: "", reason: "Delayed Milestone Release", description: "" });
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to submit dispute file.");
-    } finally {
-      setDisputeLoading(false);
-    }
+    navigate(`/search?category=${categoryId}&mode=project`);
   };
 
   const displayStats = [
@@ -731,32 +695,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════ ADDED: FREE DISPUTE RESOLUTION FILING PORTAL (pivot footer section) ═══════ */}
-      <section className="max-w-[1400px] mx-auto px-5 md:px-10 pb-16">
-        <div className="glass-card bg-[#11131C] border border-white/5 p-10 md:p-16 rounded-[3rem] shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/5 rounded-full blur-[100px] pointer-events-none" />
-          
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-            <div className="space-y-4 max-w-2xl">
-              <span className="text-rose-500 text-[10px] font-black uppercase tracking-[0.4em] mb-2 block">FREE MEDIATION DESK</span>
-              <h2 className="font-display text-3xl md:text-5xl font-black text-white tracking-tight leading-none">
-                Dispute Resolution
-              </h2>
-              <p className="text-sm text-slate-400 leading-relaxed font-semibold">
-                Having issues with work quality, milestone payments, or schedule delays? File a dispute file. Our specialized support desk will review milstone contract documents and daily attendance logs to mediate a solution within 48 hours.
-              </p>
-            </div>
-            
-            <button
-              onClick={() => setShowDisputeModal(true)}
-              className="self-start lg:self-auto shrink-0 flex items-center gap-2.5 px-8 py-5 rounded-2xl border border-rose-500/20 text-rose-500 font-black text-xs uppercase tracking-widest hover:bg-rose-500/5 transition-all shadow-md"
-            >
-              <FiAlertTriangle size={15} /> File Dispute Mediation Case
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* CTA section */}
       <section className="max-w-[1400px] mx-auto px-5 md:px-10 pb-20">
         <div className="gsap-fade-up rounded-3xl p-10 md:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #13151D, #1A1C28)' }}>
@@ -777,98 +715,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Dispute Modal */}
-      <AnimatePresence>
-        {showDisputeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/75 backdrop-blur-sm">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card max-w-md w-full bg-[#13151D] border border-white/10 p-8 rounded-[2rem] shadow-2xl space-y-6 text-white"
-            >
-              <div>
-                <h3 className="font-display text-xl font-black uppercase tracking-tight flex items-center gap-2 text-rose-500">
-                  <FiAlertTriangle /> File Dispute Case
-                </h3>
-                <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Mediation Desk Service is free of cost.</p>
-              </div>
-
-              <form onSubmit={handleDisputeSubmit} className="space-y-4">
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Booking Category</span>
-                  <select
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none"
-                    value={disputeForm.booking_type}
-                    onChange={(e) => setDisputeForm(p => ({ ...p, booking_type: e.target.value }))}
-                  >
-                    <option value="quick_booking">Quick Handyman Booking</option>
-                    <option value="project">Milestone SaaS Project</option>
-                    <option value="meeting">Consultation Meeting</option>
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Booking Reference UUID</span>
-                  <input
-                    required
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none"
-                    placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
-                    value={disputeForm.booking_ref_id}
-                    onChange={(e) => setDisputeForm(p => ({ ...p, booking_ref_id: e.target.value }))}
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Reason for Dispute</span>
-                  <select
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none"
-                    value={disputeForm.reason}
-                    onChange={(e) => setDisputeForm(p => ({ ...p, reason: e.target.value }))}
-                  >
-                    <option value="Work Quality Dispute">Bad/Substandard Work Quality</option>
-                    <option value="Delayed Milestone Release">Client refusing to release completed milestone</option>
-                    <option value="Contractor Abandonment">Contractor stopped showing up</option>
-                    <option value="Daily Wage Attendance Dispute">Manpower daily rate discrepancies</option>
-                    <option value="Unfair Cancellation">Cancellation fee dispute</option>
-                  </select>
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Detailed Statement</span>
-                  <textarea
-                    rows="3"
-                    required
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none resize-none"
-                    placeholder="Explain the event timeline and payment terms..."
-                    value={disputeForm.description}
-                    onChange={(e) => setDisputeForm(p => ({ ...p, description: e.target.value }))}
-                  />
-                </label>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowDisputeModal(false)}
-                    className="flex-1 py-3.5 rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest text-slate-400"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={disputeLoading}
-                    className="flex-1 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black uppercase tracking-widest shadow-md flex items-center justify-center gap-1.5"
-                  >
-                    {disputeLoading ? <LoadingSpinner size="xs" color="white" /> : <FiAlertTriangle />}
-                    File Dispute
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
     </main>
   );

@@ -154,7 +154,19 @@ exports.remove = async (req, res, next) => {
 exports.uploadImage = async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ ok: false, message: 'No file uploaded' });
-    const photo_url = `/uploads/${req.file.filename}`;
+    
+    // Read local temporary file and convert to Base64 data URI
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const base64Data = fileBuffer.toString('base64');
+    const photo_url = `data:${req.file.mimetype};base64,${base64Data}`;
+    
+    // Remove the temporary file from the container disk immediately
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (e) {
+      console.error("Temp file unlink failed:", e);
+    }
+
     const result = await Contractor.update(req.params.id, { photo_url });
     return res.json({ ok: true, photo_url, contractor: result });
   } catch (err) {
@@ -167,14 +179,7 @@ exports.uploadImageBase64 = async (req, res, next) => {
     const { image } = req.body || {};
     if (!image) return res.status(400).json({ ok: false, message: 'No base64 data' });
     
-    // Convert base64 to file
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, 'base64');
-    const filename = `base64-${Date.now()}.jpg`;
-    const filepath = path.join(__dirname, '../../uploads/', filename);
-    fs.writeFileSync(filepath, buffer);
-
-    const photo_url = `/uploads/${filename}`;
+    const photo_url = image;
     const result = await Contractor.update(req.params.id, { photo_url });
     return res.json({ ok: true, photo_url, contractor: result });
   } catch (err) {
@@ -185,8 +190,22 @@ exports.uploadImageBase64 = async (req, res, next) => {
 exports.uploadPortfolio = async (req, res, next) => {
   try {
     if (!req.files || req.files.length === 0) return res.status(400).json({ ok: false, message: 'No files uploaded' });
-    const urls = req.files.map(f => `/uploads/${f.filename}`);
-    const result = await Contractor.addPortfolioUrls(req.params.id, urls);
+    
+    const urls = [];
+    for (const f of req.files) {
+      const fileBuffer = fs.readFileSync(f.path);
+      const base64Data = fileBuffer.toString('base64');
+      const dataUri = `data:${f.mimetype};base64,${base64Data}`;
+      urls.push(dataUri);
+      
+      try {
+        fs.unlinkSync(f.path);
+      } catch (e) {
+        console.error("Temp portfolio file unlink failed:", e);
+      }
+    }
+
+    const result = await Contractor.appendPortfolio(req.params.id, urls);
     return res.json({ ok: true, urls, contractor: result });
   } catch (err) {
     return next(err);
@@ -198,17 +217,8 @@ exports.uploadPortfolioBase64 = async (req, res, next) => {
     const { images } = req.body || {};
     if (!images || !Array.isArray(images)) return res.status(400).json({ ok: false, message: 'No base64 array' });
 
-    const urls = [];
-    for (const base64 of images) {
-      const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
-      const buffer = Buffer.from(base64Data, 'base64');
-      const filename = `portfolio-${Date.now()}-${Math.random().toString(36).slice(7)}.jpg`;
-      const filepath = path.join(__dirname, '../../uploads/', filename);
-      fs.writeFileSync(filepath, buffer);
-      urls.push(`/uploads/${filename}`);
-    }
-
-    const result = await Contractor.addPortfolioUrls(req.params.id, urls);
+    const urls = images;
+    const result = await Contractor.appendPortfolio(req.params.id, urls);
     return res.json({ ok: true, urls, contractor: result });
   } catch (err) {
     return next(err);

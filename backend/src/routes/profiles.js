@@ -77,7 +77,17 @@ router.post('/me/avatar', requireAuth, upload.single('avatar'), async (req, res)
   try {
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    // Read the file and convert it to Base64 Data URI
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const base64Data = fileBuffer.toString('base64');
+    const avatarUrl = `data:${req.file.mimetype};base64,${base64Data}`;
+
+    // Clean up temporary local file
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (e) {
+      console.error("Temp avatar file unlink failed:", e);
+    }
 
     // Upsert profile with avatar
     await db.query(

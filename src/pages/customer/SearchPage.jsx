@@ -75,8 +75,13 @@ export default function SearchPage() {
   useEffect(() => {
     if (!mode && !query && !category) {
       navigate(`/select-service?${searchParams.toString()}`, { replace: true });
+    } else if (!mode && (query || category)) {
+      // Default to project mode when arriving with a query or category but no mode
+      const next = new URLSearchParams(searchParams);
+      next.set("mode", "project");
+      setSearchParams(next, { replace: true });
     }
-  }, [mode, query, category, searchParams, navigate]);
+  }, [mode, query, category, searchParams, navigate, setSearchParams]);
 
   // Mode-specific configuration
   const modeConfig = useMemo(() => {
