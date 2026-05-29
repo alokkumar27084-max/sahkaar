@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { FiChevronRight, FiHome, FiLogIn, FiMenu, FiSearch, FiUser, FiX, FiMoon, FiSun, FiBriefcase, FiMessageCircle, FiStar } from "react-icons/fi";
+import { FiChevronRight, FiHome, FiLogIn, FiLogOut, FiMenu, FiUser, FiX, FiMoon, FiSun, FiBriefcase, FiMessageCircle, FiStar } from "react-icons/fi";
 import { ThekedaarLogo } from "./ThekedaarLogo";
 import toast from "react-hot-toast";
 
@@ -261,8 +261,8 @@ export default function Navbar() {
             <a href="/#about" className="panel-link" onClick={closePanel}>
               <FiStar size={15} /> About <FiChevronRight className="ml-auto opacity-30" />
             </a>
-            <Link to="/search" className="panel-link" onClick={closePanel}>
-              <FiSearch size={15} /> {t("nav.search") || "Search"} <FiChevronRight className="ml-auto opacity-30" />
+            <Link to="/select-service" className="panel-link" onClick={closePanel}>
+              <FiBriefcase size={15} /> Service Marketplace <FiChevronRight className="ml-auto opacity-30" />
             </Link>
 
             {/* Dashboard — available to ALL logged-in users */}
@@ -286,7 +286,7 @@ export default function Navbar() {
             <button onClick={toggleTheme} className="panel-link w-full">
               {isDark ? <FiSun size={15} /> : <FiMoon size={15} />}
               {isDark ? "Light Mode" : "Dark Mode"}
-              <span className="ml-auto text-[11px] text-[var(--color-muted)]">{isDark ? "☀️" : "🌙"}</span>
+              <span className="ml-auto text-[11px] text-[var(--color-muted)]">Switch</span>
             </button>
 
             {/* Language */}
@@ -307,15 +307,15 @@ export default function Navbar() {
             <p className="panel-section-title">Account</p>
             {user ? (
               <button onClick={() => { closePanel(); handleLogout(); }} className="panel-action text-rose-500 border-rose-500/20 hover:bg-rose-500/5 hover:border-rose-500/30 hover:text-rose-500">
-                <FiLogIn size={15} /> {t("nav.logout")}
+                <FiLogOut size={15} /> {t("nav.logout") || "Logout"}
               </button>
             ) : (
               <>
                 <Link to="/login" className="panel-link" onClick={closePanel}>
-                  <FiLogIn size={15} /> {t("nav.login")}
+                  <FiLogIn size={15} /> {t("nav.login") || "Login"}
                 </Link>
                 <Link to="/register/contractor" className="panel-link" onClick={closePanel}>
-                  <FiUser size={15} /> {t("nav.register")}
+                  <FiUser size={15} /> Join as Partner
                 </Link>
               </>
             )}

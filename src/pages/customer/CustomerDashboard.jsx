@@ -1,300 +1,911 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiBell, FiCheckCircle, FiClock, FiMapPin, FiBriefcase, FiArrowRight, FiSettings, FiStar } from "react-icons/fi";
+import {
+  FiBell,
+  FiCheckCircle,
+  FiClock,
+  FiMapPin,
+  FiBriefcase,
+  FiArrowRight,
+  FiSettings,
+  FiStar,
+  FiZap,
+  FiCalendar,
+  FiAlertTriangle,
+  FiPhone,
+  FiMessageCircle,
+  FiExternalLink
+} from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
-import { bookingAPI, notificationAPI } from "../../services/api";
+import {
+  quickBookingAPI,
+  meetingAPI,
+  projectAPI,
+  subscriptionAPI,
+  notificationAPI
+} from "../../services/api";
 import toast from "react-hot-toast";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
-const fadeUp = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { duration: 0.5 } } };
-const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+const fadeUp = { hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+const stagger = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
 
 export default function CustomerDashboard() {
-    const { user } = useAuth();
-    const [bookings, setBookings] = useState([]);
-    const [notifications, setNotifications] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        fetchBookings();
-    }, []);
+  const [activeTab, setActiveTab] = useState("quick_bookings");
+  const [quickBookings, setQuickBookings] = useState([]);
+  const [meetings, setMeetings] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [disputes, setDisputes] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const fetchBookings = async () => {
-        try {
-            const [bookingsRes, notificationsRes] = await Promise.all([
-                bookingAPI.getMyBookings(),
-                notificationAPI.getMine(),
-            ]);
-            setBookings(bookingsRes.data.data.bookings || []);
-            setNotifications(notificationsRes.data.notifications || []);
-        } catch (err) {
-            toast.error("Failed to load your dashboard");
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Review states
+  const [reviewingBooking, setReviewingBooking] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewLoading, setReviewLoading] = useState(false);
 
-    const handleMarkComplete = async (bookingId) => {
-        try {
-            await bookingAPI.completeBooking(bookingId);
-            toast.success("Job marked as complete. Funds released!");
-            fetchBookings();
-        } catch (err) {
-            toast.error("Failed to mark complete.");
-        }
-    };
+  // Reschedule states
+  const [reschedulingMeeting, setReschedulingMeeting] = useState(null);
+  const [newDate, setNewDate] = useState("");
+  const [newSlot, setNewSlot] = useState("morning");
+  const [rescheduleNote, setRescheduleNote] = useState("");
+  const [rescheduleLoading, setRescheduleLoading] = useState(false);
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case "COMPLETED": return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>Completed</span>;
-            case "IN_PROGRESS": return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)] animate-pulse"></span>In Progress</span>;
-            case "CANCELLED": return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Cancelled</span>;
-            default: return <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Pending</span>;
-        }
-    };
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-    const unreadCount = notifications.filter(n => !n.is_read).length;
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    const results = await Promise.allSettled([
+      quickBookingAPI.getMyBookings(),
+      meetingAPI.getMyMeetings("customer"),
+      projectAPI.getMyProjects("customer"),
+      subscriptionAPI.getMyDisputes(),
+      notificationAPI.getMine()
+    ]);
 
-    return (
-        <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-20 overflow-hidden">
-            <div className="max-w-[1200px] mx-auto px-4 md:px-8">
-                
-                {/* Premium Header Area */}
-                <motion.div initial="hidden" animate="show" variants={fadeUp} className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
-                    <div>
-                        <span className="text-[var(--color-primary)] font-bold tracking-[0.2em] uppercase text-xs mb-2 block">Dashboard Overview</span>
-                        <h1 className="font-display text-4xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight">
-                            Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-cyan-500">{user?.name?.split(' ')[0]}</span>
-                        </h1>
-                        <p className="text-[var(--color-muted)] mt-2 font-medium">Manage your bookings, requests, and notifications.</p>
+    const [qbRes, meetRes, projRes, dispRes, notifRes] = results;
+    if (qbRes.status === "fulfilled") setQuickBookings(qbRes.value.data.bookings || []);
+    if (meetRes.status === "fulfilled") setMeetings(meetRes.value.data.meetings || []);
+    if (projRes.status === "fulfilled") setProjects(projRes.value.data.projects || []);
+    if (dispRes.status === "fulfilled") setDisputes(dispRes.value.data.disputes || []);
+    if (notifRes.status === "fulfilled") setNotifications(notifRes.value.data.notifications || []);
+
+    const failed = results.filter((result) => result.status === "rejected");
+    if (failed.length) {
+      console.error("Dashboard modules failed to load", failed.map((result) => result.reason));
+      toast.error("Some dashboard sections could not be loaded.");
+    }
+    setLoading(false);
+  };
+
+  const handleRescheduleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newDate) {
+      toast.error("Please select a date.");
+      return;
+    }
+    setRescheduleLoading(true);
+    try {
+      const res = await meetingAPI.reschedule(
+        reschedulingMeeting.id,
+        newDate,
+        newSlot,
+        rescheduleNote
+      );
+      if (res.data?.ok) {
+        toast.success("Reschedule request submitted successfully.");
+        setReschedulingMeeting(null);
+        setNewDate("");
+        setRescheduleNote("");
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast.error("Failed to request rescheduling.");
+    } finally {
+      setRescheduleLoading(false);
+    }
+  };
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setReviewLoading(true);
+    try {
+      const res = await quickBookingAPI.addReview(
+        reviewingBooking.id,
+        reviewRating,
+        reviewText
+      );
+      if (res.data?.ok) {
+        toast.success("Review submitted. Thank you!");
+        setReviewingBooking(null);
+        setReviewText("");
+        setReviewRating(5);
+        fetchDashboardData();
+      }
+    } catch (err) {
+      toast.error("Failed to submit review.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const getMeetingStatusBadge = (status) => {
+    switch (status) {
+      case "ACCEPTED":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"></span>
+            Scheduled
+          </span>
+        );
+      case "RESCHEDULED":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-wider animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            Rescheduled
+          </span>
+        );
+      case "DECLINED":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+            Declined
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+            Pending Accept
+          </span>
+        );
+    }
+  };
+
+  const getQuickBookingStatusBadge = (status) => {
+    switch (status) {
+      case "COMPLETED":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            Job Done
+          </span>
+        );
+      case "CONFIRMED":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-black uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.6)] animate-pulse"></span>
+            Assigned
+          </span>
+        );
+      case "CANCELLED":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+            Cancelled
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-400 text-xs font-black uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            Unconfirmed
+          </span>
+        );
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  return (
+    <main className="bg-[#090B19] text-[#ECEEF6] min-h-screen pt-24 pb-20 overflow-hidden relative">
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
+
+      <div className="max-w-[1300px] mx-auto px-4 md:px-8 relative z-10">
+
+        {/* Header Block */}
+        <motion.div initial="hidden" animate="show" variants={fadeUp} className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <span className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[10px] mb-2 block">Premium Client Workspace</span>
+            <h1 className="font-display text-4xl md:text-5xl font-black tracking-tight leading-none">
+              Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">{user?.name?.split(' ')[0]}</span>
+            </h1>
+            <p className="text-slate-400 mt-3 text-sm font-semibold">Track scheduled visits, complete small handymen slots, or view SaaS constructions.</p>
+          </div>
+        </motion.div>
+
+        {/* Tab Selector */}
+        <div className="flex border-b border-white/5 mb-8 overflow-x-auto no-scrollbar gap-2">
+          {[
+            { id: "quick_bookings", label: "Quick Bookings", icon: FiZap, count: quickBookings.length },
+            { id: "meetings", label: "Consultation Visits", icon: FiCalendar, count: meetings.length },
+            { id: "projects", label: "Milestone Projects", icon: FiBriefcase, count: projects.length },
+            { id: "disputes", label: "Dispute Tickets", icon: FiAlertTriangle, count: disputes.length }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2.5 px-6 py-4 border-b-2 font-black text-xs uppercase tracking-widest shrink-0 transition-all ${
+                  isActive
+                    ? "border-indigo-500 text-indigo-400 bg-indigo-500/5"
+                    : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/[0.01]"
+                }`}
+              >
+                <Icon size={14} />
+                {tab.label}
+                {tab.count > 0 && (
+                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-black text-slate-300">
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-8">
+
+          {/* LEFT SIDEBAR: Personal profile info & quick updates strip */}
+          <div className="space-y-6">
+
+            {/* Identity Card */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 relative overflow-hidden bg-white/[0.02] border border-white/5 rounded-[2rem] shadow-xl">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-cyan-500/5 blur-[40px] -mr-10 -mt-10 rounded-full pointer-events-none" />
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-indigo-500/10">
+                  {user?.name?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-display font-black text-lg text-white leading-tight">{user?.name}</h3>
+                  <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">{user?.phone}</p>
+                </div>
+              </div>
+              <div className="mt-6 pt-6 border-t border-white/5 flex gap-2">
+                <button
+                  onClick={() => navigate("/search")}
+                  className="flex-1 py-3 text-center rounded-xl bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 active:scale-95 transition-all shadow-md shadow-indigo-500/15"
+                >
+                  Book Contractor
+                </button>
+                <button
+                  onClick={() => navigate("/labour")}
+                  className="flex-1 py-3 text-center rounded-xl border border-white/10 hover:border-white/20 text-slate-300 font-black text-[10px] uppercase tracking-widest transition-all"
+                >
+                  Labour Chowk
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Notification Widget */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] shadow-xl">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-display text-sm font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
+                  <FiBell className="text-indigo-400 animate-bounce" /> Inbox Logs
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black">
+                      {unreadCount}
+                    </span>
+                  )}
+                </h3>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={async () => {
+                      await notificationAPI.markAllRead();
+                      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:underline"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className="py-8 text-center border border-dashed border-white/5 bg-white/[0.01] rounded-2xl">
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">No notifications yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.slice(0, 4).map((item) => (
+                    <div
+                      key={item.id}
+                      className={`p-3.5 rounded-xl border text-xs leading-relaxed transition-all ${
+                        item.is_read
+                          ? "border-white/5 bg-white/[0.01] text-slate-400"
+                          : "border-indigo-500/20 bg-indigo-500/5 text-slate-200"
+                      }`}
+                    >
+                      <p className="font-semibold">{item.message}</p>
+                      <div className="mt-2 flex items-center justify-between opacity-80">
+                        <span className="text-[9px] font-black uppercase text-slate-500">
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </span>
+                        {!item.is_read && (
+                          <button
+                            onClick={async () => {
+                              await notificationAPI.markRead(item.id);
+                              setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, is_read: true } : n));
+                            }}
+                            className="text-[9px] font-black uppercase text-indigo-400 hover:underline"
+                          >
+                            Mark Read
+                          </button>
+                        )}
+                      </div>
                     </div>
-                </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
 
-                {/* Summary Stats */}
-                {!loading && (
-                    <motion.div initial="hidden" animate="show" variants={stagger} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-                        {[
-                            { label: "Total Bookings", value: bookings.length, color: "indigo" },
-                            { label: "Active", value: bookings.filter(b => b.status === "IN_PROGRESS").length, color: "cyan" },
-                            { label: "Completed", value: bookings.filter(b => b.status === "COMPLETED").length, color: "emerald" },
-                            { label: "Pending", value: bookings.filter(b => !['COMPLETED', 'IN_PROGRESS', 'CANCELLED'].includes(b.status)).length, color: "amber" },
-                        ].map((stat, i) => (
-                            <motion.div key={stat.label} variants={fadeUp}
-                                className="glass-card p-4 md:p-5 text-center"
-                            >
-                                <p className={`font-display text-2xl font-bold text-${stat.color}-500 leading-none`}>{stat.value}</p>
-                                <p className="text-[11px] text-[var(--color-muted)] mt-1.5 font-semibold uppercase tracking-wider">{stat.label}</p>
-                            </motion.div>
-                        ))}
-                    </motion.div>
+          </div>
+
+          {/* RIGHT PANELS: Active tab items */}
+          <div className="space-y-6">
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-white/[0.02] border border-white/5 rounded-[2.5rem] shadow-xl">
+                <LoadingSpinner size="lg" />
+                <p className="mt-4 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Fetching workspace state...</p>
+              </div>
+            ) : (
+              <AnimatePresence mode="wait">
+
+                {/* TAB 1: QUICK HANDYMAN BOOKINGS */}
+                {activeTab === "quick_bookings" && (
+                  <motion.div key="quick" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
+                    {quickBookings.length === 0 ? (
+                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
+                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
+                          <FiZap size={24} />
+                        </div>
+                        <h3 className="font-display text-lg font-black">No Handyman Bookings</h3>
+                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                          Need minor electrician, plumber, AC servicing or salon bookings? Get standard slot confirmations instantly.
+                        </p>
+                        <button
+                          onClick={() => navigate("/search?mode=quick")}
+                          className="mt-6 px-6 py-3 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 active:scale-95 transition-all shadow-lg shadow-indigo-500/10"
+                        >
+                          Find Handyman Strip
+                        </button>
+                      </div>
+                    ) : (
+                      quickBookings.map((qb) => (
+                        <motion.div key={qb.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+
+                          {/* Top Row header */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5 mb-5">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                                  {qb.service_name}
+                                </span>
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ref: {qb.id.slice(0, 8)}</span>
+                              </div>
+                              <h3 className="font-display text-xl font-black text-white group-hover:text-indigo-400 transition-colors">
+                                {qb.contractor_name}
+                              </h3>
+                            </div>
+                            <div className="flex items-center sm:items-end justify-between sm:justify-center gap-3">
+                              {getQuickBookingStatusBadge(qb.status)}
+                            </div>
+                          </div>
+
+                          {/* Body items */}
+                          <div className="grid sm:grid-cols-2 gap-6">
+                            <div className="space-y-3.5">
+                              <div className="flex items-start gap-3 text-xs">
+                                <FiCalendar className="text-indigo-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Scheduled Visit</p>
+                                  <p className="font-bold text-slate-200 mt-0.5">
+                                    {new Date(qb.scheduled_date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3 text-xs">
+                                <FiClock className="text-indigo-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Selected Time Window</p>
+                                  <p className="font-bold text-slate-200 mt-0.5 capitalize">{qb.scheduled_time_slot}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3 text-xs">
+                                <FiMapPin className="text-indigo-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Location Address</p>
+                                  <p className="font-bold text-slate-200 mt-0.5 line-clamp-1">{qb.customer_address}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Settlement panel */}
+                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Pricing Terms Set</p>
+                                <div className="flex justify-between items-baseline mb-1">
+                                  <span className="text-xs font-bold text-slate-400">Confirmation Fee</span>
+                                  <span className="text-xs font-black text-emerald-400 uppercase">Paid (â‚¹30)</span>
+                                </div>
+                                <div className="flex justify-between items-baseline">
+                                  <span className="text-xs font-bold text-slate-400">Direct Contractor Pricing</span>
+                                  <span className="text-sm font-black text-white">â‚¹{qb.service_price || "Quoted"}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-2 mt-4">
+                                {qb.contractor_phone && (
+                                  <>
+                                    <a
+                                      href={`tel:${qb.contractor_phone}`}
+                                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-colors"
+                                    >
+                                      <FiPhone size={12} /> Call
+                                    </a>
+                                    <a
+                                      href={`https://wa.me/91${qb.contractor_phone.replace(/\D/g, "")}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-[10px] font-black uppercase tracking-widest text-emerald-400 transition-colors"
+                                    >
+                                      <FiMessageCircle size={12} /> WhatsApp
+                                    </a>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Completing reviews option */}
+                          {qb.status === "COMPLETED" && !qb.rating && (
+                            <div className="mt-5 pt-5 border-t border-white/5 flex justify-end">
+                              <button
+                                onClick={() => setReviewingBooking(qb)}
+                                className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-indigo-500/10"
+                              >
+                                <FiStar size={12} /> Leave Client Review
+                              </button>
+                            </div>
+                          )}
+
+                          {qb.rating && (
+                            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 text-xs">
+                              <FiStar className="text-amber-500 fill-amber-500 shrink-0" size={13} />
+                              <span className="font-bold text-slate-300">You rated {qb.rating}/5 :</span>
+                              <span className="text-slate-400 italic">"{qb.review_text}"</span>
+                            </div>
+                          )}
+
+                        </motion.div>
+                      ))
+                    )}
+                  </motion.div>
                 )}
 
-                <div className="grid lg:grid-cols-[320px_1fr] gap-8 relative z-10">
-                    
-                    {/* LEFT COLUMN: Profile Sidebar & Notifications */}
-                    <div className="space-y-6">
-                        {/* Profile Identity Card */}
-                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 md:p-8 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/20 to-cyan-500/10 blur-[40px] -mr-10 -mt-10 rounded-full"></div>
-                            
-                            <div className="flex items-center gap-5 mb-8 relative z-10">
-                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] text-white flex items-center justify-center text-2xl font-black shadow-glow">
-                                    {user?.name?.[0]?.toUpperCase()}
+                {/* TAB 2: CONSULTATION VISITS */}
+                {activeTab === "meetings" && (
+                  <motion.div key="meetings" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
+                    {meetings.length === 0 ? (
+                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
+                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
+                          <FiCalendar size={24} />
+                        </div>
+                        <h3 className="font-display text-lg font-black">No Consultations visits</h3>
+                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                          Want an upfront face-to-face site estimate before launching a big project? Book an in-person meeting.
+                        </p>
+                        <button
+                          onClick={() => navigate("/search")}
+                          className="mt-6 px-6 py-3 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 active:scale-95 transition-all"
+                        >
+                          Find Contractor Profiles
+                        </button>
+                      </div>
+                    ) : (
+                      meetings.map((m) => (
+                        <motion.div key={m.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+
+                          {/* Top Row header */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5 mb-5">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                                  {m.meeting_type?.replace("_", " ") || "In-Person Visit"}
+                                </span>
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">REF: {m.id.slice(0, 8)}</span>
+                              </div>
+                              <h3 className="font-display text-xl font-black text-white group-hover:text-indigo-400 transition-colors">
+                                {m.contractor_name}
+                              </h3>
+                            </div>
+                            <div className="flex items-center sm:items-end justify-between sm:justify-center gap-3">
+                              {getMeetingStatusBadge(m.status)}
+                            </div>
+                          </div>
+
+                          {/* Details */}
+                          <div className="grid sm:grid-cols-2 gap-6">
+                            <div className="space-y-3.5">
+                              <div className="flex items-start gap-3 text-xs">
+                                <FiCalendar className="text-indigo-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Proposed Visit Date</p>
+                                  <p className="font-bold text-slate-200 mt-0.5">
+                                    {new Date(m.proposed_date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3 text-xs">
+                                <FiClock className="text-indigo-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Time Window</p>
+                                  <p className="font-bold text-slate-200 mt-0.5 capitalize">{m.proposed_time_slot}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-start gap-3 text-xs">
+                                <FiMapPin className="text-indigo-400 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Meeting Location</p>
+                                  <p className="font-bold text-slate-200 mt-0.5 line-clamp-1">{m.proposed_location}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
+                              <div>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Notes & Context</p>
+                                <p className="text-xs font-semibold text-slate-300 italic">
+                                  "{m.customer_note || "No specific note provided."}"
+                                </p>
+                                {m.contractor_note && (
+                                  <div className="mt-3 bg-indigo-500/5 border border-indigo-500/10 p-2.5 rounded-lg text-[11px]">
+                                    <span className="font-black text-indigo-400 uppercase tracking-widest block mb-0.5">Contractor Note</span>
+                                    <p className="text-slate-300 font-medium">"{m.contractor_note}"</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex gap-2 mt-4">
+                                {m.contractor_phone && (
+                                  <a
+                                    href={`tel:${m.contractor_phone}`}
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-colors"
+                                  >
+                                    <FiPhone size={12} /> Call
+                                  </a>
+                                )}
+                                {m.status !== "DECLINED" && m.status !== "ACCEPTED" && (
+                                  <button
+                                    onClick={() => setReschedulingMeeting(m)}
+                                    className="flex-1 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                                  >
+                                    Reschedule
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                        </motion.div>
+                      ))
+                    )}
+                  </motion.div>
+                )}
+
+                {/* TAB 3: SAAS MILESTONE PROJECTS */}
+                {activeTab === "projects" && (
+                  <motion.div key="projects" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
+                    {projects.length === 0 ? (
+                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
+                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
+                          <FiBriefcase size={24} />
+                        </div>
+                        <h3 className="font-display text-lg font-black">No Active SaaS Projects</h3>
+                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                          Your major construction, masonry, or interior project boards will show up here once initiated by your contractor.
+                        </p>
+                        <button
+                          onClick={() => navigate("/search")}
+                          className="mt-6 px-6 py-3 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 active:scale-95 transition-all"
+                        >
+                          Find Contractor Profiles
+                        </button>
+                      </div>
+                    ) : (
+                      projects.map((proj) => (
+                        <motion.div key={proj.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+
+                          {/* Top Row header */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5 mb-5">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                                  Active milestone tracking
+                                </span>
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ID: {proj.id.slice(0, 8)}</span>
+                              </div>
+                              <h3 className="font-display text-xl font-black text-white group-hover:text-indigo-400 transition-colors">
+                                {proj.title}
+                              </h3>
+                              <p className="text-xs text-slate-400 font-bold mt-1">Lead Thekedaar: {proj.contractor_name}</p>
+                            </div>
+
+                            <div className="flex flex-col items-end">
+                              <span className="text-lg font-black text-white">â‚¹{Number(proj.estimated_budget || 0).toLocaleString()}</span>
+                              <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mt-0.5">Estimated Budget</span>
+                            </div>
+                          </div>
+
+                          {/* Body items */}
+                          <div className="grid sm:grid-cols-2 gap-6 items-center">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Project Brief</p>
+                              <p className="text-xs text-slate-300 leading-relaxed font-semibold">
+                                {proj.description || "No project description logged."}
+                              </p>
+
+                              <div className="mt-4 grid grid-cols-2 gap-4 text-xs font-bold">
+                                <div>
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Start Date</span>
+                                  <p className="text-slate-300 mt-0.5">{proj.start_date ? new Date(proj.start_date).toLocaleDateString() : "Pending"}</p>
                                 </div>
                                 <div>
-                                    <h2 className="font-display font-bold text-xl text-[var(--color-heading)] leading-tight">{user?.name}</h2>
-                                    <p className="text-sm text-[var(--color-muted)] font-medium mt-1">{user?.phone}</p>
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Expected End</span>
+                                  <p className="text-slate-300 mt-0.5">{proj.expected_end_date ? new Date(proj.expected_end_date).toLocaleDateString() : "Pending"}</p>
                                 </div>
+                              </div>
                             </div>
 
-                            <nav className="space-y-2 border-t border-[var(--color-border)] pt-6 relative z-10">
-                                <Link to="/search" className="flex items-center justify-between px-4 py-3 text-[var(--color-heading)] font-semibold rounded-xl hover:bg-[var(--color-border)] transition-colors group/link">
-                                    <span className="flex items-center gap-3"><FiStar className="text-amber-500" /> New Booking</span>
-                                    <FiArrowRight className="opacity-0 group-hover/link:opacity-100 transition-opacity text-[var(--color-muted)]" />
-                                </Link>
-                                <button className="w-full flex items-center justify-between px-4 py-3 text-[var(--color-primary)] font-semibold rounded-xl bg-[var(--color-primary)]/10 transition-colors">
-                                    <span className="flex items-center gap-3"><FiBriefcase /> Dashboard</span>
-                                </button>
-                                <button className="w-full flex items-center justify-between px-4 py-3 text-[var(--color-muted)] font-semibold rounded-xl hover:bg-[var(--color-border)] hover:text-[var(--color-heading)] transition-colors">
-                                    <span className="flex items-center gap-3"><FiSettings /> Account Settings</span>
-                                </button>
-                            </nav>
-                        </motion.div>
+                            {/* Progress bar panel */}
+                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-5 flex flex-col justify-between h-full">
+                              <div>
+                                <div className="flex justify-between items-baseline mb-2">
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">System Escrow</span>
+                                  <span className="text-xs font-black text-white">{proj.escrow_opted ? "OPTED IN" : "NO ESCROW"}</span>
+                                </div>
 
-                        {/* Notifications Module */}
-                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 md:p-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <h3 className="font-display text-lg font-bold text-[var(--color-heading)] flex items-center gap-2">
-                                    <FiBell className="text-[var(--color-primary)]" /> Updates
-                                    {unreadCount > 0 && <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">{unreadCount}</span>}
-                                </h3>
-                                {unreadCount > 0 && (
-                                    <button onClick={async () => {
-                                        await notificationAPI.markAllRead();
-                                        setNotifications(prev => prev.map(item => ({ ...item, is_read: true })));
-                                    }} className="text-xs font-semibold text-[var(--color-primary)] hover:underline">
-                                        Mark Read
-                                    </button>
-                                )}
+                                <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2 mt-4">
+                                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: proj.status === 'COMPLETED' ? '100%' : '35%' }} />
+                                </div>
+                                <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                  <span>Gantt Progress</span>
+                                  <span>{proj.status || "In Progress"}</span>
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => navigate(`/project/${proj.id}`)}
+                                className="mt-6 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/10 transition-all active:scale-95"
+                              >
+                                View Gantt Dashboard <FiExternalLink size={12} />
+                              </button>
                             </div>
+                          </div>
 
-                            {loading ? (
-                                <div className="space-y-3">
-                                    {[1, 2].map(i => <div key={i} className="skeleton h-16 w-full rounded-xl" />)}
-                                </div>
-                            ) : notifications.length === 0 ? (
-                                <div className="py-8 text-center border border-dashed border-[var(--color-border)] rounded-xl bg-[var(--color-bg)]/50">
-                                    <p className="text-[var(--color-muted)] text-sm font-medium">No new updates.</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    <AnimatePresence>
-                                        {notifications.slice(0, 4).map((item) => (
-                                            <motion.div key={item.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                                className={`p-3.5 rounded-xl border transition-colors ${item.is_read ? "border-[var(--color-border)] bg-[var(--color-surface)]/50" : "border-indigo-500/30 bg-indigo-500/5 shadow-sm"}`}
-                                            >
-                                                <p className="text-sm font-medium text-[var(--color-heading)] leading-snug">{item.message}</p>
-                                                <div className="flex items-center justify-between mt-2">
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted)] opacity-70">
-                                                        {new Date(item.created_at).toLocaleDateString()}
-                                                    </span>
-                                                    {!item.is_read && (
-                                                        <button onClick={async () => {
-                                                            await notificationAPI.markRead(item.id);
-                                                            setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, is_read: true } : n));
-                                                        }} className="text-[10px] font-bold text-[var(--color-primary)] uppercase">
-                                                            Acknowledge
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </AnimatePresence>
-                                </div>
-                            )}
                         </motion.div>
-                    </div>
+                      ))
+                    )}
+                  </motion.div>
+                )}
 
-                    {/* RIGHT COLUMN: Bookings & Requests */}
-                    <div className="space-y-8">
+                {/* TAB 4: DISPUTE MEDIATION TICKETS */}
+                {activeTab === "disputes" && (
+                  <motion.div key="disputes" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
+                    {disputes.length === 0 ? (
+                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
+                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
+                          <FiAlertTriangle size={24} />
+                        </div>
+                        <h3 className="font-display text-lg font-black">No Dispute Tickets</h3>
+                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                          Mediation services are completely free. If you have active dispute issues with quality or payments, raise a desk case.
+                        </p>
+                      </div>
+                    ) : (
+                      disputes.map((d) => (
+                        <motion.div key={d.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded">
+                                {d.reason}
+                              </span>
+                              <h4 className="font-display text-base font-black text-white mt-2">
+                                Booking Ref ID: {d.booking_ref_id}
+                              </h4>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                              d.status === "RESOLVED"
+                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse"
+                            }`}>
+                              {d.status}
+                            </span>
+                          </div>
 
-                        {/* Major Bookings */}
-                        <motion.section initial="hidden" animate="show" variants={stagger}>
-                            <h2 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight mb-5">Contractor Bookings</h2>
-                            
-                            {loading ? (
-                                <div className="space-y-4">
-                                    {[1, 2].map(i => <div key={i} className="skeleton h-48 rounded-2xl" />)}
-                                </div>
-                            ) : bookings.length === 0 ? (
-                                <div className="glass-card p-12 text-center flex flex-col items-center justify-center border-dashed">
-                                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500/10 to-cyan-500/10 flex items-center justify-center mb-5"><FiBriefcase className="text-[var(--color-primary)]" size={28} /></div>
-                                    <h3 className="text-xl font-display font-bold text-[var(--color-heading)] mb-2">No active bookings</h3>
-                                    <p className="text-[var(--color-muted)] text-base max-w-sm mb-6">Connect with premium verified contractors and book them securely through Escrow.</p>
-                                    <Link to="/search" className="btn-primary px-8">Find Contractors</Link>
-                                </div>
-                            ) : (
-                                <div className="space-y-5">
-                                    {bookings.map((booking) => (
-                                        <motion.div key={booking.id} variants={fadeUp} className="glass-card p-0 overflow-hidden group">
-                                            {/* Header */}
-                                            <div className="bg-gradient-to-r from-[var(--color-surface)] to-[var(--color-bg)] p-6 border-b border-[var(--color-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1.5">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                                                            Macro Project
-                                                        </span>
-                                                        <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider">
-                                                            ID: #{booking.id.slice(0,8)}
-                                                        </span>
-                                                    </div>
-                                                    <h3 className="text-xl font-display font-bold text-[var(--color-heading)]">{booking.contractor_name}</h3>
-                                                    <p className="text-sm text-[var(--color-muted)] font-medium mt-0.5">{booking.service_category?.replace('_', ' ')}</p>
-                                                </div>
-                                                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
-                                                    <p className="text-2xl font-black text-[var(--color-heading)]">₹{Number(booking.amount).toLocaleString('en-IN')}</p>
-                                                    {getStatusBadge(booking.status)}
-                                                </div>
-                                            </div>
+                          <p className="text-xs text-slate-300 font-semibold leading-relaxed">
+                            {d.description}
+                          </p>
 
-                                            {/* Body */}
-                                            <div className="p-6">
-                                                <div className="grid sm:grid-cols-2 gap-6 mb-6">
-                                                    <div className="space-y-3">
-                                                        <div className="flex items-start gap-2.5">
-                                                            <div className="w-8 h-8 rounded-full bg-[var(--color-bg)] flex items-center justify-center shrink-0 border border-[var(--color-border)]">
-                                                                <FiMapPin className="text-[var(--color-muted)]" size={14} />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-0.5">Location</p>
-                                                                <p className="text-sm font-medium text-[var(--color-body)]">{booking.location_address || "Not specified"}</p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-start gap-2.5">
-                                                            <div className="w-8 h-8 rounded-full bg-[var(--color-bg)] flex items-center justify-center shrink-0 border border-[var(--color-border)]">
-                                                                <FiClock className="text-[var(--color-muted)]" size={14} />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-0.5">Date Created</p>
-                                                                <p className="text-sm font-medium text-[var(--color-body)]">{new Date(booking.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div className="bg-[var(--color-bg)] rounded-xl p-4 border border-[var(--color-border)]">
-                                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3">Payment details</p>
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="text-sm text-[var(--color-body)] font-medium">Plan</span>
-                                                            <span className="text-sm text-[var(--color-heading)] font-semibold capitalize">{String(booking.payment_plan || "").replace(/_/g, " ")}</span>
-                                                        </div>
-                                                        <div className="flex justify-between items-center">
-                                                            <span className="text-sm text-[var(--color-body)] font-medium">Status</span>
-                                                            <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                                                booking.payment_status === "CAPTURED" || booking.payment_status === "RELEASED" || booking.payment_status === "IN_ESCROW"
-                                                                    ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
-                                                            }`}>
-                                                                {booking.payment_status?.replace('_', ' ')}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                          {d.resolution_note && (
+                            <div className="mt-4 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15 text-xs text-slate-200">
+                              <span className="font-black text-emerald-400 uppercase tracking-widest block mb-1">Resolution Summary</span>
+                              <p className="font-semibold">"{d.resolution_note}"</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))
+                    )}
+                  </motion.div>
+                )}
 
-                                                {booking.milestone_details && booking.milestone_details.length > 0 && (
-                                                    <div className="mb-6 bg-[var(--color-bg)]/30 rounded-xl p-4 border border-[var(--color-border)]">
-                                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 flex items-center gap-2">
-                                                            <FiCheckCircle className="text-indigo-500" /> Milestone Breakdown
-                                                        </p>
-                                                        <div className="space-y-2">
-                                                            {booking.milestone_details.map((m, idx) => (
-                                                                <div key={idx} className="flex justify-between items-center text-xs">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <div className={`w-2 h-2 rounded-full ${m.status === 'due_now' ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}`}></div>
-                                                                        <span className="text-[var(--color-body)] font-medium">{m.title} ({m.percentage}%)</span>
-                                                                    </div>
-                                                                    <span className="font-bold text-[var(--color-heading)]">₹{Number(m.amount).toLocaleString('en-IN')}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
+              </AnimatePresence>
+            )}
 
-                                                {booking.status === "IN_PROGRESS" && (
-                                                    <div className="flex justify-end pt-4 border-t border-[var(--color-border)]">
-                                                        <button onClick={() => handleMarkComplete(booking.id)} className="btn-primary shadow-glow hover:scale-105 transition-transform">
-                                                            <FiCheckCircle size={16} /> Mark Project Complete
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </motion.div>
-                                    ))}
-                                </div>
-                            )}
-                        </motion.section>
+          </div>
 
-                    </div>
+        </div>
+
+      </div>
+
+      {/* Review Modal */}
+      <AnimatePresence>
+        {reviewingBooking && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/75 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card max-w-md w-full bg-[#13151D] border border-white/10 p-8 rounded-[2rem] shadow-2xl space-y-6 text-white"
+            >
+              <div>
+                <h3 className="font-display text-xl font-black uppercase tracking-tight flex items-center gap-2 text-indigo-400">
+                  <FiStar /> Rate Service Work
+                </h3>
+                <p className="mt-1 text-xs text-slate-400 font-semibold">Share your feedback to help others select high-trust contractors.</p>
+              </div>
+
+              <form onSubmit={handleReviewSubmit} className="space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Star Rating</span>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="text-2xl transition-transform hover:scale-110 active:scale-95"
+                      >
+                        <FiStar className={star <= reviewRating ? "text-amber-500 fill-amber-500" : "text-slate-600"} />
+                      </button>
+                    ))}
+                  </div>
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Comments</span>
+                  <textarea
+                    rows="3"
+                    required
+                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none resize-none"
+                    placeholder="Describe promptness, cleanliness, and expertise..."
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                  />
+                </label>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setReviewingBooking(null)}
+                    className="flex-1 py-3.5 rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest text-slate-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reviewLoading}
+                    className="flex-1 py-3.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    {reviewLoading ? <LoadingSpinner size="xs" color="white" /> : <FiCheckCircle />}
+                    Submit Review
+                  </button>
                 </div>
-            </div>
-        </main>
-    );
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Reschedule Modal */}
+      <AnimatePresence>
+        {reschedulingMeeting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/75 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card max-w-md w-full bg-[#13151D] border border-white/10 p-8 rounded-[2rem] shadow-2xl space-y-6 text-white"
+            >
+              <div>
+                <h3 className="font-display text-xl font-black uppercase tracking-tight flex items-center gap-2 text-indigo-400">
+                  <FiCalendar /> Reschedule Visit
+                </h3>
+                <p className="mt-1 text-xs text-slate-400 font-semibold">Propose a new visit date and time slot to the contractor.</p>
+              </div>
+
+              <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">New Date</span>
+                  <input
+                    type="date"
+                    required
+                    min={new Date().toISOString().split("T")[0]}
+                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">New Time Window</span>
+                  <select
+                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none"
+                    value={newSlot}
+                    onChange={(e) => setNewSlot(e.target.value)}
+                  >
+                    <option value="morning">Morning (8 AM â€“ 12 PM)</option>
+                    <option value="afternoon">Afternoon (12 PM â€“ 5 PM)</option>
+                    <option value="evening">Evening (5 PM â€“ 9 PM)</option>
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Short Note</span>
+                  <textarea
+                    rows="2"
+                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none resize-none"
+                    placeholder="e.g. Rescheduling due to sudden change in my travel plans..."
+                    value={rescheduleNote}
+                    onChange={(e) => setRescheduleNote(e.target.value)}
+                  />
+                </label>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setReschedulingMeeting(null)}
+                    className="flex-1 py-3.5 rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest text-slate-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={rescheduleLoading}
+                    className="flex-1 py-3.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    {rescheduleLoading ? <LoadingSpinner size="xs" color="white" /> : <FiCheckCircle />}
+                    Request Reschedule
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </main>
+  );
 }

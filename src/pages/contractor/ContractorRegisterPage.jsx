@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   FiArrowLeft,
@@ -10,23 +10,23 @@ import {
   FiCheck,
   FiCheckCircle,
   FiFileText,
-  FiLock,
+  FiGrid,
+  FiHome,
   FiMail,
   FiMapPin,
   FiPhone,
   FiShield,
-  FiTool,
   FiUpload,
   FiUser,
   FiUsers,
+  FiZap,
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
-import { useLanguage } from "../../context/LanguageContext";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import { authAPI, contractorAPI } from "../../services/api";
 import LocationSearchInput from "../../components/common/LocationSearchInput";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { CATEGORIES } from "../../utils/constants";
+import { CATEGORIES, QUICK_SERVICE_CATEGORIES } from "../../utils/constants";
 import {
   isValidEmail,
   isValidImageFile,
@@ -37,47 +37,227 @@ import {
 } from "../../utils/validators";
 import { getQuestionnaireForCategory } from "../../utils/questionnaires";
 
-const TOTAL_STEPS = 4;
+const STEPS = [
+  { id: 1, label: "Type" },
+  { id: 2, label: "Identity" },
+  { id: 3, label: "Details" },
+  { id: 4, label: "Verify" },
+];
 
-const stepAnim = {
-  initial: { opacity: 0, x: 20 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -20 },
-  transition: { duration: 0.3, ease: "easeOut" },
-};
-
-const PARTNER_TYPES = [
+const PROVIDER_TYPES = [
   {
     id: "project",
-    title: "Enterprise Contractor",
-    short: "Full-Scale Projects",
+    title: "Contractor",
+    subtitle: "Projects, renovations, civil work, long scope jobs",
+    badge: "Project bids",
     icon: FiBriefcase,
-    examples: "Construction, full renovations, large-scale civil projects",
+    categoryMode: "project",
+    categoryTitle: "Select your project category",
+    categoryHelp: "This decides the project questions customers will see before meeting you.",
     flags: { is_labour_group: false, is_responsibility_model: true },
+    accent: "cyan",
   },
   {
-    id: "team",
-    title: "Labour Group Leader",
-    short: "On-Site Work Teams",
-    icon: FiUsers,
-    examples: "Masonry teams, painting crews, structural labor",
-    flags: { is_labour_group: true, is_responsibility_model: false },
-  },
-  {
-    id: "business",
-    title: "Solo Expert / Specialist",
-    short: "Dedicated Services",
-    icon: FiTool,
-    examples: "Electricians, plumbers, smart-home installers, cleaning",
+    id: "quick",
+    title: "Quick Service Provider",
+    subtitle: "Fast home repairs, visits, installation and small jobs",
+    badge: "Same-day work",
+    icon: FiZap,
+    categoryMode: "quick",
+    categoryTitle: "Select your quick service",
+    categoryHelp: "Choose the service you can accept as a direct booking.",
     flags: { is_labour_group: false, is_responsibility_model: false },
+    accent: "indigo",
+  },
+  {
+    id: "labour",
+    title: "Labour Group Leader",
+    subtitle: "Masons, helpers, painters, crews and site manpower",
+    badge: "Team hiring",
+    icon: FiUsers,
+    categoryMode: "labour",
+    categoryTitle: "Confirm your labour category",
+    categoryHelp: "Labour leaders are listed as team providers with worker breakdowns.",
+    flags: { is_labour_group: true, is_responsibility_model: false },
+    accent: "amber",
   },
 ];
 
-const CATEGORY_GROUPS = [
-  { title: "Home and site work", ids: ["construction", "electrical", "plumbing", "painting", "carpentry"] },
-  { title: "Teams and projects", ids: ["labour_group", "events", "transport"] },
-  { title: "Local services", ids: ["cleaning", "property", "farming", "other"] },
+const QUICK_PROVIDER_QUESTIONS = {
+  ac_repair: [
+    q("ac_work", "Which AC service calls do you accept?", ["Wet service", "Gas refill", "PCB or cooling diagnosis", "Install / uninstall"]),
+    q("ac_tools", "Which AC tools do you carry on visits?", ["Vacuum pump", "Pressure gauge", "Jet washer", "Leak detector"]),
+  ],
+  electrician: [
+    q("electrical_jobs", "Which electrical calls can you take?", ["Switchboard repair", "Fan / light fitting", "MCB or inverter work", "Hidden wiring fault"]),
+    q("electrical_safety", "Which safety checks do you perform?", ["Load check", "Earthing check", "Short-circuit tracing", "Appliance isolation"]),
+  ],
+  plumber: [
+    q("plumbing_jobs", "Which plumbing jobs can you take?", ["Leak repair", "Tap and sanitary fitting", "Drain choke", "Pipeline work"]),
+    q("plumbing_tools", "Which plumbing tools do you carry?", ["Drill machine", "Pipe cutter", "Drain spring", "CPVC/PPR tool"]),
+  ],
+  carpenter: [
+    q("carpentry_calls", "Which carpentry visits do you accept?", ["Door repair", "Furniture assembly", "Modular fitting repair", "Lock / hinge replacement"]),
+    q("carpentry_tools", "Which tools do you carry?", ["Drill and bits", "Circular saw", "Laminate trimmer", "Hand tool kit"]),
+  ],
+  home_cleaning: [
+    q("cleaning_scope", "Which cleaning packages do you accept?", ["1BHK / 2BHK deep clean", "Kitchen deep clean", "Bathroom deep clean", "Move-in / move-out clean"]),
+    q("cleaning_materials", "What cleaning setup do you bring?", ["Chemicals included", "Machine scrubbing", "Vacuum cleaner", "Customer provides material"]),
+  ],
+  pest_control: [
+    q("pest_scope", "Which pest-control treatments do you offer?", ["Cockroach gel", "Termite treatment", "Bed bug treatment", "Rodent control"]),
+    q("pest_safety", "What safety process do you follow?", ["Odourless chemicals", "Child-safe guidance", "Kitchen-safe protocol", "Warranty visit"]),
+  ],
+  painter: [
+    q("paint_scope", "Which quick painting jobs do you accept?", ["One-room repaint", "Touch-up patches", "Texture repair", "Putty and primer patch"]),
+    q("paint_material", "How do you handle paint material?", ["Customer provides paint", "I procure paint", "Brand-specific work", "Only labour visit"]),
+  ],
+  mechanic: [
+    q("vehicle_scope", "Which vehicle calls do you take?", ["Bike breakdown", "Car battery jump", "Puncture support", "Basic servicing"]),
+    q("mechanic_visit", "Where can you work?", ["Customer home", "Roadside nearby", "Workshop only", "Pickup support"]),
+  ],
+  locksmith: [
+    q("lock_scope", "Which lock jobs do you handle?", ["Door lock opening", "Lock replacement", "Duplicate key", "Digital lock setup"]),
+    q("lock_verification", "What proof do you check before opening locks?", ["Photo ID", "Address proof", "Owner confirmation", "Society guard confirmation"]),
+  ],
+  packers_movers: [
+    q("moving_scope", "Which shifting jobs do you accept?", ["Few-item shifting", "1BHK shifting", "Office small move", "Packing-only visit"]),
+    q("moving_assets", "What do you provide?", ["Packing boxes", "Bubble wrap", "Tempo / mini truck", "Loading labour"]),
+  ],
+  salon_women: [
+    q("salon_services_women", "Which salon-at-home services do you offer?", ["Facial / clean-up", "Waxing / threading", "Hair spa / hair cut", "Manicure / pedicure"]),
+    q("salon_hygiene_women", "What hygiene setup do you carry?", ["Disposable kit", "Sanitized tools", "Branded products", "Customer product on request"]),
+  ],
+  grooming_men: [
+    q("grooming_services_men", "Which men's grooming services do you offer?", ["Hair cut", "Beard trim", "Head massage", "Facial / clean-up"]),
+    q("grooming_hygiene_men", "What grooming kit do you carry?", ["Sanitized trimmer", "Disposable cape", "Fresh blades", "Branded products"]),
+  ],
+  tv_repair: [
+    q("tv_scope", "Which TV jobs do you accept?", ["No display", "Sound issue", "Wall mounting", "Motherboard / panel diagnosis"]),
+    q("tv_types", "Which TV types can you handle?", ["LED", "OLED / QLED", "Smart TV setup", "Set-top / HDMI issue"]),
+  ],
+  washing_machine: [
+    q("washing_scope", "Which washing machine issues do you handle?", ["No spin", "Water leakage", "Drain problem", "Installation / demo"]),
+    q("washing_types", "Which machines do you service?", ["Top load", "Front load", "Semi-automatic", "Washer dryer"]),
+  ],
+  refrigerator: [
+    q("fridge_scope", "Which refrigerator issues do you handle?", ["Cooling issue", "Gas refill", "Compressor diagnosis", "Water leakage"]),
+    q("fridge_types", "Which fridge types do you service?", ["Single door", "Double door", "Side-by-side", "Commercial fridge"]),
+  ],
+  ro_service: [
+    q("ro_scope", "Which RO jobs do you accept?", ["Filter change", "Membrane change", "Leak repair", "New installation"]),
+    q("ro_parts", "How do you handle parts?", ["Carry standard filters", "Customer buys parts", "Brand-specific parts", "Service-only visit"]),
+  ],
+  cctv: [
+    q("cctv_scope", "Which CCTV jobs do you accept?", ["New camera install", "DVR / NVR setup", "Mobile viewing setup", "Fault tracing"]),
+    q("cctv_systems", "Which systems can you handle?", ["Analog CCTV", "IP camera", "Wi-Fi camera", "Door camera"]),
+  ],
+  welding: [
+    q("welding_scope", "Which welding jobs do you accept?", ["Gate repair", "Grill fabrication", "Frame repair", "On-site welding"]),
+    q("welding_setup", "What setup can you bring?", ["Arc welding", "Gas welding", "Cutting tools", "Helper included"]),
+  ],
+};
+
+const PROJECT_CATEGORY_QUESTIONS = {
+  events: [
+    q("event_scope", "Which event contracts do you manage?", ["Wedding setup", "Birthday / private party", "Corporate event", "Tent and stage setup"]),
+    q("event_assets", "What event assets can you arrange?", ["Decor team", "Lighting and sound", "Catering partners", "Furniture and tenting"]),
+  ],
+  carpentry: [
+    q("carpentry_project_scope", "Which carpentry projects do you take?", ["Modular kitchen", "Wardrobes", "Doors and windows", "Office furniture"]),
+    q("carpentry_material", "How do you work with material?", ["Plywood and laminate included", "Labour-only", "Factory-made modules", "Client-selected brands"]),
+  ],
+  farming: [
+    q("farming_scope", "Which farming contracts do you handle?", ["Land preparation", "Irrigation setup", "Harvest labour", "Equipment operation"]),
+    q("farming_equipment", "Which farm resources can you provide?", ["Tractor", "Sprayer", "Pump setup", "Seasonal labour team"]),
+  ],
+  transport: [
+    q("transport_scope", "Which transport work do you take?", ["Construction material", "House shifting", "Commercial delivery", "Heavy goods movement"]),
+    q("transport_assets", "Which vehicles can you arrange?", ["Pickup", "Mini truck", "Tempo", "Large truck"]),
+  ],
+  cleaning: [
+    q("cleaning_contract_scope", "Which cleaning contracts do you take?", ["Residential deep clean", "Office housekeeping", "Post-construction clean", "Society common areas"]),
+    q("cleaning_contract_team", "What cleaning resources do you provide?", ["Trained staff", "Machines", "Chemicals", "Supervisor included"]),
+  ],
+  property: [
+    q("property_scope", "Which property services do you provide?", ["Rental brokerage", "Sale / purchase", "Property management", "Tenant verification support"]),
+    q("property_area", "What property type is your strength?", ["Residential flats", "Plots", "Commercial shops", "Warehouses / offices"]),
+  ],
+  other: [
+    q("specialist_scope", "What kind of specialist work do you want listed?", ["Custom installation", "Repair contract", "Maintenance AMC", "Skilled consultation"]),
+    q("specialist_proof", "What proves your specialist capability?", ["Photos of work", "Client references", "Certificate / license", "Tool or machine ownership"]),
+  ],
+};
+
+const LABOUR_CREW_TEMPLATES = [
+  { role: "Mason", count: 4, rate: 650 },
+  { role: "Helper", count: 6, rate: 450 },
+  { role: "Painter", count: 4, rate: 550 },
+  { role: "Carpenter", count: 2, rate: 800 },
 ];
+
+const DETAIL_COPY = {
+  project: {
+    eyebrow: "Project Capability",
+    title: "Set project scope, team strength, and proof",
+    descriptionLabel: "Project profile",
+    descriptionPlaceholder: "Mention project types, materials, site supervision, billing model, and recent completed work.",
+    servicesLabel: "Project services, comma separated",
+    servicesPlaceholder: "RCC work, turnkey construction, interior execution, plumbing layout",
+    rateLabel: "Starting project value",
+  },
+  quick: {
+    eyebrow: "Visit Readiness",
+    title: "Set visit pricing, coverage, and proof",
+    descriptionLabel: "Service visit profile",
+    descriptionPlaceholder: "Mention exact services, visit process, hygiene/safety setup, tools carried, and what is included in your base rate.",
+    servicesLabel: "Bookable service menu, comma separated",
+    servicesPlaceholder: "Facial, waxing, threading, manicure, pedicure",
+    rateLabel: "Base visit rate",
+  },
+  labour: {
+    eyebrow: "Crew Capability",
+    title: "Set crew strength, wage structure, and proof",
+    descriptionLabel: "Labour crew profile",
+    descriptionPlaceholder: "Mention worker categories, attendance reliability, site discipline, supervisor role, and wage/billing model.",
+    servicesLabel: "Crew work types, comma separated",
+    servicesPlaceholder: "Masonry, helpers, plaster, shuttering, painting crew",
+    rateLabel: "Lead booking rate",
+  },
+};
+
+const QUICK_SERVICE_PLACEHOLDERS = {
+  ac_repair: "Wet service, gas refill, cooling diagnosis, AC installation",
+  electrician: "Switchboard repair, fan fitting, MCB work, inverter wiring",
+  plumber: "Leak repair, tap fitting, drain cleaning, pipeline repair",
+  carpenter: "Door repair, hinge replacement, furniture assembly, modular repair",
+  home_cleaning: "Kitchen deep clean, bathroom cleaning, full home cleaning",
+  pest_control: "Cockroach treatment, termite treatment, bed bug treatment",
+  painter: "Room repaint, patch touch-up, texture repair, putty work",
+  mechanic: "Bike repair, battery jump, puncture support, basic servicing",
+  locksmith: "Lock opening, lock replacement, duplicate key, digital lock setup",
+  packers_movers: "Few-item shifting, 1BHK shifting, packing, loading labour",
+  salon_women: "Facial, waxing, threading, hair spa, manicure, pedicure",
+  grooming_men: "Hair cut, beard trim, massage, facial clean-up",
+  tv_repair: "No display diagnosis, wall mounting, sound issue, smart TV setup",
+  washing_machine: "No spin repair, leakage repair, drain issue, installation",
+  refrigerator: "Cooling issue, gas refill, compressor check, leakage repair",
+  ro_service: "Filter change, membrane change, leak repair, RO installation",
+  cctv: "Camera installation, DVR setup, mobile viewing, fault tracing",
+  welding: "Gate repair, grill fabrication, frame repair, on-site welding",
+};
+
+function q(id, question, labels, type = "multi") {
+  return {
+    id,
+    question,
+    type,
+    options: labels.map((label) => ({
+      label,
+      value: label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""),
+    })),
+  };
+}
 
 function asNumberOrNull(value) {
   if (value === "" || value === null || value === undefined) return null;
@@ -85,44 +265,136 @@ function asNumberOrNull(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function CategoryButton({ category, selected, onClick, label }) {
+function money(value) {
+  const num = Number(value || 0);
+  return num ? `Rs ${num.toLocaleString("en-IN")}` : "Not set";
+}
+
+function titleFromId(id) {
+  return String(id || "")
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getCategoryLabel(category) {
+  if (!category) return "";
+  if (category.label) return category.label;
+  if (category.id === "labour_group") return "Labour Group";
+  return titleFromId(category.id);
+}
+
+function getAccentClasses(accent, selected = false) {
+  const map = {
+    cyan: selected
+      ? "border-cyan-400 bg-cyan-500/10 text-cyan-700 shadow-cyan-500/10 dark:border-cyan-300 dark:bg-cyan-400/10 dark:text-cyan-200"
+      : "hover:border-cyan-400/70 hover:bg-cyan-500/5",
+    indigo: selected
+      ? "border-indigo-400 bg-indigo-500/10 text-indigo-700 shadow-indigo-500/10 dark:border-indigo-300 dark:bg-indigo-400/10 dark:text-indigo-200"
+      : "hover:border-indigo-400/70 hover:bg-indigo-500/5",
+    amber: selected
+      ? "border-amber-400 bg-amber-500/10 text-amber-700 shadow-amber-500/10 dark:border-amber-300 dark:bg-amber-400/10 dark:text-amber-200"
+      : "hover:border-amber-400/70 hover:bg-amber-500/5",
+  };
+  return map[accent] || map.indigo;
+}
+
+function buildQuickQuestions(categoryId) {
+  return QUICK_PROVIDER_QUESTIONS[categoryId] || [
+    q(`${categoryId}_scope`, `Which ${titleFromId(categoryId)} services do you offer?`, ["Basic service", "Advanced service", "Inspection visit", "Scheduled maintenance"]),
+    q(`${categoryId}_setup`, `What setup do you carry for ${titleFromId(categoryId)} work?`, ["Own tools", "Helper available", "Material support", "Customer material only"]),
+  ];
+}
+
+function visibleProjectQuestions(categoryId, answers) {
+  const questions = PROJECT_CATEGORY_QUESTIONS[categoryId] || getQuestionnaireForCategory(categoryId, answers);
+  return questions.map((item) => ({
+    ...item,
+    question: item.question,
+  }));
+}
+
+function ProviderCard({ provider, selected, onClick }) {
+  const Icon = provider.icon;
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`relative overflow-hidden rounded-[20px] border px-6 py-6 text-left transition-all duration-500 group ${
-        selected
-          ? "border-indigo-500 bg-indigo-500/10 shadow-[0_0_20px_rgba(99,102,241,0.05)] scale-[1.02]"
-          : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-indigo-500/30 hover:bg-[var(--color-surface-hover)] shadow-sm"
-      }`}
+      className={`group relative min-h-[176px] overflow-hidden rounded-2xl border bg-[var(--color-surface)] p-5 text-left shadow-xl shadow-black/10 transition-all duration-300 ${getAccentClasses(provider.accent, selected)}`}
     >
-      <div className={`w-10 h-10 rounded-xl mb-4 flex items-center justify-center transition-all ${selected ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/30' : 'bg-[var(--color-bg-elevated)] text-[var(--color-muted)] group-hover:bg-indigo-500 group-hover:text-white'}`}>
-        <FiCheck size={20} className={selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'} />
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--color-border)] dark:bg-white/20" />
+      <div className="flex items-start justify-between gap-4">
+        <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${selected ? "bg-[var(--color-heading)] text-[var(--color-bg)]" : "bg-[var(--color-bg)] text-[var(--color-muted)]"} transition-colors`}>
+          <Icon size={22} />
+        </span>
+        <span className="rounded-full border border-current/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] opacity-80">
+          {provider.badge}
+        </span>
       </div>
-      <span className={`block text-[15px] font-black uppercase tracking-tight ${selected ? "text-indigo-600 dark:text-indigo-300" : "text-[var(--color-heading)]"}`}>{label}</span>
-      <span className="mt-2 block text-[10px] leading-relaxed text-[var(--color-muted)] font-black uppercase tracking-widest opacity-80">
-        {category.subtitle}
-      </span>
-      {selected && <div className="absolute top-0 right-0 p-3"><div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" /></div>}
+      <h3 className="mt-5 text-xl font-black text-[var(--color-heading)]">{provider.title}</h3>
+      <p className="mt-2 text-sm font-semibold leading-relaxed text-[var(--color-muted)]">{provider.subtitle}</p>
+      {selected && (
+        <span className="absolute bottom-5 right-5 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-heading)] text-[var(--color-bg)]">
+          <FiCheck size={16} />
+        </span>
+      )}
     </button>
   );
 }
 
+function Field({ label, error, children }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">
+        {label}
+      </span>
+      {children}
+      {error && <p className="mt-2 text-xs font-bold text-rose-500">{error}</p>}
+    </label>
+  );
+}
+
+function FileDrop({ icon: Icon, title, hint, value, onChange, multiple = false }) {
+  return (
+    <label className="flex min-h-[170px] cursor-pointer flex-col justify-between rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-5 transition-colors hover:border-indigo-400/60">
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-surface)] text-indigo-500">
+        <Icon size={20} />
+      </span>
+      <span>
+        <strong className="block text-sm font-black text-[var(--color-heading)]">{title}</strong>
+        <span className="mt-1 block text-xs font-semibold leading-relaxed text-[var(--color-muted)]">{hint}</span>
+        {value && (
+          <span className="mt-3 flex items-center gap-2 text-xs font-black text-emerald-600">
+            <FiCheckCircle size={14} />
+            {Array.isArray(value) ? `${value.length} files selected` : value.name}
+          </span>
+        )}
+      </span>
+      <input
+        className="hidden"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple={multiple}
+        onChange={onChange}
+      />
+    </label>
+  );
+}
+
 export default function ContractorRegisterPage() {
-  const { t } = useLanguage();
-  const { login } = useAuth();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const { lat, lng, address, accuracy, request: requestGps, loading: gpsLoading } = useGeolocation();
 
   const [step, setStep] = useState(1);
-  const [subStepIndex, setSubStepIndex] = useState(0);
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [locationQuery, setLocationQuery] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(null);
-
   const [form, setForm] = useState({
-    partner_type: "",
+    provider_type: "",
     category: "",
     business_name: "",
     name: "",
@@ -135,22 +407,62 @@ export default function ContractorRegisterPage() {
     min_project_value: "",
     experience_years: "",
     team_size: "",
+    service_radius_km: "8",
+    response_time: "",
     location_text: "",
     profile_photo_file: null,
     portfolio_files: [],
     id_proof_file: null,
     onboarding_data: {},
+    labour_crew: [],
   });
 
-  const selectedPartnerType = useMemo(
-    () => PARTNER_TYPES.find((item) => item.id === form.partner_type),
-    [form.partner_type]
+  const selectedProvider = useMemo(
+    () => PROVIDER_TYPES.find((item) => item.id === form.provider_type),
+    [form.provider_type]
   );
 
-  const activeQuestionnaire = useMemo(
-    () => form.category ? getQuestionnaireForCategory(form.category) : [],
-    [form.category]
+  const categoryOptions = useMemo(() => {
+    if (!selectedProvider) return [];
+    if (selectedProvider.categoryMode === "quick") {
+      return QUICK_SERVICE_CATEGORIES.map((item) => ({
+        ...item,
+        id: item.id,
+        subtitle: `Starting price ${money(item.price)}`,
+      }));
+    }
+    if (selectedProvider.categoryMode === "labour") {
+      return CATEGORIES.filter((item) => item.id === "labour_group");
+    }
+    return CATEGORIES.filter((item) => item.id !== "labour_group");
+  }, [selectedProvider]);
+
+  const selectedCategory = useMemo(
+    () => categoryOptions.find((item) => item.id === form.category),
+    [categoryOptions, form.category]
   );
+
+  const adaptiveQuestions = useMemo(() => {
+    if (!form.category || !selectedProvider) return [];
+    if (selectedProvider.categoryMode === "quick") return buildQuickQuestions(form.category);
+    return visibleProjectQuestions(form.category, form.onboarding_data);
+  }, [form.category, selectedProvider, form.onboarding_data]);
+
+  const crewStats = useMemo(() => {
+    const totalCount = form.labour_crew.reduce((sum, item) => sum + (Number(item.count) || 0), 0);
+    const totalDaily = form.labour_crew.reduce(
+      (sum, item) => sum + (Number(item.count) || 0) * (Number(item.rate) || 0),
+      0
+    );
+    return { totalCount, totalDaily };
+  }, [form.labour_crew]);
+
+  const progress = useMemo(() => {
+    const stepProgress = ((step - 1) / STEPS.length) * 100;
+    if (step !== 3 || adaptiveQuestions.length === 0) return Math.round(stepProgress);
+    const detailShare = (questionIndex / (adaptiveQuestions.length + 1)) * (100 / STEPS.length);
+    return Math.min(100, Math.round(stepProgress + detailShare));
+  }, [adaptiveQuestions.length, questionIndex, step]);
 
   useEffect(() => {
     if (lat === null || lng === null) return;
@@ -163,7 +475,7 @@ export default function ContractorRegisterPage() {
     setSelectedLocation(snapshot);
     setLocationQuery(snapshot.address);
     setForm((prev) => ({ ...prev, location_text: snapshot.address }));
-    setErrors((prev) => ({ ...prev, location: undefined }));
+    setErrors((prev) => ({ ...prev, location_text: undefined }));
   }, [lat, lng, address, accuracy]);
 
   function update(field) {
@@ -174,76 +486,121 @@ export default function ContractorRegisterPage() {
     };
   }
 
-  function choosePartnerType(type) {
+  function chooseProvider(provider) {
     setForm((prev) => ({
       ...prev,
-      partner_type: type.id,
-      category: type.id === "team" ? "labour_group" : prev.category,
-      team_size: type.id === "team" && !prev.team_size ? "5" : prev.team_size,
+      provider_type: provider.id,
+      category: provider.id === "labour" ? "labour_group" : "",
+      daily_rate: provider.id === "quick" ? prev.daily_rate || "299" : prev.daily_rate,
+      team_size: provider.id === "labour" ? prev.team_size || "8" : prev.team_size || "1",
+      labour_crew: provider.id === "labour" && prev.labour_crew.length === 0 ? LABOUR_CREW_TEMPLATES.slice(0, 2) : prev.labour_crew,
+      onboarding_data: {},
     }));
-    setErrors((prev) => ({ ...prev, partner_type: undefined, category: undefined }));
+    setQuestionIndex(0);
+    setErrors((prev) => ({ ...prev, provider_type: undefined, category: undefined }));
   }
 
-  function handleQuestionnaireAnswer(questionId, value, type) {
-    setForm((prev) => {
-      const currentAnswers = prev.onboarding_data[questionId] || [];
-      let newAnswers;
+  function chooseCategory(categoryId) {
+    setForm((prev) => ({
+      ...prev,
+      category: categoryId,
+      services: selectedProvider?.categoryMode === "quick" ? getCategoryLabel({ id: categoryId, label: QUICK_SERVICE_CATEGORIES.find((item) => item.id === categoryId)?.label }) : prev.services,
+      onboarding_data: {},
+    }));
+    setQuestionIndex(0);
+    setErrors((prev) => ({ ...prev, category: undefined }));
+  }
 
-      if (type === "single") {
-        newAnswers = [value];
-      } else {
-        if (currentAnswers.includes(value)) {
-          newAnswers = currentAnswers.filter((v) => v !== value);
-        } else {
-          newAnswers = [...currentAnswers, value];
-        }
-      }
+  function setQuestionAnswer(question, value) {
+    setForm((prev) => {
+      const current = prev.onboarding_data[question.id] || [];
+      const nextValue =
+        question.type === "single"
+          ? [value]
+          : current.includes(value)
+            ? current.filter((item) => item !== value)
+            : [...current, value];
 
       return {
         ...prev,
         onboarding_data: {
           ...prev.onboarding_data,
-          [questionId]: newAnswers,
+          [question.id]: nextValue,
         },
       };
     });
+    setErrors((prev) => ({ ...prev, questionnaire: undefined }));
   }
 
-  function validateStep(nextStep = step) {
+  function setCrew(index, field, value) {
+    setForm((prev) => {
+      const labour_crew = prev.labour_crew.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: field === "role" ? value : Math.max(0, Number(value) || 0) } : item
+      );
+      return { ...prev, labour_crew };
+    });
+  }
+
+  function addCrewRow() {
+    setForm((prev) => ({
+      ...prev,
+      labour_crew: [...prev.labour_crew, { role: "", count: 1, rate: 450 }],
+    }));
+  }
+
+  function removeCrewRow(index) {
+    setForm((prev) => ({
+      ...prev,
+      labour_crew: prev.labour_crew.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  }
+
+  function validateStep(targetStep = step) {
     const nextErrors = {};
-    if (nextStep === 1) {
-      if (!form.partner_type) nextErrors.partner_type = "Choose the way you work.";
-      if (!form.category) nextErrors.category = "Choose your main service category.";
+
+    if (targetStep === 1) {
+      if (!form.provider_type) nextErrors.provider_type = "Choose how you want to register.";
+      if (!form.category) nextErrors.category = "Choose a category to continue.";
     }
-    if (nextStep === 2) {
+
+    if (targetStep === 2) {
       if (!form.name.trim()) nextErrors.name = "Enter the owner's full name.";
+      if (!form.business_name.trim()) nextErrors.business_name = "Enter your public business name.";
       if (!isValidPhone(form.phone)) nextErrors.phone = "Enter a valid 10-digit mobile number.";
       if (!isValidEmail(form.email)) nextErrors.email = "Enter a valid email address.";
       if (!isValidPassword(form.password)) nextErrors.password = "Use at least 8 characters.";
     }
-    if (nextStep === 3) {
-      if (subStepIndex === activeQuestionnaire.length) {
+
+    if (targetStep === 3) {
+      if (questionIndex < adaptiveQuestions.length) {
+        const question = adaptiveQuestions[questionIndex];
+        if (!form.onboarding_data[question.id]?.length) {
+          nextErrors.questionnaire = "Select at least one option.";
+        }
+      } else {
         if (!form.description.trim() || form.description.trim().length < 40) {
           nextErrors.description = "Write at least 40 characters about your work.";
         }
-        if (form.partner_type === "team" && Number(form.team_size || 0) < 2) {
-          nextErrors.team_size = "Team leaders should enter at least 2 workers.";
+        if (selectedProvider?.categoryMode === "labour" && Number(form.team_size || 0) < 2) {
+          nextErrors.team_size = "Labour group leaders need at least 2 workers.";
         }
         if (form.daily_rate && Number(form.daily_rate) < 0) nextErrors.daily_rate = "Enter a valid rate.";
-      } else {
-        const currentQ = activeQuestionnaire[subStepIndex];
-        const answers = form.onboarding_data[currentQ.id];
-        if (!answers || answers.length === 0) {
-          nextErrors.questionnaire = "Please select an option to proceed.";
-        }
       }
     }
-    if (nextStep === 4) {
-      if (!form.location_text.trim()) nextErrors.location_text = "Enter your service area.";
-      if (!selectedLocation?.lat || !selectedLocation?.lng) {
-        nextErrors.location = "Pin a GPS or map location so customers nearby can discover you.";
+
+    if (targetStep === 4) {
+      if (!form.location_text.trim()) {
+        nextErrors.location_text = "Enter your operating area.";
+      } else if (!selectedLocation?.lat || !selectedLocation?.lng) {
+        setSelectedLocation({
+          lat: Number(lat || 28.6139),
+          lng: Number(lng || 77.2090),
+          address: form.location_text,
+          accuracy_m: accuracy ?? null,
+        });
       }
     }
+
     return nextErrors;
   }
 
@@ -254,45 +611,44 @@ export default function ContractorRegisterPage() {
       return;
     }
     setErrors({});
-    
-    if (step === 3 && subStepIndex < activeQuestionnaire.length) {
-      setSubStepIndex((prev) => prev + 1);
-    } else {
-      setStep((prev) => Math.min(TOTAL_STEPS, prev + 1));
-      if (step === 2) setSubStepIndex(0); // Reset substep when entering step 3
+
+    if (step === 3 && questionIndex < adaptiveQuestions.length) {
+      setQuestionIndex((prev) => prev + 1);
+      return;
     }
+    setStep((prev) => Math.min(STEPS.length, prev + 1));
   }
 
   function goBack() {
-    if (step === 3 && subStepIndex > 0) {
-      setSubStepIndex((prev) => prev - 1);
-    } else {
-      setStep((prev) => prev - 1);
+    if (step === 3 && questionIndex > 0) {
+      setQuestionIndex((prev) => prev - 1);
+      return;
     }
+    setStep((prev) => Math.max(1, prev - 1));
   }
 
   function handleLocationSelect(selection) {
     setSelectedLocation(selection);
     setLocationQuery(selection.address || "");
     setForm((prev) => ({ ...prev, location_text: selection.address || prev.location_text }));
-    setErrors((prev) => ({ ...prev, location: undefined, location_text: undefined }));
+    setErrors((prev) => ({ ...prev, location_text: undefined }));
   }
 
   function handleProfilePhoto(event) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!isValidImageFile(file).ok) {
-      toast.error("Upload a JPG or PNG image under 5MB.");
+      toast.error("Upload a JPG, PNG, or WebP image under 5MB.");
       return;
     }
     setForm((prev) => ({ ...prev, profile_photo_file: file }));
   }
 
   function handlePortfolio(event) {
-    const files = Array.from(event.target.files || []).slice(0, 6);
+    const files = Array.from(event.target.files || []).slice(0, 5);
     if (!files.length) return;
     if (files.some((file) => !isValidImageFile(file).ok)) {
-      toast.error("Portfolio images must be JPG or PNG under 5MB.");
+      toast.error("Portfolio images must be JPG, PNG, or WebP under 5MB.");
       return;
     }
     setForm((prev) => ({ ...prev, portfolio_files: files }));
@@ -302,7 +658,7 @@ export default function ContractorRegisterPage() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!isValidImageFile(file).ok) {
-      toast.error("ID proof must be a JPG or PNG under 5MB.");
+      toast.error("ID proof must be a JPG, PNG, or WebP file under 5MB.");
       return;
     }
     setForm((prev) => ({ ...prev, id_proof_file: file }));
@@ -318,16 +674,17 @@ export default function ContractorRegisterPage() {
 
     setLoading(true);
     try {
-      const regRes = await authAPI.register({
+      const registerRes = await authAPI.register({
         name: sanitize(form.name),
         email: sanitize(form.email),
         phone: sanitize(form.phone),
         password: form.password,
         role: "contractor",
       });
-      login(regRes.data.user, regRes.data.token);
+      login(registerRes.data.user, registerRes.data.token);
 
-      const flags = selectedPartnerType?.flags || {};
+      const flags = selectedProvider?.flags || {};
+      const categoryLabel = getCategoryLabel(selectedCategory || { id: form.category });
       const services = form.services
         .split(",")
         .map((item) => item.trim())
@@ -341,16 +698,24 @@ export default function ContractorRegisterPage() {
         daily_rate: asNumberOrNull(form.daily_rate),
         estimated_project_value: asNumberOrNull(form.min_project_value),
         experience_years: asNumberOrNull(form.experience_years) || 0,
-        team_size: asNumberOrNull(form.team_size) || (form.partner_type === "team" ? 5 : 1),
+        team_size: asNumberOrNull(form.team_size) || (selectedProvider?.categoryMode === "labour" ? crewStats.totalCount || 2 : 1),
         is_labour_group: !!flags.is_labour_group,
-        is_responsibility_model: !!flags.is_responsibility_model || form.partner_type === "project",
-        services,
+        is_responsibility_model: !!flags.is_responsibility_model,
+        services: services.length ? services : [categoryLabel],
         location_text: form.location_text,
         latitude: Number(selectedLocation.lat),
         longitude: Number(selectedLocation.lng),
         lat: Number(selectedLocation.lat),
         lng: Number(selectedLocation.lng),
-        onboarding_data: form.onboarding_data,
+        onboarding_data: {
+          ...form.onboarding_data,
+          provider_type: form.provider_type,
+          category_label: categoryLabel,
+          service_radius_km: asNumberOrNull(form.service_radius_km),
+          response_time: form.response_time || null,
+          min_project_value: asNumberOrNull(form.min_project_value),
+        },
+        labour_crew: form.labour_crew.filter((item) => item.role || item.count || item.rate),
       });
 
       const createRes = await contractorAPI.create(profileData);
@@ -372,7 +737,7 @@ export default function ContractorRegisterPage() {
         await contractorAPI.uploadIdProof(contractorId, fd);
       }
 
-      toast.success("Your contractor profile is ready for review.");
+      toast.success("Registration submitted. Your profile is ready for review.");
       navigate("/contractor/dashboard");
     } catch (err) {
       toast.error(err.response?.data?.message || "Could not complete registration.");
@@ -381,399 +746,389 @@ export default function ContractorRegisterPage() {
     }
   }
 
-  const totalSubSteps = step === 3 ? activeQuestionnaire.length + 1 : 1;
-  const currentSubStep = step === 3 ? subStepIndex : 0;
-  const progressBase = ((step - 1) / TOTAL_STEPS);
-  const subProgress = (currentSubStep / totalSubSteps) * (1 / TOTAL_STEPS);
-  const progress = Math.min(100, Math.round((progressBase + subProgress) * 100));
+  const currentQuestion = adaptiveQuestions[questionIndex];
+  const isFinalDetailPanel = step === 3 && questionIndex >= adaptiveQuestions.length;
+  const selectedAccent = selectedProvider?.accent || "indigo";
+  const detailCopy = DETAIL_COPY[selectedProvider?.categoryMode] || DETAIL_COPY.project;
+  const servicesPlaceholder =
+    selectedProvider?.categoryMode === "quick"
+      ? QUICK_SERVICE_PLACEHOLDERS[form.category] || detailCopy.servicesPlaceholder
+      : detailCopy.servicesPlaceholder;
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] pt-24 pb-14 px-4 md:px-8 font-sans transition-colors duration-500">
-      <div className="mx-auto grid max-w-[1400px] gap-12 lg:grid-cols-[400px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-24 lg:h-[calc(100vh-140px)]">
-          <div className="relative flex h-full flex-col rounded-[2.5rem] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-10 text-[var(--color-heading)] shadow-xl overflow-hidden">
-            {/* Cinematic Background Elements */}
-            <div className="absolute -top-32 -right-32 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
-            
-            <div className="relative z-10 mb-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-500 mb-6">Partner Ecosystem</p>
-              <h1 className="font-display text-4xl font-black leading-tight bg-gradient-to-br from-[var(--color-heading)] to-[var(--color-muted)] bg-clip-text text-transparent tracking-tighter">
-                Register as an Elite Partner.
+    <main
+      className="relative min-h-screen overflow-hidden bg-[var(--color-bg)] px-4 pb-16 pt-24 text-[var(--color-heading)] md:px-8"
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.08] dark:opacity-30"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(99,102,241,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.22) 1px, transparent 1px)",
+          backgroundSize: "44px 44px",
+          maskImage: "linear-gradient(to bottom, black, transparent 75%)",
+        }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.10),transparent_45%)] dark:bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.18),transparent_45%)]" />
+      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
+        <aside className="lg:sticky lg:top-24 lg:h-[calc(100vh-120px)]">
+          <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl shadow-black/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.035] dark:shadow-black/30">
+            <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--color-border)] dark:bg-white/20" />
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-indigo-500 dark:text-indigo-300">Thekedaar Partner</p>
+              <h1 className="mt-4 font-display text-3xl font-black leading-tight text-[var(--color-heading)]">
+                Build a verified work profile
               </h1>
-              <p className="mt-6 text-[13px] leading-relaxed text-[var(--color-body)] font-bold uppercase tracking-widest opacity-80">
-                Join a global network of verified experts and win higher-value projects.
+              <p className="mt-4 text-sm font-semibold leading-7 text-[var(--color-muted)]">
+                Your questions now change by provider type, category, and actual work. Customers see cleaner matching from day one.
               </p>
-            </div>
 
-            {/* Progress Bar moved to Top */}
-            <div className="relative z-10 mb-12">
-              <div className="mb-3 flex items-center justify-between text-[10px] font-black text-[var(--color-muted)] uppercase tracking-widest">
-                <span>Application Phase</span>
-                <span className="text-indigo-500">{progress}%</span>
+              <div className="mt-8 h-2 overflow-hidden rounded-full bg-[var(--color-bg-elevated)] dark:bg-white/5">
+                <div className="h-full rounded-full bg-gradient-to-r from-indigo-400 via-cyan-300 to-emerald-300 transition-all duration-500" style={{ width: `${progress}%` }} />
               </div>
-              <div className="h-2 rounded-full bg-[var(--color-border)] overflow-hidden p-[1px]">
-                <div className="h-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-400 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(99,102,241,0.3)]" style={{ width: `${progress}%` }} />
-              </div>
-            </div>
 
-            <div className="relative z-10 space-y-6">
-              {[
-                [FiShield, "Verified Pro Shield", "Showcase expertise with a verified profile."],
-                [FiMapPin, "Hyper-Local Matching", "Appear directly for local searches."],
-                [FiCheckCircle, "Secure Escrow Logic", "Milestone-based escrow payment system."],
-              ].map(([Icon, title, copy]) => (
-                <div key={title} className="group rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 hover:bg-[var(--color-surface-hover)] hover:border-indigo-500/30 transition-all duration-500 shadow-sm">
-                  <div className="flex items-start gap-5">
-                    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all shadow-md">
-                      <Icon size={18} />
-                    </span>
-                    <div>
-                      <p className="text-sm font-black text-[var(--color-heading)] uppercase tracking-tight">{title}</p>
-                      <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted)] font-bold uppercase tracking-widest">{copy}</p>
+              <div className="mt-6 space-y-3">
+                {STEPS.map((item) => {
+                  const active = step === item.id;
+                  const complete = step > item.id;
+                  return (
+                    <div key={item.id} className="flex items-center gap-3">
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${active || complete ? "bg-indigo-500 text-white" : "bg-[var(--color-bg)] text-[var(--color-muted)]"}`}>
+                        {complete ? <FiCheck size={15} /> : item.id}
+                      </span>
+                      <span className={`text-sm font-black ${active ? "text-[var(--color-heading)]" : "text-[var(--color-muted)]"}`}>
+                        {item.label}
+                      </span>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">Profile Preview</p>
+              <h2 className="mt-3 text-lg font-black text-[var(--color-heading)]">{form.business_name || form.name || "Your public name"}</h2>
+              <p className="mt-1 text-sm font-semibold text-[var(--color-muted)]">
+                {selectedProvider?.title || "Provider type"} {selectedCategory ? `// ${getCategoryLabel(selectedCategory)}` : ""}
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-xs font-bold text-[var(--color-muted)]">
+                <span className="rounded-xl bg-[var(--color-surface)] px-3 py-2 dark:bg-white/[0.04]">{money(form.daily_rate)}</span>
+                <span className="rounded-xl bg-[var(--color-surface)] px-3 py-2 dark:bg-white/[0.04]">{form.team_size || 1} people</span>
+              </div>
             </div>
           </div>
         </aside>
 
-        <section className="flex flex-col justify-center py-8">
-          <div className="mb-12">
-            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-500">
-              Onboarding Process // Step {step} of {TOTAL_STEPS}
-            </p>
-            <h2 className="mt-4 font-display text-4xl font-black text-[var(--color-heading)] md:text-6xl tracking-tighter">
-              {step === 1 && "Define your expertise"}
-              {step === 2 && "Identity Setup"}
-              {step === 3 && subStepIndex < activeQuestionnaire.length && activeQuestionnaire[subStepIndex].question}
-              {step === 3 && subStepIndex === activeQuestionnaire.length && "Portfolio & Bio"}
-              {step === 4 && "Operational Domain"}
-            </h2>
-          </div>
+        <form onSubmit={handleSubmit} className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-2xl shadow-black/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.035] dark:shadow-black/30 md:p-8">
+          <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--color-border)] dark:bg-white/20" />
+          <AnimatePresence mode="wait">
+            {step === 1 && (
+              <motion.section key="step-1" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">Start Here</p>
+                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">What kind of provider are you?</h2>
+                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-[var(--color-muted)]">
+                    Choose one path. The next questions change automatically so you only answer what matters for your work.
+                  </p>
+                  {errors.provider_type && <p className="mt-3 text-sm font-bold text-rose-500">{errors.provider_type}</p>}
+                </div>
 
-          <form onSubmit={handleSubmit} className="relative min-h-[400px]">
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <motion.div key="step-1" {...stepAnim} className="space-y-12">
-                  <div className="grid gap-6 md:grid-cols-3">
-                    {PARTNER_TYPES.map((type) => {
-                      const Icon = type.icon;
-                      const selected = form.partner_type === type.id;
-                      return (
-                        <button
-                          key={type.id}
-                          type="button"
-                          onClick={() => choosePartnerType(type)}
-                          className={`group relative overflow-hidden rounded-[2rem] border p-8 text-left transition-all duration-500 shadow-xl ${
-                            selected
-                              ? "border-indigo-500 bg-indigo-500/10 scale-[1.05]"
-                              : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-indigo-500/30 hover:bg-[var(--color-surface-hover)]"
-                          }`}
-                        >
-                          <div className={`mb-8 flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-500 ${
-                            selected ? "bg-indigo-500 text-white shadow-xl shadow-indigo-500/40" : "bg-[var(--color-bg-elevated)] text-[var(--color-muted)] group-hover:bg-indigo-500 group-hover:text-white"
-                          }`}>
-                            <Icon size={28} />
-                          </div>
-                          <span className={`block text-xl font-black tracking-tighter mb-2 leading-tight ${selected ? "text-indigo-600 dark:text-indigo-300" : "text-[var(--color-heading)]"}`}>{type.title}</span>
-                          <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 mb-6">{type.short}</span>
-                          <p className="text-[12px] leading-relaxed text-[var(--color-muted)] font-bold uppercase tracking-widest opacity-80 line-clamp-3">{type.examples}</p>
-                          
-                          {selected && (
-                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-6 right-6 text-indigo-500">
-                              <FiCheckCircle size={24} />
-                            </motion.div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <AnimatePresence>
-                    {form.partner_type && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        className="pt-12 border-t border-[var(--color-border)]"
-                      >
-                        <p className="mb-8 text-[11px] font-black uppercase tracking-[0.3em] text-[var(--color-muted)]">Select Primary Domain</p>
-                        <div className="space-y-10">
-                          {CATEGORY_GROUPS.map((group) => (
-                            <div key={group.title}>
-                              <p className="mb-4 text-[9px] font-black uppercase tracking-[0.2em] text-indigo-500/80">
-                                {group.title}
-                              </p>
-                              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                                {CATEGORIES.filter((category) => group.ids.includes(category.id)).map((category) => (
-                                  <CategoryButton
-                                    key={category.id}
-                                    category={category}
-                                    selected={form.category === category.id}
-                                    label={t(category.key)}
-                                    onClick={() => {
-                                      setForm((prev) => ({ ...prev, category: category.id }));
-                                      setErrors((prev) => ({ ...prev, category: undefined }));
-                                      setTimeout(goNext, 500);
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              )}
-
-              {step === 2 && (
-                <motion.div key="step-2" {...stepAnim} className="grid gap-8 md:grid-cols-2 bg-[var(--color-surface)] p-10 rounded-[2rem] border border-[var(--color-border)] shadow-xl">
-                  <label className="block">
-                    <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Partner Full Name</span>
-                    <div className="relative">
-                      <FiUser className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-500" />
-                      <input className={`w-full bg-[var(--color-bg)] border ${errors.name ? 'border-rose-500/50' : 'border-[var(--color-border)]'} rounded-2xl px-12 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none`} value={form.name} onChange={update("name")} placeholder="Your full name" />
-                    </div>
-                    {errors.name && <p className="mt-2 text-xs font-black uppercase text-rose-500 tracking-widest">{errors.name}</p>}
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Business Display Name</span>
-                    <div className="relative">
-                      <FiBriefcase className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-500" />
-                      <input className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl px-12 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none" value={form.business_name} onChange={update("business_name")} placeholder="e.g. Sharma Pro Solutions" />
-                    </div>
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Contact Number</span>
-                    <div className="relative">
-                      <FiPhone className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-500" />
-                      <input className={`w-full bg-[var(--color-bg)] border ${errors.phone ? 'border-rose-500/50' : 'border-[var(--color-border)]'} rounded-2xl px-12 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none`} inputMode="numeric" maxLength={10} value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value.replace(/\D/g, "") }))} placeholder="10-digit mobile" />
-                    </div>
-                    {errors.phone && <p className="mt-2 text-xs font-black uppercase text-rose-500 tracking-widest">{errors.phone}</p>}
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Email Address</span>
-                    <div className="relative">
-                      <FiMail className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-500" />
-                      <input className={`w-full bg-[var(--color-bg)] border ${errors.email ? 'border-rose-500/50' : 'border-[var(--color-border)]'} rounded-2xl px-12 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none`} value={form.email} onChange={update("email")} placeholder="name@domain.com" />
-                    </div>
-                    {errors.email && <p className="mt-2 text-xs font-black uppercase text-rose-500 tracking-widest">{errors.email}</p>}
-                  </label>
-
-                  <label className="block md:col-span-2">
-                    <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Access Password</span>
-                    <div className="relative">
-                      <FiLock className="absolute left-5 top-1/2 -translate-y-1/2 text-indigo-500" />
-                      <input className={`w-full bg-[var(--color-bg)] border ${errors.password ? 'border-rose-500/50' : 'border-[var(--color-border)]'} rounded-2xl px-12 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none`} type="password" value={form.password} onChange={update("password")} placeholder="Create a secure password" />
-                    </div>
-                    {errors.password && <p className="mt-2 text-xs font-black uppercase text-rose-500 tracking-widest">{errors.password}</p>}
-                  </label>
-                </motion.div>
-              )}
-
-              {step === 3 && subStepIndex < activeQuestionnaire.length && (
-                <motion.div key={`step-3-sub-${subStepIndex}`} {...stepAnim} className="max-w-2xl space-y-8">
-                  {(() => {
-                    const currentQ = activeQuestionnaire[subStepIndex];
-                    const answers = form.onboarding_data[currentQ.id] || [];
-                    
-                    return (
-                      <div className="space-y-4">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--color-muted)] mb-8">Select {currentQ.type === 'single' ? 'One Choice' : 'Multiple Options'}</p>
-                        
-                        <div className="grid gap-4">
-                          {currentQ.options.map((opt) => {
-                            const isSelected = answers.includes(opt.value);
-                            return (
-                              <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => {
-                                  handleQuestionnaireAnswer(currentQ.id, opt.value, currentQ.type);
-                                  setErrors((prev) => ({ ...prev, questionnaire: undefined }));
-                                  if (currentQ.type === 'single') setTimeout(goNext, 400);
-                                }}
-                                className={`w-full flex items-center justify-between p-6 rounded-3xl border transition-all duration-500 text-left ${
-                                  isSelected 
-                                    ? "border-indigo-500 bg-indigo-500/10 shadow-lg scale-[1.02]" 
-                                    : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-indigo-500/30 hover:bg-[var(--color-surface-hover)] shadow-sm"
-                                }`}
-                              >
-                                <span className={`text-lg font-black tracking-tight ${isSelected ? "text-indigo-600 dark:text-indigo-300" : "text-[var(--color-heading)]"}`}>
-                                  {opt.label}
-                                </span>
-                                <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all ${
-                                  isSelected ? "border-indigo-500 bg-indigo-500 shadow-md shadow-indigo-500/40" : "border-[var(--color-border)]"
-                                }`}>
-                                  {isSelected && <FiCheck size={18} className="text-white" />}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                        {errors.questionnaire && <p className="mt-6 text-xs font-black uppercase text-rose-500 tracking-widest">{errors.questionnaire}</p>}
-                        
-                        {currentQ.type === 'multi' && (
-                          <button type="button" onClick={goNext} className="mt-12 w-full py-5 rounded-2xl bg-indigo-500 text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-500/20 hover:bg-indigo-600 transition-all">
-                            Validate & Continue <FiArrowRight className="inline ml-2" />
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </motion.div>
-              )}
-
-              {step === 3 && subStepIndex === activeQuestionnaire.length && (
-                <motion.div key="step-3-final" {...stepAnim} className="space-y-10 bg-[var(--color-surface)] p-10 rounded-[2rem] border border-[var(--color-border)] shadow-xl">
-                  <label className="block">
-                    <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Professional Bio</span>
-                    <textarea
-                      className={`w-full bg-[var(--color-bg)] border ${errors.description ? 'border-rose-500/50' : 'border-[var(--color-border)]'} rounded-2xl px-6 py-5 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none min-h-[160px] resize-none shadow-inner`}
-                      value={form.description}
-                      onChange={update("description")}
-                      placeholder="E.g. We provide end-to-end civil construction services with a focus on sustainable building practices..."
-                      maxLength={700}
+                <div className="grid gap-4 md:grid-cols-3">
+                  {PROVIDER_TYPES.map((provider) => (
+                    <ProviderCard
+                      key={provider.id}
+                      provider={provider}
+                      selected={form.provider_type === provider.id}
+                      onClick={() => chooseProvider(provider)}
                     />
-                    <div className="mt-3 flex justify-between text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)] opacity-60">
-                      <span className={errors.description ? "text-rose-500" : ""}>{errors.description || "Minimum 40 characters required."}</span>
-                      <span>{form.description.length} / 700</span>
-                    </div>
-                  </label>
+                  ))}
+                </div>
 
-                  <div className="grid gap-6 md:grid-cols-3">
-                    <label className="block">
-                      <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Base Rate (₹)</span>
-                      <input className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl px-6 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none shadow-inner" type="number" min="0" value={form.daily_rate} onChange={update("daily_rate")} placeholder="Per day/job" />
-                    </label>
-                    <label className="block">
-                      <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Experience</span>
-                      <input className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-2xl px-6 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none shadow-inner" type="number" min="0" max="60" value={form.experience_years} onChange={update("experience_years")} placeholder="Years" />
-                    </label>
-                    <label className="block">
-                      <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Team Force</span>
-                      <input className={`w-full bg-[var(--color-bg)] border ${errors.team_size ? 'border-rose-500/50' : 'border-[var(--color-border)]'} rounded-2xl px-6 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none shadow-inner`} type="number" min="1" max="500" value={form.team_size} onChange={update("team_size")} placeholder="Solo = 1" />
-                    </label>
-                  </div>
-
-                  <div className="grid gap-6 md:grid-cols-2 pt-10 border-t border-[var(--color-border)]">
-                    <label className="block group relative rounded-[2rem] border-2 border-dashed border-[var(--color-border)] hover:border-indigo-500/50 bg-[var(--color-bg)] p-10 transition-all duration-500 text-center cursor-pointer shadow-inner">
-                      <div className="mx-auto w-16 h-16 bg-indigo-500/10 text-indigo-500 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-md">
-                        <FiCamera size={24} />
-                      </div>
-                      <span className="block text-sm font-black text-[var(--color-heading)] uppercase tracking-tight">Identity Photo</span>
-                      <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)] leading-relaxed">Clear portrait or brand logo</p>
-                      <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhoto} />
-                      {form.profile_photo_file && <p className="mt-4 text-xs font-black text-emerald-500 flex items-center justify-center gap-2 uppercase tracking-widest animate-in fade-in"><FiCheckCircle/> {form.profile_photo_file.name}</p>}
-                    </label>
-
-                    <label className="block group relative rounded-[2rem] border-2 border-dashed border-[var(--color-border)] hover:border-indigo-500/50 bg-[var(--color-bg)] p-10 transition-all duration-500 text-center cursor-pointer shadow-inner">
-                      <div className="mx-auto w-16 h-16 bg-cyan-500/10 text-cyan-500 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-md">
-                        <FiUpload size={24} />
-                      </div>
-                      <span className="block text-sm font-black text-[var(--color-heading)] uppercase tracking-tight">Showcase Assets</span>
-                      <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)] leading-relaxed">Select up to 6 portfolio shots</p>
-                      <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handlePortfolio} />
-                      {form.portfolio_files.length > 0 && <p className="mt-4 text-xs font-black text-cyan-500 flex items-center justify-center gap-2 uppercase tracking-widest animate-in fade-in"><FiCheckCircle/> {form.portfolio_files.length} Assets Attached</p>}
-                    </label>
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 4 && (
-                <motion.div key="step-4" {...stepAnim} className="space-y-10 max-w-2xl">
-                  <div className="rounded-[2rem] bg-gradient-to-r from-indigo-500/5 to-cyan-500/5 border border-[var(--color-border)] p-8 shadow-lg relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 blur-[40px]" />
-                    <div className="flex gap-6 relative z-10">
-                      <div className="mt-1 bg-indigo-500 rounded-2xl p-3 text-white shadow-lg shadow-indigo-500/30 shrink-0">
-                        <FiMapPin size={20} />
-                      </div>
+                {selectedProvider && (
+                  <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 md:p-6">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                       <div>
-                        <p className="text-lg font-black text-[var(--color-heading)] tracking-tight">Geographic Domain Discovery</p>
-                        <p className="mt-2 text-sm leading-relaxed text-[var(--color-muted)] font-bold uppercase tracking-widest opacity-80">
-                          Precision mapping ensures you are prioritized for projects within your reachable radius.
-                        </p>
+                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">{selectedProvider.categoryTitle}</p>
+                        <h3 className="mt-2 text-xl font-black text-[var(--color-heading)]">{selectedProvider.title} category</h3>
                       </div>
+                      <p className="max-w-md text-xs font-semibold leading-6 text-[var(--color-muted)]">{selectedProvider.categoryHelp}</p>
                     </div>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {categoryOptions.map((category) => {
+                        const selected = form.category === category.id;
+                        return (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => chooseCategory(category.id)}
+                            className={`min-h-[116px] rounded-2xl border bg-[var(--color-surface)] p-4 text-left transition-all ${getAccentClasses(selectedAccent, selected)}`}
+                          >
+                            <span className="flex items-start justify-between gap-3">
+                              <span className="text-sm font-black text-[var(--color-heading)]">{getCategoryLabel(category)}</span>
+                              {selected && <FiCheckCircle className="shrink-0" size={17} />}
+                            </span>
+                            <span className="mt-2 block text-xs font-semibold leading-5 text-[var(--color-muted)]">{category.subtitle}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {errors.category && <p className="mt-3 text-sm font-bold text-rose-500">{errors.category}</p>}
                   </div>
-
-                  <div className="bg-[var(--color-surface)] p-10 rounded-[2.5rem] border border-[var(--color-border)] shadow-xl space-y-8">
-                    <label className="block">
-                      <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">HQ Service Address</span>
-                      <input className={`w-full bg-[var(--color-bg)] border ${errors.location_text ? 'border-rose-500/50' : 'border-[var(--color-border)]'} rounded-2xl px-6 py-4 text-[var(--color-heading)] font-bold focus:border-indigo-500 transition-all outline-none shadow-inner`} value={form.location_text} onChange={update("location_text")} placeholder="City, Landmark, Area" />
-                      {errors.location_text && <p className="mt-2 text-xs font-black uppercase text-rose-500 tracking-widest">{errors.location_text}</p>}
-                    </label>
-
-                    <div>
-                      <span className="mb-3 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Pin Precise Locality</span>
-                      <div className="relative z-50">
-                        <LocationSearchInput
-                          value={locationQuery}
-                          onChange={setLocationQuery}
-                          onSelect={handleLocationSelect}
-                          placeholder="Search Map Area..."
-                        />
-                      </div>
-                      <div className="mt-6 flex flex-wrap items-center gap-4">
-                        <button type="button" onClick={() => requestGps({ enableHighAccuracy: true })} disabled={gpsLoading} className="px-6 py-3 rounded-xl bg-indigo-500 text-white font-black uppercase tracking-widest text-[10px] hover:bg-indigo-400 transition-all flex items-center gap-3 shadow-lg shadow-indigo-500/20">
-                          {gpsLoading ? <LoadingSpinner size="sm" /> : <FiMapPin size={14} />}
-                          Sync via GPS
-                        </button>
-                        {selectedLocation?.lat && (
-                          <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/10 px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 border border-emerald-500/30 shadow-inner">
-                            <FiCheckCircle size={14} /> Coordinates Locked
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <label className="block group relative rounded-[2.5rem] border border-[var(--color-border)] bg-[var(--color-surface)] p-10 transition-all hover:border-indigo-500/40 cursor-pointer flex items-center gap-8 shadow-xl overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[40px] pointer-events-none" />
-                    <div className="w-20 h-20 bg-[var(--color-bg-elevated)] text-indigo-500 rounded-3xl flex items-center justify-center shrink-0 border border-[var(--color-border)] group-hover:scale-105 transition-transform shadow-md">
-                      <FiFileText size={28} />
-                    </div>
-                    <div>
-                      <span className="block text-lg font-black text-[var(--color-heading)] tracking-tight">Identity Verification</span>
-                      <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-muted)] font-bold uppercase tracking-widest">
-                        Upload Aadhaar, PAN, or GST Cert. Encrypted & Secure.
-                      </p>
-                      {form.id_proof_file && <p className="mt-4 text-xs font-black text-emerald-500 flex items-center gap-2 uppercase tracking-widest animate-in fade-in"><FiCheckCircle/> {form.id_proof_file.name}</p>}
-                    </div>
-                    <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleIdProof} />
-                  </label>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Navigation Footer */}
-            {!(step === 3 && subStepIndex < activeQuestionnaire.length && activeQuestionnaire[subStepIndex].type === 'multi') && (
-              <div className="mt-16 flex items-center gap-6 border-t border-[var(--color-border)] pt-10 pb-12">
-                {(step > 1 || (step === 3 && subStepIndex > 0)) && (
-                  <button type="button" onClick={goBack} className="flex items-center gap-3 px-8 py-4 rounded-2xl border border-[var(--color-border)] text-[var(--color-heading)] font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[var(--color-surface-hover)] transition-all">
-                    <FiArrowLeft size={16} /> Previous Phase
-                  </button>
                 )}
-                
-                {step < TOTAL_STEPS ? (
-                  <button type="button" onClick={goNext} className="ml-auto flex items-center gap-3 px-12 py-4 rounded-2xl bg-indigo-500 text-white font-black uppercase tracking-[0.25em] text-[10px] shadow-lg shadow-indigo-500/30 hover:bg-indigo-400 active:scale-95 transition-all group">
-                    Advance Process <FiArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-                  </button>
-                ) : (
-                  <button type="submit" disabled={loading} className="ml-auto flex items-center justify-center gap-4 px-14 py-5 rounded-2xl bg-indigo-500 text-white font-black uppercase tracking-[0.25em] text-xs shadow-xl shadow-indigo-500/40 hover:bg-indigo-400 active:scale-95 transition-all disabled:opacity-50">
-                    {loading ? <LoadingSpinner size="sm" /> : <>Finalize Registration <FiCheckCircle size={20} /></>}
-                  </button>
-                )}
-              </div>
+              </motion.section>
             )}
-          </form>
-        </section>
+
+            {step === 2 && (
+              <motion.section key="step-2" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">Identity</p>
+                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">Tell customers who they are hiring</h2>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <Field label="Owner full name" error={errors.name}>
+                    <div className="relative">
+                      <FiUser className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
+                      <input className="input-field !pl-11" value={form.name} onChange={update("name")} placeholder="Amit Kumar" />
+                    </div>
+                  </Field>
+                  <Field label="Public business / team name" error={errors.business_name}>
+                    <div className="relative">
+                      <FiHome className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
+                      <input className="input-field !pl-11" value={form.business_name} onChange={update("business_name")} placeholder="Amit Civil Works" />
+                    </div>
+                  </Field>
+                  <Field label="Mobile number" error={errors.phone}>
+                    <div className="relative">
+                      <FiPhone className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
+                      <input className="input-field !pl-11" value={form.phone} onChange={update("phone")} inputMode="numeric" placeholder="9876543210" maxLength={10} />
+                    </div>
+                  </Field>
+                  <Field label="Email address" error={errors.email}>
+                    <div className="relative">
+                      <FiMail className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
+                      <input className="input-field !pl-11" value={form.email} onChange={update("email")} type="email" placeholder="you@example.com" />
+                    </div>
+                  </Field>
+                  <Field label="Password" error={errors.password}>
+                    <div className="relative">
+                      <FiShield className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
+                      <input className="input-field !pl-11" value={form.password} onChange={update("password")} type="password" placeholder="Minimum 8 characters" />
+                    </div>
+                  </Field>
+                  <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.06] p-5">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-indigo-500">Selected path</p>
+                    <p className="mt-3 text-lg font-black text-[var(--color-heading)]">{selectedProvider?.title}</p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--color-muted)]">{getCategoryLabel(selectedCategory)}</p>
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
+            {step === 3 && currentQuestion && (
+              <motion.section key={`question-${currentQuestion.id}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">
+                    Smart Questions {questionIndex + 1} / {adaptiveQuestions.length}
+                  </p>
+                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">{currentQuestion.question}</h2>
+                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-[var(--color-muted)]">
+                    These answers shape your profile, search match, and customer booking prompts.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {currentQuestion.options.map((option) => {
+                    const selected = form.onboarding_data[currentQuestion.id]?.includes(option.value);
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setQuestionAnswer(currentQuestion, option.value)}
+                        className={`flex min-h-[92px] items-center justify-between gap-4 rounded-2xl border bg-[var(--color-bg)] p-5 text-left transition-all ${getAccentClasses(selectedAccent, selected)}`}
+                      >
+                        <span className="text-sm font-black text-[var(--color-heading)]">{option.label}</span>
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${selected ? "border-current bg-current/10" : "border-[var(--color-border)] text-[var(--color-muted)]"}`}>
+                          {selected && <FiCheck size={15} />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.questionnaire && <p className="text-sm font-bold text-rose-500">{errors.questionnaire}</p>}
+              </motion.section>
+            )}
+
+            {step === 3 && isFinalDetailPanel && (
+              <motion.section key="details-final" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500 dark:text-indigo-300">{detailCopy.eyebrow}</p>
+                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">{detailCopy.title}</h2>
+                </div>
+
+                <Field label={detailCopy.descriptionLabel} error={errors.description}>
+                  <textarea
+                    className="input-field min-h-[150px] resize-none"
+                    value={form.description}
+                    onChange={update("description")}
+                    maxLength={700}
+                    placeholder={detailCopy.descriptionPlaceholder}
+                  />
+                  <p className="mt-2 text-xs font-semibold text-[var(--color-muted)]">{form.description.length} / 700 characters</p>
+                </Field>
+
+                <Field label={detailCopy.servicesLabel}>
+                  <input
+                    className="input-field"
+                    value={form.services}
+                    onChange={update("services")}
+                    placeholder={servicesPlaceholder}
+                  />
+                </Field>
+
+                <div className="grid gap-5 md:grid-cols-4">
+                  <Field label={detailCopy.rateLabel} error={errors.daily_rate}>
+                    <input className="input-field" type="number" min="0" value={selectedProvider?.categoryMode === "project" ? form.min_project_value : form.daily_rate} onChange={selectedProvider?.categoryMode === "project" ? update("min_project_value") : update("daily_rate")} placeholder="Amount in Rs" />
+                  </Field>
+                  <Field label="Experience years">
+                    <input className="input-field" type="number" min="0" max="60" value={form.experience_years} onChange={update("experience_years")} placeholder="5" />
+                  </Field>
+                  <Field label="Team size" error={errors.team_size}>
+                    <input className="input-field" type="number" min="1" max="500" value={form.team_size} onChange={update("team_size")} placeholder="1" />
+                  </Field>
+                  <Field label="Service radius km">
+                    <input className="input-field" type="number" min="1" max="100" value={form.service_radius_km} onChange={update("service_radius_km")} placeholder="8" />
+                  </Field>
+                </div>
+
+                {selectedProvider?.categoryMode === "quick" && (
+                  <Field label="Usual response time">
+                    <select className="input-field" value={form.response_time} onChange={update("response_time")}>
+                      <option value="">Select response time</option>
+                      <option value="under_60_min">Under 60 minutes</option>
+                      <option value="same_day">Same day</option>
+                      <option value="next_day">Next day</option>
+                      <option value="scheduled_only">Scheduled only</option>
+                    </select>
+                  </Field>
+                )}
+
+                {selectedProvider?.categoryMode === "labour" && (
+                  <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">Crew Breakdown</p>
+                        <h3 className="mt-2 text-xl font-black text-[var(--color-heading)]">{crewStats.totalCount || 0} workers // {money(crewStats.totalDaily)} daily pool</h3>
+                      </div>
+                      <button type="button" onClick={addCrewRow} className="rounded-xl border border-indigo-400/40 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-indigo-500 transition-colors hover:bg-indigo-500/10">
+                        Add role
+                      </button>
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      {form.labour_crew.map((crew, index) => (
+                        <div key={index} className="grid gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:grid-cols-[1fr_110px_140px_44px]">
+                          <input className="input-field" value={crew.role} onChange={(event) => setCrew(index, "role", event.target.value)} placeholder="Role, e.g. Mason" />
+                          <input className="input-field" type="number" min="0" value={crew.count} onChange={(event) => setCrew(index, "count", event.target.value)} placeholder="Qty" />
+                          <input className="input-field" type="number" min="0" value={crew.rate} onChange={(event) => setCrew(index, "rate", event.target.value)} placeholder="Rate" />
+                          <button type="button" onClick={() => removeCrewRow(index)} className="flex h-11 items-center justify-center rounded-xl bg-rose-500/10 font-black text-rose-500 transition-colors hover:bg-rose-500/20">
+                            x
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <FileDrop icon={FiCamera} title="Profile photo or logo" hint="A clear face or brand mark builds trust." value={form.profile_photo_file} onChange={handleProfilePhoto} />
+                  <FileDrop icon={FiUpload} title="Portfolio photos" hint="Upload up to 5 work samples." value={form.portfolio_files.length ? form.portfolio_files : null} onChange={handlePortfolio} multiple />
+                </div>
+              </motion.section>
+            )}
+
+            {step === 4 && (
+              <motion.section key="step-4" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">Location and Verification</p>
+                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">Lock your service area</h2>
+                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-[var(--color-muted)]">
+                    Customers nearby will discover you first. You can use GPS, search an area, or type your operating base.
+                  </p>
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+                  <div className="space-y-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+                    <Field label="Operating address / area" error={errors.location_text}>
+                      <div className="relative">
+                        <FiMapPin className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
+                        <input className="input-field !pl-11" value={form.location_text} onChange={update("location_text")} placeholder="Area, city, landmark" />
+                      </div>
+                    </Field>
+
+                    <Field label="Search precise locality">
+                      <LocationSearchInput
+                        value={locationQuery}
+                        onChange={setLocationQuery}
+                        onSelect={handleLocationSelect}
+                        placeholder="Search your locality"
+                      />
+                    </Field>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button type="button" onClick={() => requestGps({ enableHighAccuracy: true })} disabled={gpsLoading} className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-indigo-600 disabled:opacity-60">
+                        {gpsLoading ? <LoadingSpinner size="sm" /> : <FiMapPin size={15} />}
+                        Use GPS
+                      </button>
+                      {selectedLocation?.lat && (
+                        <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-black text-emerald-600">
+                          <FiCheckCircle size={15} />
+                          Coordinates locked
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <FileDrop icon={FiFileText} title="ID / GST / license proof" hint="Optional now, but verified profiles rank better." value={form.id_proof_file} onChange={handleIdProof} />
+                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
+                      <p className="flex items-center gap-2 text-sm font-black text-[var(--color-heading)]">
+                        <FiGrid size={17} />
+                        Review Summary
+                      </p>
+                      <div className="mt-4 space-y-2 text-sm font-semibold text-[var(--color-muted)]">
+                        <p>{selectedProvider?.title}</p>
+                        <p>{getCategoryLabel(selectedCategory)}</p>
+                        <p>{form.services || "Services will use selected category"}</p>
+                        <p>{form.location_text || "Location pending"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+            )}
+          </AnimatePresence>
+
+          <div className="mt-10 flex flex-col gap-3 border-t border-[var(--color-border)] pt-6 sm:flex-row sm:items-center">
+            {step > 1 || (step === 3 && questionIndex > 0) ? (
+              <button type="button" onClick={goBack} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg)]">
+                <FiArrowLeft size={15} />
+                Back
+              </button>
+            ) : null}
+
+            {step < STEPS.length ? (
+              <button type="button" onClick={goNext} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-7 py-3 text-xs font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-indigo-600 sm:ml-auto">
+                Continue
+                <FiArrowRight size={15} />
+              </button>
+            ) : (
+              <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-7 py-3 text-xs font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-indigo-600 disabled:opacity-60 sm:ml-auto">
+                {loading ? <LoadingSpinner size="sm" /> : <FiCheckCircle size={16} />}
+                Submit Registration
+              </button>
+            )}
+          </div>
+        </form>
       </div>
     </main>
   );
