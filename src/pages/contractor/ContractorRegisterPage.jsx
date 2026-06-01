@@ -756,118 +756,122 @@ export default function ContractorRegisterPage() {
       : detailCopy.servicesPlaceholder;
 
   return (
-    <main
-      className="relative min-h-screen overflow-hidden bg-[var(--color-bg)] px-4 pb-16 pt-24 text-[var(--color-heading)] md:px-8"
-    >
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.08] dark:opacity-30"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(99,102,241,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.22) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
-          maskImage: "linear-gradient(to bottom, black, transparent 75%)",
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.10),transparent_45%)] dark:bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.18),transparent_45%)]" />
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-24 lg:h-[calc(100vh-120px)]">
-          <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-2xl shadow-black/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.035] dark:shadow-black/30">
-            <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--color-border)] dark:bg-white/20" />
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.28em] text-indigo-500 dark:text-indigo-300">Thekedaar Partner</p>
-              <h1 className="mt-4 font-display text-3xl font-black leading-tight text-[var(--color-heading)]">
-                Build a verified work profile
-              </h1>
-              <p className="mt-4 text-sm font-semibold leading-7 text-[var(--color-muted)]">
-                Your questions now change by provider type, category, and actual work. Customers see cleaner matching from day one.
-              </p>
-
-              <div className="mt-8 h-2 overflow-hidden rounded-full bg-[var(--color-bg-elevated)] dark:bg-white/5">
-                <div className="h-full rounded-full bg-gradient-to-r from-indigo-400 via-cyan-300 to-emerald-300 transition-all duration-500" style={{ width: `${progress}%` }} />
-              </div>
-
-              <div className="mt-6 space-y-3">
-                {STEPS.map((item) => {
-                  const active = step === item.id;
-                  const complete = step > item.id;
-                  return (
-                    <div key={item.id} className="flex items-center gap-3">
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black ${active || complete ? "bg-indigo-500 text-white" : "bg-[var(--color-bg)] text-[var(--color-muted)]"}`}>
-                        {complete ? <FiCheck size={15} /> : item.id}
-                      </span>
-                      <span className={`text-sm font-black ${active ? "text-[var(--color-heading)]" : "text-[var(--color-muted)]"}`}>
-                        {item.label}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mt-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">Profile Preview</p>
-              <h2 className="mt-3 text-lg font-black text-[var(--color-heading)]">{form.business_name || form.name || "Your public name"}</h2>
-              <p className="mt-1 text-sm font-semibold text-[var(--color-muted)]">
-                {selectedProvider?.title || "Provider type"} {selectedCategory ? `// ${getCategoryLabel(selectedCategory)}` : ""}
-              </p>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-xs font-bold text-[var(--color-muted)]">
-                <span className="rounded-xl bg-[var(--color-surface)] px-3 py-2 dark:bg-white/[0.04]">{money(form.daily_rate)}</span>
-                <span className="rounded-xl bg-[var(--color-surface)] px-3 py-2 dark:bg-white/[0.04]">{form.team_size || 1} people</span>
-              </div>
-            </div>
+    <main className="min-h-screen bg-[var(--color-bg-elevated)] px-4 py-12 pt-24 text-[var(--color-heading)] md:px-8 flex flex-col items-center justify-center relative">
+      <div className="max-w-3xl w-full bg-[var(--color-surface)] rounded-2xl border border-[var(--color-border)] shadow-card p-6 md:p-10 relative">
+        
+        {/* Progress Tracker */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--color-muted)]">
+              Partner Registration — Step {step} of 4
+            </span>
+            <span className="text-xs font-bold text-[var(--color-primary)]">{progress}% Complete</span>
           </div>
-        </aside>
+          <div className="h-2 w-full bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[var(--color-primary)] transition-all duration-300 rounded-full"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-between text-xs font-semibold text-[var(--color-muted)] border-b border-[var(--color-border)] pb-4">
+            {STEPS.map((item) => {
+              const active = step === item.id;
+              const complete = step > item.id;
+              return (
+                <div key={item.id} className="flex items-center gap-1.5">
+                  <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${active || complete ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-bg-elevated)] text-[var(--color-muted)]"}`}>
+                    {complete ? <FiCheck size={10} /> : item.id}
+                  </span>
+                  <span className={active ? "text-[var(--color-heading)] font-bold" : "text-[var(--color-muted)]"}>
+                    {item.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit} className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-2xl shadow-black/10 backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.035] dark:shadow-black/30 md:p-8">
-          <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--color-border)] dark:bg-white/20" />
+        {/* Step Headers */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-extrabold tracking-tight text-[var(--color-heading)]">
+            {step === 1 && "What kind of provider are you?"}
+            {step === 2 && "Tell customers who they are hiring"}
+            {step === 3 && (currentQuestion ? currentQuestion.question : detailCopy.title)}
+            {step === 4 && "Lock your service area"}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-muted)] font-medium">
+            {step === 1 && "Choose your business path. The questionnaire adapts automatically."}
+            {step === 2 && "Enter your basic identity details to construct your public profile."}
+            {step === 3 && (currentQuestion ? "These answers help customers understand your specific capability." : "Enter your experience, starting pricing, description and profile pictures.")}
+            {step === 4 && "Operating base locality & proof upload for customer verification."}
+          </p>
+        </div>
+
+        {/* Form Container */}
+        <form onSubmit={handleSubmit} className="space-y-6">
           <AnimatePresence mode="wait">
             {step === 1 && (
-              <motion.section key="step-1" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">Start Here</p>
-                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">What kind of provider are you?</h2>
-                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-[var(--color-muted)]">
-                    Choose one path. The next questions change automatically so you only answer what matters for your work.
-                  </p>
-                  {errors.provider_type && <p className="mt-3 text-sm font-bold text-rose-500">{errors.provider_type}</p>}
-                </div>
-
+              <motion.section key="step-1" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
+                {errors.provider_type && <p className="text-sm font-bold text-rose-500">{errors.provider_type}</p>}
+                
                 <div className="grid gap-4 md:grid-cols-3">
-                  {PROVIDER_TYPES.map((provider) => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      selected={form.provider_type === provider.id}
-                      onClick={() => chooseProvider(provider)}
-                    />
-                  ))}
+                  {PROVIDER_TYPES.map((provider) => {
+                    const Icon = provider.icon;
+                    const isSelected = form.provider_type === provider.id;
+                    return (
+                      <button
+                        key={provider.id}
+                        type="button"
+                        onClick={() => chooseProvider(provider)}
+                        className={`group relative min-h-[160px] overflow-hidden rounded-xl border bg-[var(--color-surface)] p-5 text-left transition-all duration-200 flex flex-col justify-between ${
+                          isSelected
+                            ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/10"
+                            : "border-[var(--color-border)] hover:border-[var(--color-muted)] hover:shadow-sm"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between w-full">
+                          <span className={`flex h-10 w-10 items-center justify-center rounded-lg ${isSelected ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-bg-elevated)] text-[var(--color-muted)]"} transition-colors`}>
+                            <Icon size={20} />
+                          </span>
+                          <span className={`rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${isSelected ? "bg-[var(--color-primary)]/15 text-[var(--color-primary)]" : "bg-[var(--color-bg-elevated)] text-[var(--color-muted)]"}`}>
+                            {provider.badge}
+                          </span>
+                        </div>
+                        <div className="mt-4">
+                          <h3 className="text-base font-bold text-[var(--color-heading)]">{provider.title}</h3>
+                          <p className="mt-1 text-xs text-[var(--color-muted)] font-medium leading-relaxed">{provider.subtitle}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {selectedProvider && (
-                  <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 md:p-6">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                      <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">{selectedProvider.categoryTitle}</p>
-                        <h3 className="mt-2 text-xl font-black text-[var(--color-heading)]">{selectedProvider.title} category</h3>
-                      </div>
-                      <p className="max-w-md text-xs font-semibold leading-6 text-[var(--color-muted)]">{selectedProvider.categoryHelp}</p>
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5 md:p-6 transition-all duration-200 mt-6">
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">{selectedProvider.categoryTitle}</p>
+                      <p className="mt-1 text-xs text-[var(--color-muted)] font-semibold leading-relaxed">{selectedProvider.categoryHelp}</p>
                     </div>
 
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {categoryOptions.map((category) => {
-                        const selected = form.category === category.id;
+                        const isSelected = form.category === category.id;
                         return (
                           <button
                             key={category.id}
                             type="button"
                             onClick={() => chooseCategory(category.id)}
-                            className={`min-h-[116px] rounded-2xl border bg-[var(--color-surface)] p-4 text-left transition-all ${getAccentClasses(selectedAccent, selected)}`}
+                            className={`rounded-lg border bg-[var(--color-surface)] p-4 text-left transition-all ${
+                              isSelected
+                                ? "border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/10 font-bold"
+                                : "border-[var(--color-border)] hover:border-[var(--color-muted)]"
+                            }`}
                           >
-                            <span className="flex items-start justify-between gap-3">
-                              <span className="text-sm font-black text-[var(--color-heading)]">{getCategoryLabel(category)}</span>
-                              {selected && <FiCheckCircle className="shrink-0" size={17} />}
+                            <span className="flex items-center justify-between gap-3 mb-1">
+                              <span className="text-xs font-bold text-[var(--color-heading)]">{getCategoryLabel(category)}</span>
+                              {isSelected && <FiCheckCircle className="text-[var(--color-primary)] shrink-0" size={15} />}
                             </span>
-                            <span className="mt-2 block text-xs font-semibold leading-5 text-[var(--color-muted)]">{category.subtitle}</span>
+                            <span className="block text-[10px] text-[var(--color-muted)] font-semibold">{category.subtitle}</span>
                           </button>
                         );
                       })}
@@ -879,159 +883,176 @@ export default function ContractorRegisterPage() {
             )}
 
             {step === 2 && (
-              <motion.section key="step-2" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">Identity</p>
-                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">Tell customers who they are hiring</h2>
-                </div>
-
+              <motion.section key="step-2" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
                 <div className="grid gap-5 md:grid-cols-2">
-                  <Field label="Owner full name" error={errors.name}>
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Owner Full Name</label>
                     <div className="relative">
                       <FiUser className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
-                      <input className="input-field !pl-11" value={form.name} onChange={update("name")} placeholder="Amit Kumar" />
+                      <input className="w-full pl-11 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" value={form.name} onChange={update("name")} placeholder="e.g. Alok Mishra" />
                     </div>
-                  </Field>
-                  <Field label="Public business / team name" error={errors.business_name}>
+                    {errors.name && <p className="text-[11px] font-bold text-rose-500">{errors.name}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Public Business / Team Name</label>
                     <div className="relative">
                       <FiHome className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
-                      <input className="input-field !pl-11" value={form.business_name} onChange={update("business_name")} placeholder="Amit Civil Works" />
+                      <input className="w-full pl-11 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" value={form.business_name} onChange={update("business_name")} placeholder="e.g. Mishra Electricals & Co" />
                     </div>
-                  </Field>
-                  <Field label="Mobile number" error={errors.phone}>
+                    {errors.business_name && <p className="text-[11px] font-bold text-rose-500">{errors.business_name}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Mobile Number</label>
                     <div className="relative">
                       <FiPhone className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
-                      <input className="input-field !pl-11" value={form.phone} onChange={update("phone")} inputMode="numeric" placeholder="9876543210" maxLength={10} />
+                      <input className="w-full pl-11 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" value={form.phone} onChange={update("phone")} inputMode="numeric" placeholder="9876543210" maxLength={10} />
                     </div>
-                  </Field>
-                  <Field label="Email address" error={errors.email}>
+                    {errors.phone && <p className="text-[11px] font-bold text-rose-500">{errors.phone}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Email Address</label>
                     <div className="relative">
                       <FiMail className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
-                      <input className="input-field !pl-11" value={form.email} onChange={update("email")} type="email" placeholder="you@example.com" />
+                      <input className="w-full pl-11 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" value={form.email} onChange={update("email")} type="email" placeholder="you@example.com" />
                     </div>
-                  </Field>
-                  <Field label="Password" error={errors.password}>
+                    {errors.email && <p className="text-[11px] font-bold text-rose-500">{errors.email}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Password</label>
                     <div className="relative">
                       <FiShield className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
-                      <input className="input-field !pl-11" value={form.password} onChange={update("password")} type="password" placeholder="Minimum 8 characters" />
+                      <input className="w-full pl-11 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" value={form.password} onChange={update("password")} type="password" placeholder="Minimum 8 characters" />
                     </div>
-                  </Field>
-                  <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/[0.06] p-5">
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-indigo-500">Selected path</p>
-                    <p className="mt-3 text-lg font-black text-[var(--color-heading)]">{selectedProvider?.title}</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--color-muted)]">{getCategoryLabel(selectedCategory)}</p>
+                    {errors.password && <p className="text-[11px] font-bold text-rose-500">{errors.password}</p>}
+                  </div>
+
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 flex flex-col justify-center">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)]">Selected Path</span>
+                    <span className="text-base font-bold text-[var(--color-heading)] mt-1">{selectedProvider?.title}</span>
+                    <span className="text-xs text-[var(--color-muted)] font-semibold mt-0.5">{getCategoryLabel(selectedCategory)}</span>
                   </div>
                 </div>
               </motion.section>
             )}
 
             {step === 3 && currentQuestion && (
-              <motion.section key={`question-${currentQuestion.id}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">
-                    Smart Questions {questionIndex + 1} / {adaptiveQuestions.length}
-                  </p>
-                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">{currentQuestion.question}</h2>
-                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-[var(--color-muted)]">
-                    These answers shape your profile, search match, and customer booking prompts.
-                  </p>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
+              <motion.section key={`question-${currentQuestion.id}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {currentQuestion.options.map((option) => {
-                    const selected = form.onboarding_data[currentQuestion.id]?.includes(option.value);
+                    const isSelected = form.onboarding_data[currentQuestion.id]?.includes(option.value);
                     return (
                       <button
                         key={option.value}
                         type="button"
                         onClick={() => setQuestionAnswer(currentQuestion, option.value)}
-                        className={`flex min-h-[92px] items-center justify-between gap-4 rounded-2xl border bg-[var(--color-bg)] p-5 text-left transition-all ${getAccentClasses(selectedAccent, selected)}`}
+                        className={`flex min-h-[76px] items-center justify-between gap-4 rounded-xl border bg-[var(--color-surface)] px-5 py-4 text-left transition-all ${
+                          isSelected
+                            ? "border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/10 font-bold"
+                            : "border-[var(--color-border)] hover:border-[var(--color-muted)]"
+                        }`}
                       >
-                        <span className="text-sm font-black text-[var(--color-heading)]">{option.label}</span>
-                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${selected ? "border-current bg-current/10" : "border-[var(--color-border)] text-[var(--color-muted)]"}`}>
-                          {selected && <FiCheck size={15} />}
+                        <span className="text-sm font-bold text-[var(--color-heading)]">{option.label}</span>
+                        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isSelected ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]" : "border-[var(--color-border)] text-[var(--color-muted)]"}`}>
+                          {isSelected && <FiCheck size={12} />}
                         </span>
                       </button>
                     );
                   })}
                 </div>
-                {errors.questionnaire && <p className="text-sm font-bold text-rose-500">{errors.questionnaire}</p>}
+                {errors.questionnaire && <p className="text-sm font-bold text-rose-500 mt-2">{errors.questionnaire}</p>}
               </motion.section>
             )}
 
             {step === 3 && isFinalDetailPanel && (
-              <motion.section key="details-final" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500 dark:text-indigo-300">{detailCopy.eyebrow}</p>
-                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">{detailCopy.title}</h2>
-                </div>
-
-                <Field label={detailCopy.descriptionLabel} error={errors.description}>
+              <motion.section key="details-final" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
+                
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">{detailCopy.descriptionLabel}</label>
                   <textarea
-                    className="input-field min-h-[150px] resize-none"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all min-h-[120px] resize-none"
                     value={form.description}
                     onChange={update("description")}
                     maxLength={700}
                     placeholder={detailCopy.descriptionPlaceholder}
                   />
-                  <p className="mt-2 text-xs font-semibold text-[var(--color-muted)]">{form.description.length} / 700 characters</p>
-                </Field>
+                  <div className="flex items-center justify-between text-[11px] text-[var(--color-muted)] font-semibold">
+                    <span>Write at least 40 characters.</span>
+                    <span>{form.description.length} / 700 characters</span>
+                  </div>
+                  {errors.description && <p className="text-[11px] font-bold text-rose-500">{errors.description}</p>}
+                </div>
 
-                <Field label={detailCopy.servicesLabel}>
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">{detailCopy.servicesLabel}</label>
                   <input
-                    className="input-field"
+                    className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all"
                     value={form.services}
                     onChange={update("services")}
                     placeholder={servicesPlaceholder}
                   />
-                </Field>
+                </div>
 
-                <div className="grid gap-5 md:grid-cols-4">
-                  <Field label={detailCopy.rateLabel} error={errors.daily_rate}>
-                    <input className="input-field" type="number" min="0" value={selectedProvider?.categoryMode === "project" ? form.min_project_value : form.daily_rate} onChange={selectedProvider?.categoryMode === "project" ? update("min_project_value") : update("daily_rate")} placeholder="Amount in Rs" />
-                  </Field>
-                  <Field label="Experience years">
-                    <input className="input-field" type="number" min="0" max="60" value={form.experience_years} onChange={update("experience_years")} placeholder="5" />
-                  </Field>
-                  <Field label="Team size" error={errors.team_size}>
-                    <input className="input-field" type="number" min="1" max="500" value={form.team_size} onChange={update("team_size")} placeholder="1" />
-                  </Field>
-                  <Field label="Service radius km">
-                    <input className="input-field" type="number" min="1" max="100" value={form.service_radius_km} onChange={update("service_radius_km")} placeholder="8" />
-                  </Field>
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">{detailCopy.rateLabel} (₹)</label>
+                    <input className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" type="number" min="0" value={selectedProvider?.categoryMode === "project" ? form.min_project_value : form.daily_rate} onChange={selectedProvider?.categoryMode === "project" ? update("min_project_value") : update("daily_rate")} placeholder="e.g. 500" />
+                    {errors.daily_rate && <p className="text-[11px] font-bold text-rose-500">{errors.daily_rate}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Experience (Years)</label>
+                    <input className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" type="number" min="0" max="60" value={form.experience_years} onChange={update("experience_years")} placeholder="5" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Team Size</label>
+                    <input className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" type="number" min="1" max="500" value={form.team_size} onChange={update("team_size")} placeholder="1" />
+                    {errors.team_size && <p className="text-[11px] font-bold text-rose-500">{errors.team_size}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Service Radius (KM)</label>
+                    <input className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" type="number" min="1" max="100" value={form.service_radius_km} onChange={update("service_radius_km")} placeholder="8" />
+                  </div>
                 </div>
 
                 {selectedProvider?.categoryMode === "quick" && (
-                  <Field label="Usual response time">
-                    <select className="input-field" value={form.response_time} onChange={update("response_time")}>
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Usual Response Time</label>
+                    <select className="w-full px-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" value={form.response_time} onChange={update("response_time")}>
                       <option value="">Select response time</option>
                       <option value="under_60_min">Under 60 minutes</option>
                       <option value="same_day">Same day</option>
                       <option value="next_day">Next day</option>
                       <option value="scheduled_only">Scheduled only</option>
                     </select>
-                  </Field>
+                  </div>
                 )}
 
                 {selectedProvider?.categoryMode === "labour" && (
-                  <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-5">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4 border-b border-[var(--color-border)] pb-3">
                       <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[var(--color-muted)]">Crew Breakdown</p>
-                        <h3 className="mt-2 text-xl font-black text-[var(--color-heading)]">{crewStats.totalCount || 0} workers // {money(crewStats.totalDaily)} daily pool</h3>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Labour Chowk Crew Details</span>
+                        <h3 className="text-base font-extrabold text-[var(--color-heading)] mt-0.5">{crewStats.totalCount || 0} crew members · {money(crewStats.totalDaily)}/day pool</h3>
                       </div>
-                      <button type="button" onClick={addCrewRow} className="rounded-xl border border-indigo-400/40 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-indigo-500 transition-colors hover:bg-indigo-500/10">
-                        Add role
+                      <button type="button" onClick={addCrewRow} className="rounded-lg border border-[var(--color-primary)] px-3 py-1.5 text-xs font-bold text-[var(--color-primary)] transition-all hover:bg-[var(--color-primary)]/5">
+                        + Add Role
                       </button>
                     </div>
-                    <div className="mt-5 space-y-3">
+                    
+                    <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                       {form.labour_crew.map((crew, index) => (
-                        <div key={index} className="grid gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 md:grid-cols-[1fr_110px_140px_44px]">
-                          <input className="input-field" value={crew.role} onChange={(event) => setCrew(index, "role", event.target.value)} placeholder="Role, e.g. Mason" />
-                          <input className="input-field" type="number" min="0" value={crew.count} onChange={(event) => setCrew(index, "count", event.target.value)} placeholder="Qty" />
-                          <input className="input-field" type="number" min="0" value={crew.rate} onChange={(event) => setCrew(index, "rate", event.target.value)} placeholder="Rate" />
-                          <button type="button" onClick={() => removeCrewRow(index)} className="flex h-11 items-center justify-center rounded-xl bg-rose-500/10 font-black text-rose-500 transition-colors hover:bg-rose-500/20">
-                            x
+                        <div key={index} className="grid gap-2 grid-cols-[1fr_80px_100px_40px] items-center bg-[var(--color-surface)] p-2 rounded-lg border border-[var(--color-border)]">
+                          <input className="w-full px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-xs text-[var(--color-heading)] font-semibold outline-none" value={crew.role} onChange={(event) => setCrew(index, "role", event.target.value)} placeholder="Role, e.g. Mason" />
+                          <input className="w-full px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-xs text-[var(--color-heading)] font-semibold outline-none" type="number" min="0" value={crew.count} onChange={(event) => setCrew(index, "count", event.target.value)} placeholder="Qty" />
+                          <input className="w-full px-3 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-xs text-[var(--color-heading)] font-semibold outline-none" type="number" min="0" value={crew.rate} onChange={(event) => setCrew(index, "rate", event.target.value)} placeholder="Rate ₹" />
+                          <button type="button" onClick={() => removeCrewRow(index)} className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500/10 font-bold text-rose-500 hover:bg-rose-500/20 transition-all text-sm">
+                            &times;
                           </button>
                         </div>
                       ))}
@@ -1040,66 +1061,100 @@ export default function ContractorRegisterPage() {
                 )}
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <FileDrop icon={FiCamera} title="Profile photo or logo" hint="A clear face or brand mark builds trust." value={form.profile_photo_file} onChange={handleProfilePhoto} />
-                  <FileDrop icon={FiUpload} title="Portfolio photos" hint="Upload up to 5 work samples." value={form.portfolio_files.length ? form.portfolio_files : null} onChange={handlePortfolio} multiple />
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Profile Photo or Logo</label>
+                    <label className="flex flex-col items-center justify-center min-h-[130px] cursor-pointer rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 text-center hover:border-[var(--color-primary)] transition-all">
+                      <FiCamera className="text-[var(--color-primary)] mb-2" size={24} />
+                      <span className="text-xs font-bold text-[var(--color-heading)]">Upload Photo</span>
+                      <span className="text-[10px] text-[var(--color-muted)] font-medium mt-0.5">JPG, PNG under 5MB</span>
+                      {form.profile_photo_file && (
+                        <span className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
+                          <FiCheckCircle size={12} /> {form.profile_photo_file.name}
+                        </span>
+                      )}
+                      <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfilePhoto} />
+                    </label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Portfolio Work Samples</label>
+                    <label className="flex flex-col items-center justify-center min-h-[130px] cursor-pointer rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 text-center hover:border-[var(--color-primary)] transition-all">
+                      <FiUpload className="text-[var(--color-primary)] mb-2" size={24} />
+                      <span className="text-xs font-bold text-[var(--color-heading)]">Upload Portfolio</span>
+                      <span className="text-[10px] text-[var(--color-muted)] font-medium mt-0.5">Up to 5 images</span>
+                      {form.portfolio_files.length > 0 && (
+                        <span className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
+                          <FiCheckCircle size={12} /> {form.portfolio_files.length} files selected
+                        </span>
+                      )}
+                      <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={handlePortfolio} />
+                    </label>
+                  </div>
                 </div>
               </motion.section>
             )}
 
             {step === 4 && (
-              <motion.section key="step-4" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.25em] text-indigo-500">Location and Verification</p>
-                  <h2 className="mt-3 font-display text-3xl font-black text-[var(--color-heading)]">Lock your service area</h2>
-                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-[var(--color-muted)]">
-                    Customers nearby will discover you first. You can use GPS, search an area, or type your operating base.
-                  </p>
-                </div>
-
-                <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
-                  <div className="space-y-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-                    <Field label="Operating address / area" error={errors.location_text}>
+              <motion.section key="step-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-6">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Operating Address / Base Area</label>
                       <div className="relative">
                         <FiMapPin className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
-                        <input className="input-field !pl-11" value={form.location_text} onChange={update("location_text")} placeholder="Area, city, landmark" />
+                        <input className="w-full pl-11 pr-4 py-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" value={form.location_text} onChange={update("location_text")} placeholder="Area, city, or landmark" />
                       </div>
-                    </Field>
+                      {errors.location_text && <p className="text-[11px] font-bold text-rose-500">{errors.location_text}</p>}
+                    </div>
 
-                    <Field label="Search precise locality">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Search & Lock Precise Locality</label>
                       <LocationSearchInput
                         value={locationQuery}
                         onChange={setLocationQuery}
                         onSelect={handleLocationSelect}
-                        placeholder="Search your locality"
+                        placeholder="Type to search and lock location coordinates"
                       />
-                    </Field>
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                      <button type="button" onClick={() => requestGps({ enableHighAccuracy: true })} disabled={gpsLoading} className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-indigo-600 disabled:opacity-60">
-                        {gpsLoading ? <LoadingSpinner size="sm" /> : <FiMapPin size={15} />}
-                        Use GPS
+                      <button type="button" onClick={() => requestGps({ enableHighAccuracy: true })} disabled={gpsLoading} className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-xs font-bold text-white transition-all hover:bg-[var(--color-primary)]/90 disabled:opacity-60">
+                        {gpsLoading ? <LoadingSpinner size="sm" /> : <FiMapPin size={14} />}
+                        Use Current GPS
                       </button>
                       {selectedLocation?.lat && (
-                        <span className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-black text-emerald-600">
-                          <FiCheckCircle size={15} />
-                          Coordinates locked
+                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs font-bold text-emerald-600">
+                          <FiCheckCircle size={14} /> Coordinates Locked
                         </span>
                       )}
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <FileDrop icon={FiFileText} title="ID / GST / license proof" hint="Optional now, but verified profiles rank better." value={form.id_proof_file} onChange={handleIdProof} />
-                    <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5">
-                      <p className="flex items-center gap-2 text-sm font-black text-[var(--color-heading)]">
-                        <FiGrid size={17} />
-                        Review Summary
-                      </p>
-                      <div className="mt-4 space-y-2 text-sm font-semibold text-[var(--color-muted)]">
-                        <p>{selectedProvider?.title}</p>
-                        <p>{getCategoryLabel(selectedCategory)}</p>
-                        <p>{form.services || "Services will use selected category"}</p>
-                        <p>{form.location_text || "Location pending"}</p>
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">ID / GST / License Proof</label>
+                      <label className="flex flex-col items-center justify-center min-h-[100px] cursor-pointer rounded-xl border-2 border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 text-center hover:border-[var(--color-primary)] transition-all">
+                        <FiFileText className="text-[var(--color-primary)] mb-1" size={22} />
+                        <span className="text-xs font-bold text-[var(--color-heading)]">Upload Proof File</span>
+                        <span className="text-[10px] text-[var(--color-muted)] font-medium">GST, Aadhaar, PAN, License</span>
+                        {form.id_proof_file && (
+                          <span className="mt-2 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600">
+                            <FiCheckCircle size={12} /> {form.id_proof_file.name}
+                          </span>
+                        )}
+                        <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleIdProof} />
+                      </label>
+                    </div>
+
+                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+                      <h4 className="flex items-center gap-2 text-xs font-bold text-[var(--color-heading)] uppercase tracking-wider border-b border-[var(--color-border)] pb-2 mb-2">
+                        <FiGrid size={14} /> Profile Overview
+                      </h4>
+                      <div className="space-y-1.5 text-xs text-[var(--color-muted)] font-semibold">
+                        <div className="flex justify-between"><span>Name:</span><span className="text-[var(--color-heading)]">{form.business_name || form.name}</span></div>
+                        <div className="flex justify-between"><span>Type:</span><span className="text-[var(--color-heading)]">{selectedProvider?.title}</span></div>
+                        <div className="flex justify-between"><span>Category:</span><span className="text-[var(--color-heading)]">{getCategoryLabel(selectedCategory)}</span></div>
+                        <div className="flex justify-between"><span>Rate/Min Value:</span><span className="text-[var(--color-heading)]">{selectedProvider?.categoryMode === "project" ? money(form.min_project_value) : money(form.daily_rate)}</span></div>
                       </div>
                     </div>
                   </div>
@@ -1108,22 +1163,21 @@ export default function ContractorRegisterPage() {
             )}
           </AnimatePresence>
 
-          <div className="mt-10 flex flex-col gap-3 border-t border-[var(--color-border)] pt-6 sm:flex-row sm:items-center">
-            {step > 1 || (step === 3 && questionIndex > 0) ? (
-              <button type="button" onClick={goBack} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-[var(--color-heading)] transition-colors hover:bg-[var(--color-bg)]">
-                <FiArrowLeft size={15} />
-                Back
+          {/* Navigation Action Buttons */}
+          <div className="mt-8 pt-6 border-t border-[var(--color-border)] flex items-center gap-3">
+            {(step > 1 || (step === 3 && questionIndex > 0)) && (
+              <button type="button" onClick={goBack} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)] transition-all">
+                <FiArrowLeft size={14} /> Back
               </button>
-            ) : null}
+            )}
 
             {step < STEPS.length ? (
-              <button type="button" onClick={goNext} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-7 py-3 text-xs font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-indigo-600 sm:ml-auto">
-                Continue
-                <FiArrowRight size={15} />
+              <button type="button" onClick={goNext} className="ml-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[var(--color-primary)]/90 transition-all shadow-sm">
+                Continue <FiArrowRight size={14} />
               </button>
             ) : (
-              <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-500 px-7 py-3 text-xs font-black uppercase tracking-[0.16em] text-white transition-colors hover:bg-indigo-600 disabled:opacity-60 sm:ml-auto">
-                {loading ? <LoadingSpinner size="sm" /> : <FiCheckCircle size={16} />}
+              <button type="submit" disabled={loading} className="ml-auto inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-[var(--color-primary)]/90 disabled:opacity-60 transition-all shadow-sm">
+                {loading ? <LoadingSpinner size="sm" /> : <FiCheckCircle size={14} />}
                 Submit Registration
               </button>
             )}

@@ -13,44 +13,54 @@ export default function ModerationPanel({ reports, busy, reportFilter, setReport
           <button
             key={f}
             onClick={() => setReportFilter(f)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition ${reportFilter === f ? "bg-gradient-to-r from-indigo-500 to-cyan-400 text-white shadow" : "bg-white/5 text-[var(--color-muted)] border border-white/10 hover:bg-white/10"}`}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition border capitalize ${
+              reportFilter === f 
+                ? "bg-primary border-primary text-white" 
+                : "bg-surface border-border text-muted hover:bg-bg-elevated"
+            }`}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f} Reports
           </button>
         ))}
-        <BtnOutline onClick={() => downloadCsv(`reports-${reportFilter}.csv`, visible)}>
-          <FiDownload className="inline mr-1" />Export
+        <BtnOutline onClick={() => downloadCsv(`reports-${reportFilter}.csv`, visible)} className="flex items-center gap-1.5 font-bold">
+          <FiDownload size={13} /> Export CSV
         </BtnOutline>
       </div>
 
       <div className="space-y-3">
         {visible.map((r) => (
-          <div key={r.id} className="glass-card rounded-2xl p-5 border border-white/10">
+          <div key={r.id} className="card p-5 border border-border bg-surface">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm text-[var(--color-body)]">{r.reason || "No reason provided"}</p>
-                <p className="text-xs text-[var(--color-muted)] mt-1">
+              <div className="space-y-1">
+                <p className="text-sm text-body font-medium leading-relaxed">{r.reason || "No reason provided"}</p>
+                <p className="text-xs text-muted">
                   Reporter: {r.reporter_name || "Unknown"} · Contractor: {r.business_name || `#${r.contractor_id}`}
                 </p>
-                <p className="text-xs text-[var(--color-muted)]">{r.created_at ? new Date(r.created_at).toLocaleDateString("en-IN") : ""}</p>
+                <p className="text-[11px] text-muted font-medium">{r.created_at ? new Date(r.created_at).toLocaleDateString("en-IN") : ""}</p>
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0 ${r.status === "pending" ? "bg-amber-500/15 text-amber-400" : r.status === "resolved" ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+              <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border capitalize shrink-0 ${
+                r.status === "pending" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" : 
+                r.status === "resolved" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : 
+                "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+              }`}>
                 {r.status}
               </span>
             </div>
             {r.status === "pending" && (
-              <div className="flex gap-2 mt-3">
-                <BtnOutline disabled={busy} onClick={() => onResolve(r.id, "resolved")}>
-                  <FiCheckCircle className="inline mr-1" />Resolve
+              <div className="flex gap-2 mt-4 pt-3.5 border-t border-border">
+                <BtnOutline disabled={busy} onClick={() => onResolve(r.id, "resolved")} className="flex items-center gap-1.5 font-bold">
+                  <FiCheckCircle size={13} /> Mark Resolved
                 </BtnOutline>
-                <BtnDanger disabled={busy} onClick={() => onResolve(r.id, "rejected")}>
-                  <FiXCircle className="inline mr-1" />Reject
+                <BtnDanger disabled={busy} onClick={() => onResolve(r.id, "rejected")} className="flex items-center gap-1.5 font-bold">
+                  <FiXCircle size={13} /> Reject Report
                 </BtnDanger>
               </div>
             )}
           </div>
         ))}
-        {visible.length === 0 && <p className="text-sm text-[var(--color-muted)] text-center py-8">No reports for this filter.</p>}
+        {visible.length === 0 && (
+          <p className="text-sm text-muted text-center py-12 font-medium">No reports found matching this status.</p>
+        )}
       </div>
     </div>
   );

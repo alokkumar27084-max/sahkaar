@@ -1,167 +1,37 @@
-import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
-import { CATEGORIES } from "../../utils/constants";
+import { CATEGORIES, QUICK_SERVICE_CATEGORIES } from "../../utils/constants";
 import { useGeolocation } from "../../hooks/useGeolocation";
-import { contractorAPI, subscriptionAPI } from "../../services/api";
+import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
 import Icon from "../../components/common/Icon";
 import { useAuth } from "../../context/AuthContext";
 import {
-  FiTrendingUp,
   FiSearch,
   FiArrowRight,
   FiCheckCircle,
-  FiStar,
-  FiMapPin,
-  FiBriefcase,
   FiShield,
-  FiAlertTriangle,
-  FiUsers,
-  FiDollarSign,
+  FiStar,
+  FiChevronRight,
+  FiPlay,
 } from "react-icons/fi";
-import toast from "react-hot-toast";
 import SEOHead from "../../components/common/SEOHead";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
-
-// GSAP Animations Helper
-function useGSAPAnimations(dependency) {
-  useEffect(() => {
-    if (!window.gsap || !window.ScrollTrigger) return;
-    const gsap = window.gsap;
-    gsap.registerPlugin(window.ScrollTrigger);
-
-    document.querySelectorAll('.gsap-fade-up').forEach((el) => {
-      gsap.fromTo(el,
-        { y: 30, opacity: 0 },
-        {
-          y: 0, opacity: 1,
-          duration: 0.5,
-          ease: "power2.out",
-          scrollTrigger: { trigger: el, start: "top 95%", once: true }
-        }
-      );
-    });
-
-    document.querySelectorAll('.gsap-card-enter').forEach((el, i) => {
-      gsap.fromTo(el,
-        { y: 40, opacity: 0, rotation: 1 },
-        {
-          y: 0, opacity: 1, rotation: 0,
-          duration: 0.5,
-          ease: "expo.out",
-          delay: i * 0.05,
-          scrollTrigger: { trigger: el, start: "top 95%", once: true }
-        }
-      );
-    });
-
-    return () => {
-      window.ScrollTrigger?.getAll().forEach(t => t.kill());
-    };
-  }, [dependency]);
-}
-
-// Stat Counter Widget
-function StatCounter({ target, percentage, label }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const nodeRef = useRef(null);
-
-  useEffect(() => {
-    if (!window.gsap || !window.ScrollTrigger) return;
-    const gsap = window.gsap;
-    
-    let targetNum = parseFloat(target) || 0;
-    if (typeof target === 'string' && target.toLowerCase().includes('k')) {
-      targetNum = parseFloat(target) * 1000;
-    }
-
-    gsap.fromTo(nodeRef.current, 
-      { innerText: 0 },
-      {
-        innerText: targetNum,
-        duration: 2.5,
-        ease: "power4.out",
-        snap: { innerText: 1 },
-        scrollTrigger: { trigger: nodeRef.current, start: "top 95%", once: true },
-        onUpdate: function() {
-          let val = Math.floor(this.targets()[0].innerText);
-          if (val >= 1000 && !percentage) {
-            setDisplayValue((val / 1000).toFixed(1).replace('.0', '') + 'k+');
-          } else {
-            setDisplayValue(val + (percentage ? '%' : '+'));
-          }
-        }
-      }
-    );
-  }, [target, percentage]);
-
-  return (
-    <div className="flex flex-col md:flex-row items-center gap-1 md:gap-3 text-center md:text-left">
-      <span 
-        ref={nodeRef}
-        className="font-display font-bold text-white text-xl md:text-2xl tracking-tight leading-none"
-      >
-        {displayValue}
-      </span>
-      <span className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">{label}</span>
-    </div>
-  );
-}
-
-// Magnetic Hover Button
-function MagneticButton({ children, className, onClick, tag = "button" }) {
-  const ref = useRef(null);
-  const handleMove = useCallback((e) => {
-    if (!ref.current || !window.gsap) return;
-    const rect = ref.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2) * 0.3;
-    const y = (e.clientY - rect.top - rect.height / 2) * 0.3;
-    window.gsap.to(ref.current, { x, y, duration: 0.2, ease: "power2.out" });
-  }, []);
-  const handleLeave = useCallback(() => {
-    if (!ref.current || !window.gsap) return;
-    window.gsap.to(ref.current, { x: 0, y: 0, duration: 0.4, ease: "elastic.out(1, 0.5)" });
-  }, []);
-  const Tag = tag;
-  return (
-    <Tag ref={ref} onMouseMove={handleMove} onMouseLeave={handleLeave} onClick={onClick} className={className} style={{ display: 'inline-flex' }}>
-      {children}
-    </Tag>
-  );
-}
-
-// Marquee text loop
-function MarqueeTicker() {
-  const text = "CONTRACTORS · PROJECTS · TRUSTED WORK · VERIFIED PROFESSIONALS · QUALITY BUILDS · EXPERT TEAMS · ";
-  return (
-    <div className="overflow-hidden py-6 md:py-10 border-y border-[var(--color-border)]">
-      <div className="marquee-track">
-        <span className="marquee-text">{text}</span>
-        <span className="marquee-text">{text}</span>
-      </div>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const { t, lang } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Search & Geolocation States
   const [query, setQuery] = useState("");
   const [showTrending, setShowTrending] = useState(false);
   const [featured, setFeatured] = useState([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [realStats, setRealStats] = useState(null);
   const { request: getLocation, lat, lng } = useGeolocation();
 
   const trendingSearches = ["Plumber", "Electrician", "Civil Contractor", "Carpenter", "Painter"];
-
-  useGSAPAnimations(realStats);
 
   useEffect(() => {
     if (user?.role === "admin") navigate("/admin/dashboard", { replace: true });
@@ -178,28 +48,29 @@ export default function HomePage() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    const timer = setInterval(() => setActiveTestimonial((prev) => (prev + 1) % 3), 5000);
-    return () => clearInterval(timer);
-  }, []);
-
   const handleSearch = (e) => {
     e.preventDefault();
+    if (!query.trim()) return;
     const params = new URLSearchParams({ q: query, mode: "project" });
     if (lat && lng) { params.set("lat", lat); params.set("lng", lng); }
     navigate(`/search?${params}`);
+  };
+
+  const handleCategoryClick = (categoryId) => {
+    // Labour Squad should redirect to /labour instead of /search
+    if (categoryId === "labour_group") {
+      navigate(`/labour`);
+    } else {
+      navigate(`/search?category=${categoryId}&mode=project`);
+    }
   };
 
   const handleQuickServiceClick = (categoryId) => {
     navigate(`/search?category=${categoryId}&mode=quick`);
   };
 
-  const handleCategoryClick = (categoryId) => {
-    navigate(`/search?category=${categoryId}&mode=project`);
-  };
-
   const displayStats = [
-    { val: realStats?.contractors || "500+", label: "Verified Partners" },
+    { val: realStats?.contractors || "500+", label: "Verified Pros" },
     { val: realStats?.projects || "10k+", label: "Projects Done" },
     { val: (realStats?.satisfaction || 98) + "%", label: "Satisfaction" },
     { val: realStats?.cities || "50+", label: "Cities" }
@@ -209,509 +80,473 @@ export default function HomePage() {
     {
       quote: lang === "hi"
         ? "24 ghante mein verified contractor mil gaya. Quality aur response dono laajawab the."
-        : "We hired a verified contractor in under 24 hours. Response time and quality were outstanding.",
-      name: "Shivang Singh", role: "Homeowner", avatar: "SS"
+        : "We hired a verified contractor in under 24 hours. Quality and response were outstanding.",
+      name: "Shivang Singh", role: "Homeowner", rating: 5
     },
     {
       quote: lang === "hi"
-        ? "Thekedaar ne serious clients connect kiye. Lead conversion clearly improve hua."
-        : "Thekedaar connected us with serious clients. Our lead conversion improved significantly.",
-      name: "Alok Kumar", role: "Contractor Partner", avatar: "AK"
+        ? "Milestone billing system bahut achha hai. Paisa tab nikalta hai jab kaam quality check ho jaaye."
+        : "The milestone billing system is excellent. Payments only release after quality is verified.",
+      name: "Priya Mehta", role: "Business Owner", rating: 5
     },
     {
       quote: lang === "hi"
-        ? "Filters aur profile comparison se right professional choose karna bahut easy ho gaya."
-        : "Search filters and profile comparison made choosing the right professional incredibly easy.",
-      name: "Mudit Kalya", role: "Business Owner", avatar: "MK"
-    },
+        ? "Labour group booking se construction project 3 weeks pehle khatam ho gaya."
+        : "Labour group booking finished our construction project 3 weeks ahead of schedule.",
+      name: "Rajesh Kumar", role: "Property Developer", rating: 5
+    }
   ], [lang]);
 
+  // Curated premium Indian stock images for local informal categories
+  const categoryImages = {
+    construction: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&h=400&fit=crop",
+    electrical: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&h=400&fit=crop",
+    plumbing: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&h=400&fit=crop",
+    painting: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=400&fit=crop",
+    events: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&h=400&fit=crop",
+    carpentry: "https://images.unsplash.com/photo-1534224039826-c7a0eda0e6b3?w=600&h=400&fit=crop",
+    farming: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600&h=400&fit=crop",
+    transport: "https://images.unsplash.com/photo-1597404294360-feeefa0443eb?w=600&h=400&fit=crop",
+    cleaning: "https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=600&h=400&fit=crop",
+    labour_group: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
+    property: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop",
+    other: "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=400&fit=crop",
+  };
+
+  const BACKDROPS = [
+    {
+      id: "sweeping_drone",
+      src: "/Cinematic_sweeping_drone_shot.mp4",
+      label: "🚁 Sweeping Drone",
+      poster: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&h=1080&fit=crop"
+    },
+    {
+      id: "installing_switch",
+      src: "/Technician_installing_light_switch_202606011423.mp4",
+      label: "🔌 Electrical Work",
+      poster: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1920&h=1080&fit=crop"
+    },
+    {
+      id: "renovation_moti",
+      src: "/cinematic_wide_shot_slow_moti.mp4",
+      label: "🔨 Site Renovation",
+      poster: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1920&h=1080&fit=crop"
+    },
+    {
+      id: "wide_smooth",
+      src: "/Cinematic_wide_shot_smooth_sl.mp4",
+      label: "✨ Premium Space",
+      poster: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1920&h=1080&fit=crop"
+    }
+  ];
+
+  const [activeBackdrop, setActiveBackdrop] = useState(BACKDROPS[0]);
+
+  // Auto-cycle through backdrop videos on completion
+  const handleVideoEnd = () => {
+    setActiveBackdrop((prev) => {
+      const currentIndex = BACKDROPS.findIndex((b) => b.id === prev.id);
+      const nextIndex = (currentIndex + 1) % BACKDROPS.length;
+      return BACKDROPS[nextIndex];
+    });
+  };
+
   return (
-    <main id="main-content" className="overflow-hidden">
+    <main className="bg-[var(--color-bg)]">
       <SEOHead
-        title="Thekedaar — Premium Verified Contractors in India"
-        description="Find and hire verified contractors for construction, renovation, interior design, electrical, plumbing, and more. Secure escrow payments. Trusted by thousands across India."
-        canonical="https://thekedaar.com"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "Thekedaar",
-          url: "https://thekedaar.com",
-          potentialAction: { "@type": "SearchAction", target: "https://thekedaar.com/search?q={search_term_string}", "query-input": "required name=search_term_string" },
-        }}
+        title="Thekedaar — India's Premier Informal Contractor Marketplace"
+        description="Find verified local builders, shuttering masons, wiring electricians, tractor logistics, and daily quick helpers near you."
       />
 
-      {/* Hero section */}
-      <section
-        id="home"
-        className="relative min-h-screen flex items-center overflow-hidden"
-        style={{
-          background: 'radial-gradient(ellipse at top, #141B3D 0%, #090B19 70%)',
-        }}
-      >
-        <div className="absolute top-[-10%] right-[10%] w-[600px] h-[600px] rounded-full opacity-30 blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[10%] left-[5%] w-[500px] h-[500px] rounded-full opacity-20 blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.25) 0%, transparent 70%)' }} />
-        <div className="absolute inset-0 hero-grid opacity-40" />
+      {/* ═══════ SECTION 1: HERO ═══════ */}
+      <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden bg-[#0A0A0A]">
+        {/* Video / Image Background - Zoomed to crop watermarks */}
+        <div className="absolute inset-0">
+          <video
+            key={activeBackdrop.id}
+            autoPlay
+            muted
+            playsInline
+            onEnded={handleVideoEnd}
+            poster={activeBackdrop.poster}
+            className="w-full h-full object-cover scale-[1.08] origin-center transition-opacity duration-500"
+          >
+            <source src={activeBackdrop.src} type="video/mp4" />
+          </video>
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/80" />
+        </div>
 
-        <div className="relative z-30 w-full max-w-[1400px] mx-auto px-6 pt-32 md:pt-40 pb-20">
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
-              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] backdrop-blur-md mb-8"
-            >
-              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-              <span className="text-indigo-200/60 text-[10px] font-semibold uppercase tracking-[0.3em]">
-                Premium Service Network
+        {/* Hero Content - No manual backdrop selector pills */}
+        <div className="relative z-10 w-full max-w-[var(--max-width)] mx-auto px-5 md:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Trust badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 mb-8">
+              <FiCheckCircle className="text-green-400" size={14} />
+              <span className="text-white/85 text-xs font-semibold uppercase tracking-wider">
+                India's Trust-Based Contractor Network
               </span>
-            </motion.div>
-
-            <div className="mb-8 space-y-0">
-              {["ELITE", "CONTRACTORS", "VERIFIED", "RESULTS"].map((word, i) => (
-                <motion.h1
-                  key={word}
-                  initial={{ opacity: 0, y: 60, filter: "blur(10px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={{ delay: 0.15 + i * 0.1, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="font-display font-extrabold uppercase leading-[0.85] md:leading-[0.9] tracking-[-0.04em]"
-                  style={{
-                    fontSize: 'clamp(1.8rem, 10vw, 8rem)',
-                    color: i === 1 ? '#818CF8' : i === 2 ? '#22D3EE' : '#ECEEF6',
-                  }}
-                >
-                  {word}
-                </motion.h1>
-              ))}
             </div>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="mb-8"
-            >
-              <span className="script-annotation text-xl text-cyan-300">Find your perfect contractor →</span>
-            </motion.div>
+            {/* Headline - taglined */}
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-6 font-display">
+              Har Kaam Ka Ek<br />
+              <span className="text-indigo-400">Thekedaar.</span>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-              className="text-slate-400 text-base md:text-lg max-w-xl mb-10 leading-relaxed"
-            >
-              Connect with trusted home renovators, civil builders, and quick services through powerful spatial search and milestone-escrow protection.
-            </motion.p>
+            <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-medium">
+              India's premier marketplace for informal contractors & daily-wage expert hires. Connect directly, zero commission.
+            </p>
+          </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.7 }}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 w-full sm:w-auto"
-            >
-              <MagneticButton
-                onClick={() => navigate("/select-service")}
-                className="w-full sm:w-auto h-14 px-10 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-sm font-bold uppercase tracking-[0.1em] shadow-[0_4px_30px_rgba(99,102,241,0.3)] btn-shimmer animate-pulse-glow items-center justify-center gap-2"
-              >
-                Explore Services
-                <FiArrowRight className="inline ml-1 -mt-0.5" />
-              </MagneticButton>
-              <MagneticButton
-                onClick={() => navigate("/register/contractor")}
-                className="w-full sm:w-auto h-14 px-10 rounded-xl border-2 border-white/20 text-white/90 text-sm font-bold uppercase tracking-[0.1em] hover:bg-white/5 hover:border-white/30 transition-all items-center justify-center"
-              >
-                Become a Partner
-              </MagneticButton>
-            </motion.div>
-          </div>
-
-          {/* Core Search forms */}
+          {/* Search Bar */}
           <motion.form
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.5, delay: 0.15 }}
             onSubmit={handleSearch}
-            className="mt-12 md:mt-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl w-full max-w-4xl mx-auto relative z-50 shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
+            className="relative max-w-2xl mx-auto"
           >
-            <div className="grid md:grid-cols-[1fr_auto_auto]">
-              <div className="relative">
-                <FiSearch className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setShowTrending(true)}
-                  onBlur={() => setTimeout(() => setShowTrending(false), 200)}
-                  placeholder="What are you looking for?"
-                  className="w-full h-16 bg-transparent border-none outline-none pl-14 pr-6 text-white text-sm"
-                />
-                <AnimatePresence>
-                  {showTrending && !query && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-[#13151D] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-[100]"
-                    >
-                      <div className="p-4 border-b border-white/5">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                          <FiTrendingUp size={12} /> Trending Searches
-                        </p>
-                      </div>
-                      <div className="p-2">
-                        {trendingSearches.map(term => (
-                          <button
-                            key={term}
-                            type="button"
-                            onClick={() => { setQuery(term); setShowTrending(false); }}
-                            className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-white/5 rounded-lg transition-colors flex items-center gap-3"
-                          >
-                            <FiSearch size={14} className="text-slate-500" />
-                            {term}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-              <button
-                type="button"
-                onClick={getLocation}
-                className="h-16 px-6 border-t md:border-t-0 md:border-l border-white/5 text-slate-400 hover:text-white transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider"
-              >
-                <FiMapPin size={16} />
-                {lat && lng ? "Location Set" : "Get Location"}
-              </button>
+            <div className="flex items-center bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-1">
+              <FiSearch className="ml-4 text-gray-400 shrink-0" size={20} />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setShowTrending(true)}
+                onBlur={() => setTimeout(() => setShowTrending(false), 200)}
+                placeholder="Search for builders, wiring, plumbers, material logistics..."
+                className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-3 text-gray-900 text-sm md:text-base placeholder:text-gray-400 font-semibold"
+              />
               <button
                 type="submit"
-                className="h-16 px-10 bg-indigo-600 text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-indigo-700 transition-colors"
+                className="h-12 md:h-14 px-6 md:px-8 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0"
               >
-                {t("app.search")}
+                Search
               </button>
             </div>
-          </motion.form>
-        </div>
-      </section>
 
-      {/* Trust Strip */}
-      <section className="relative z-40 -mt-14 md:-mt-10 mb-20 px-5">
-        <motion.div
-          key={realStats ? "loaded" : "loading"}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-[1000px] mx-auto rounded-[32px] md:rounded-full border border-white/[0.08] bg-white/[0.03] backdrop-blur-3xl py-6 md:py-5 px-8 md:px-12 shadow-2xl"
-        >
-          <div className="grid grid-cols-2 md:flex md:flex-nowrap items-center justify-center gap-y-8 gap-x-4 md:gap-x-12">
-            {displayStats.map((stat, i) => (
-              <React.Fragment key={i}>
-                <StatCounter 
-                  target={stat.val} 
-                  percentage={String(stat.val).includes('%')} 
-                  label={stat.label} 
-                />
-                {i < displayStats.length - 1 && (
-                  <div className="hidden md:block w-1 h-1 rounded-full bg-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </motion.div>
-      </section>
-
-
-
-      {/* Bento Grid */}
-      <section className="relative py-24 md:py-32 bg-[#0A0C16] overflow-hidden mt-16 rounded-[3rem]">
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-px h-full bg-indigo-500" />
-          <div className="absolute top-0 left-2/4 w-px h-full bg-indigo-500" />
-          <div className="absolute top-1/4 left-0 w-full h-px bg-indigo-500" />
-        </div>
-
-        <div className="max-w-[1400px] mx-auto px-5 md:px-10 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="md:col-span-8 relative group rounded-[40px] overflow-hidden border border-white/5 shadow-2xl aspect-[16/9] md:aspect-auto md:h-[500px]"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop"
-                alt="Elite Construction"
-                className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0C16] via-transparent to-transparent opacity-90" />
-              <div className="absolute bottom-10 left-10 right-10">
-                <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-indigo-500/20 backdrop-blur-md border border-indigo-500/30 mb-6">
-                  <FiBriefcase className="text-indigo-400" size={14} />
-                  <span className="text-white text-[10px] font-black uppercase tracking-[0.2em]">Scale & Precision</span>
-                </div>
-                <h2 className="font-display text-4xl md:text-5xl font-black text-white leading-[0.9] tracking-[-0.03em] max-w-2xl">
-                  EXPERTISE FOR YOUR <br/>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">BIGGEST DREAMS.</span>
-                </h2>
-              </div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="md:col-span-4 bg-white/[0.02] border border-white/5 rounded-[40px] p-10 flex flex-col justify-between"
-            >
-              <div className="space-y-6">
-                <div className="w-16 h-1 bg-indigo-500" />
-                <p className="text-lg text-white/60 leading-relaxed font-medium">
-                  Whether you're building from scratch or renovating a full floor, Thekedaar connects you with verified local contractors.
-                </p>
-              </div>
-              <div className="space-y-8 pt-10">
-                <div className="flex gap-5">
-                   <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 flex-shrink-0">
-                      <FiStar size={20} />
-                   </div>
-                   <div>
-                      <p className="text-white font-black uppercase tracking-widest text-[11px] mb-1">Milestone Billing</p>
-                      <p className="text-white/40 text-xs">Pay only when work is physically done.</p>
-                   </div>
-                </div>
-                <div className="flex gap-5">
-                   <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 flex-shrink-0">
-                      <FiCheckCircle size={20} />
-                   </div>
-                   <div>
-                      <p className="text-white font-black uppercase tracking-widest text-[11px] mb-1">Verified Assets</p>
-                      <p className="text-white/40 text-xs">Every contractor is audited & verified.</p>
-                   </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════ LABOUR CHOWK — Premium Team Hiring Banner ═══════ */}
-      <section className="max-w-[1400px] mx-auto px-5 md:px-10 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative rounded-[3rem] overflow-hidden group cursor-pointer"
-          onClick={() => navigate("/labour")}
-          style={{
-            background: 'linear-gradient(135deg, #0F1629 0%, #151A30 40%, #1A1535 70%, #120E24 100%)',
-            boxShadow: '0 25px 80px -20px rgba(99,102,241,0.15), 0 0 0 1px rgba(255,255,255,0.05)',
-          }}
-        >
-          {/* Multi-layered ambient glow */}
-          <div className="absolute -top-24 -right-24 w-[500px] h-[500px] rounded-full blur-[140px] opacity-30 pointer-events-none group-hover:opacity-50 transition-opacity duration-1000" style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.4) 0%, transparent 70%)' }} />
-          <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] rounded-full blur-[120px] opacity-20 pointer-events-none group-hover:opacity-35 transition-opacity duration-1000" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%)' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full blur-[100px] opacity-10 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.3) 0%, transparent 70%)' }} />
-
-          {/* Subtle grid pattern */}
-          <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-
-          {/* Content container */}
-          <div className="relative z-10 p-10 md:p-16 flex flex-col lg:flex-row lg:items-center justify-between gap-12">
-            {/* Left content */}
-            <div className="space-y-6 max-w-2xl">
-              {/* Top badge */}
-              <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-amber-500/20 bg-amber-500/5 backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-amber-300/80 text-[9px] font-black uppercase tracking-[0.35em]">Workforce Marketplace</span>
-              </div>
-
-              <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-[-0.03em] leading-[0.9]">
-                Geospatial
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400">
-                  Labour Chowk
-                </span>
-              </h2>
-
-              <p className="text-[15px] text-slate-400 leading-relaxed max-w-lg">
-                Hire entire work crews — masons, helpers, painters, carpenters — under a single registered Thekedaar leader. Review breakdowns, daily rates, and hire instantly.
-              </p>
-
-              {/* Feature chips */}
-              <div className="flex flex-wrap gap-3 pt-2">
-                {[
-                  { icon: FiUsers, label: "Full Squad Hiring" },
-                  { icon: FiMapPin, label: "GPS Matching" },
-                  { icon: FiCheckCircle, label: "Verified Leaders" },
-                  { icon: FiDollarSign, label: "Transparent Rates" },
-                ].map((feat, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] backdrop-blur-sm"
+            {/* Trending dropdown */}
+            {showTrending && !query && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Trending Searches</p>
+                {trendingSearches.map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onMouseDown={() => { setQuery(term); }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors font-semibold"
                   >
-                    <feat.icon size={13} className="text-amber-400" />
-                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{feat.label}</span>
-                  </div>
+                    <FiSearch size={14} className="text-gray-400" />
+                    {term}
+                  </button>
                 ))}
               </div>
-            </div>
+            )}
+          </motion.form>
 
-            {/* Right — CTA Card */}
-            <div className="shrink-0 relative">
-              <div className="w-full lg:w-[280px] rounded-[2rem] border border-white/[0.08] bg-white/[0.03] backdrop-blur-2xl p-8 text-center space-y-6 group-hover:border-amber-500/20 transition-colors duration-500" style={{ boxShadow: '0 15px 50px rgba(0,0,0,0.3)' }}>
-                {/* Icon */}
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/20 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-500">
-                  <FiUsers size={32} className="text-amber-400" />
-                </div>
-
-                <div>
-                  <p className="text-white font-black text-lg tracking-tight">Hire a Squad</p>
-                  <p className="text-xs text-slate-500 mt-1">Browse available teams nearby</p>
-                </div>
-
-                <div className="flex items-center justify-center gap-2 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-[0.15em] shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-all">
-                  Explore Squads
-                  <FiArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                </div>
-
-                {/* Stats row */}
-                <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                  <div className="text-center">
-                    <p className="text-white font-black text-sm">500+</p>
-                    <p className="text-[9px] text-slate-500 uppercase tracking-wider">Leaders</p>
-                  </div>
-                  <div className="w-px h-8 bg-white/5" />
-                  <div className="text-center">
-                    <p className="text-white font-black text-sm">50+</p>
-                    <p className="text-[9px] text-slate-500 uppercase tracking-wider">Cities</p>
-                  </div>
-                  <div className="w-px h-8 bg-white/5" />
-                  <div className="text-center">
-                    <p className="text-white font-black text-sm">₹350</p>
-                    <p className="text-[9px] text-slate-500 uppercase tracking-wider">Avg/Day</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+          {/* Quick category chips */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+            className="flex flex-wrap items-center justify-center gap-2 mt-6"
+          >
+            <span className="text-white/40 text-xs mr-1 font-bold uppercase tracking-wider">Popular:</span>
+            {trendingSearches.map((term) => (
+              <button
+                key={term}
+                onClick={() => {
+                  setQuery(term);
+                  const params = new URLSearchParams({ q: term, mode: "project" });
+                  navigate(`/search?${params}`);
+                }}
+                className="px-3 py-1.5 rounded-full border border-white/15 text-white/70 text-xs font-semibold hover:bg-white/10 hover:text-white transition-colors uppercase tracking-wider"
+              >
+                {term}
+              </button>
+            ))}
+          </motion.div>
+        </div>
       </section>
 
-      {/* Core Categories Grid */}
-      <section id="services" className="max-w-[1400px] mx-auto px-5 md:px-10 py-20">
-        <div className="gsap-fade-up mb-12">
-          <p className="text-indigo-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-3">Categories</p>
-          <h2 className="section-title">{lang === "hi" ? "कोर सर्विसेज" : "Core Services"}</h2>
-          <p className="section-subtitle mt-4">Choose a category and connect with verified contractors in minutes.</p>
+      {/* ═══════ SECTION 2: CORE SERVICE CATEGORIES (Image Grid) ═══════ */}
+      <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
+            Kaunsa Theka Dena Hai?
+          </h2>
+          <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
+            Browse our 12 trust-based informal contractor sectors
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {CATEGORIES.slice(0, 7).map((cat) => (
-            <button key={cat.id} onClick={() => handleCategoryClick(cat.id)} className="gsap-card-enter text-left glass-card p-7 group">
-              <div className="mb-4 w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/12 to-cyan-500/8 text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
-                <Icon name={cat.icon} className="w-6 h-6" />
-              </div>
-              <p className="font-display text-base font-semibold text-[var(--color-heading)] group-hover:text-indigo-400 transition-colors">{t(cat.key)}</p>
-              <p className="text-sm text-[var(--color-muted)] mt-1.5 leading-relaxed">{cat.subtitle}</p>
-              <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-indigo-400 opacity-0 group-hover:opacity-100 transition-all group-hover:gap-2">
-                Explore <FiArrowRight size={12} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => handleCategoryClick(cat.id)}
+              className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-[var(--color-border)]"
+            >
+              <img
+                src={categoryImages[cat.id]}
+                alt={t(cat.key)}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <h3 className="text-white font-bold text-base md:text-lg font-display">
+                  {t(cat.key)}
+                </h3>
+                <p className="text-white/60 text-[10px] uppercase font-bold mt-1 tracking-wider hidden sm:block">
+                  100% Digitally Verified
+                </p>
               </div>
             </button>
           ))}
-          <button onClick={() => navigate("/select-service")} className="gsap-card-enter text-left glass-card p-7 group border-dashed border-indigo-500/15 hover:border-indigo-500/30">
-            <div className="mb-4 w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white flex items-center justify-center group-hover:scale-110 transition-all duration-500">
-              <FiArrowRight className="w-6 h-6" />
-            </div>
-            <p className="font-display text-base font-semibold text-[var(--color-heading)] group-hover:text-indigo-400 transition-colors">Explore All</p>
-            <p className="text-sm text-[var(--color-muted)] mt-1.5 leading-relaxed">Browse all service categories.</p>
-          </button>
         </div>
       </section>
 
-      {/* Featured list */}
-      <section className="max-w-[1400px] mx-auto px-5 md:px-10 py-16">
-        <div className="gsap-fade-up mb-12">
-          <p className="text-cyan-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-3">Handpicked</p>
-          <h2 className="section-title">{t("home.featured")}</h2>
-          <p className="section-subtitle mt-4">Curated high-trust contractor profiles.</p>
-          <span className="script-annotation mt-3 text-lg">Most popular! ⭐</span>
+      {/* ═══════ SECTION 3: HOW IT WORKS ═══════ */}
+      <section className="bg-[var(--color-bg-elevated)] relative overflow-hidden py-16 md:py-24 border-y border-[var(--color-divider)]">
+        <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
+              Kaam Kaise Hota Hai?
+            </h2>
+            <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
+              Secure verbal and trust-based contracting in 3 easy steps
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            {[
+              {
+                step: "01",
+                title: "Tell us what you need",
+                desc: "Choose a service category, describe your specific project or daily work. It takes less than a minute.",
+                icon: <FiSearch size={24} />,
+              },
+              {
+                step: "02",
+                title: "Get matched with local pros",
+                desc: "Connect directly with verified nearby contractors. Compare local rates, professional ratings, and previous work.",
+                icon: <FiCheckCircle size={24} />,
+              },
+              {
+                step: "03",
+                title: "Quality checking & pay",
+                desc: "Pay securely via milestones or on completion. Handover payments only when quality checks pass.",
+                icon: <FiShield size={24} />,
+              },
+            ].map((item) => (
+              <div key={item.step} className="card p-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-md hover:shadow-xl transition-all duration-300">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 mb-6 shadow-sm border border-[var(--color-border)]">
+                  {item.icon}
+                </div>
+                <div className="text-xs font-bold text-[var(--color-muted)] mb-2 tracking-widest uppercase">STEP {item.step}</div>
+                <h3 className="text-lg font-bold text-[var(--color-heading)] mb-2 font-display">{item.title}</h3>
+                <p className="text-[var(--color-muted)] text-sm leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ SECTION 4: QUICK SERVICES HORIZONTAL SCROLL ═══════ */}
+      <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
+        <div className="flex items-center justify-between mb-10">
+          <div>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
+              Daily Hires & Emergency Services
+            </h2>
+            <p className="mt-2 text-[var(--color-muted)] text-sm font-semibold">Book local daily-wage experts & on-call repairs instantly</p>
+          </div>
+          <button
+            onClick={() => navigate("/select-service")}
+            className="hidden md:flex items-center gap-1.5 text-sm font-bold text-[var(--color-primary)] hover:underline"
+          >
+            See all <FiChevronRight size={18} />
+          </button>
+        </div>
+
+        <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory">
+          {QUICK_SERVICE_CATEGORIES.slice(0, 12).map((service) => (
+            <button
+              key={service.id}
+              onClick={() => handleQuickServiceClick(service.id)}
+              className="flex-shrink-0 w-[160px] md:w-[180px] snap-start group"
+            >
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 text-center shadow-md hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400 shadow-sm border border-[var(--color-border)]">
+                  <Icon name={service.icon} className="w-6 h-6" />
+                </div>
+                <h4 className="text-xs font-bold text-[var(--color-heading)] mb-2 line-clamp-2 min-h-[32px] font-display">
+                  {t(service.labelKey)}
+                </h4>
+                <p className="text-xs text-[var(--color-primary)] font-bold">
+                  From ₹{service.price}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Mobile see all */}
+        <button
+          onClick={() => navigate("/select-service")}
+          className="md:hidden mt-6 w-full py-3.5 rounded-xl border border-[var(--color-border)] text-sm font-bold text-[var(--color-heading)] bg-[var(--color-surface)] shadow-sm active:shadow-inner hover:bg-[var(--color-bg-elevated)] transition-all"
+        >
+          See all services →
+        </button>
+      </section>
+
+      {/* ═══════ SECTION 5: FEATURED CONTRACTORS ═══════ */}
+      <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 pb-16 md:pb-24">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-[var(--color-heading)] tracking-tight">
+              Top-rated professionals
+            </h2>
+            <p className="mt-1 text-[var(--color-muted)] text-sm">Verified and reviewed by real customers</p>
+          </div>
+          <button
+            onClick={() => navigate("/search?mode=project")}
+            className="hidden md:flex items-center gap-1 text-sm font-semibold text-[var(--color-primary)] hover:underline"
+          >
+            View all <FiChevronRight size={16} />
+          </button>
         </div>
 
         {featuredLoading ? (
-          <div className="grid lg:grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map(n => (
-              <div key={n} className="glass-card p-5">
-                <div className="flex gap-4">
-                  <div className="skeleton w-[72px] h-[72px] rounded-xl shrink-0" />
-                  <div className="flex-1 space-y-3 pt-1">
-                    <div className="skeleton h-5 w-3/4 rounded-md" />
-                    <div className="skeleton h-4 w-1/2 rounded-md" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-48 rounded-xl bg-[var(--color-bg-elevated)] animate-pulse" />
+            ))}
+          </div>
+        ) : featured.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {featured.slice(0, 6).map((c) => (
+              <ContractorCard key={c.id} contractor={c} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <p className="text-[var(--color-muted)]">No featured professionals available yet.</p>
+          </div>
+        )}
+      </section>
+
+      {/* ═══════ SECTION 6: TRUST & SAFETY ═══════ */}
+      <section className="bg-[var(--color-bg-elevated)]">
+        <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-20">
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            {[
+              {
+                icon: <FiCheckCircle size={28} className="text-green-600 dark:text-green-400" />,
+                title: "Verified Professionals",
+                desc: "Every contractor goes through ID verification, background checks, and skill assessment."
+              },
+              {
+                icon: <FiShield size={28} className="text-indigo-600 dark:text-indigo-400" />,
+                title: "Secure Payments",
+                desc: "Milestone-based escrow ensures you only pay for completed, quality-checked work."
+              },
+              {
+                icon: <FiStar size={28} className="text-amber-500" />,
+                title: "Quality Guaranteed",
+                desc: "Transparent reviews, ratings, and a dedicated support team to resolve any issues."
+              }
+            ].map((item) => (
+              <div key={item.title} className="flex gap-4">
+                <div className="shrink-0 w-14 h-14 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center">
+                  {item.icon}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[var(--color-heading)] mb-1">{item.title}</h3>
+                  <p className="text-sm text-[var(--color-muted)] leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ SECTION 7: STATS ═══════ */}
+      <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          {displayStats.map((stat) => (
+            <div key={stat.label}>
+              <div className="text-3xl md:text-4xl font-bold text-[var(--color-heading)] tracking-tight">
+                {stat.val}
+              </div>
+              <div className="mt-1 text-sm text-[var(--color-muted)]">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════ SECTION 8: TESTIMONIALS ═══════ */}
+      <section className="bg-[var(--color-bg-elevated)]">
+        <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold text-[var(--color-heading)] tracking-tight">
+              What our customers say
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((t, i) => (
+              <div
+                key={i}
+                className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 md:p-8"
+              >
+                <div className="flex gap-1 mb-4">
+                  {Array.from({ length: t.rating }).map((_, j) => (
+                    <FiStar key={j} size={16} className="text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-[var(--color-body)] text-sm leading-relaxed mb-6">
+                  "{t.quote}"
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                    {t.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[var(--color-heading)]">{t.name}</div>
+                    <div className="text-xs text-[var(--color-muted)]">{t.role}</div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        ) : featured.length > 0 ? (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {featured.slice(0, 4).map((c) => (
-              <div key={c.id} className="gsap-card-enter">
-                <ContractorCard contractor={c} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[var(--color-muted)] text-sm py-12 text-center">No featured contractors yet.</p>
-        )}
-      </section>
-
-      <MarqueeTicker />
-
-      {/* Testimonials */}
-      <section id="about" className="max-w-[1400px] mx-auto px-5 md:px-10 py-20">
-        <div className="gsap-fade-up text-center mb-16">
-          <p className="text-indigo-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-3">Trusted by thousands</p>
-          <h2 className="section-title">What People Say</h2>
-          <p className="section-subtitle mt-4 mx-auto">Real feedback from real customers and contractor partners.</p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((item, index) => (
-            <article
-              key={item.name}
-              className={`gsap-card-enter testimonial-card glass-card p-8 transition-all duration-500 cursor-default ${activeTestimonial === index ? "ring-1 ring-indigo-500/30 shadow-glow" : ""}`}
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">
-                  {item.avatar}
-                </div>
-                <div>
-                  <p className="font-display text-[var(--color-heading)] font-semibold text-sm">{item.name}</p>
-                  <p className="text-[10px] font-medium text-[var(--color-muted)] uppercase tracking-wider">{item.role}</p>
-                </div>
-              </div>
-              <p className="text-[var(--color-body)] leading-relaxed text-[15px]">"{item.quote}"</p>
-            </article>
-          ))}
         </div>
       </section>
 
-      {/* CTA section */}
-      <section className="max-w-[1400px] mx-auto px-5 md:px-10 pb-20">
-        <div className="gsap-fade-up rounded-3xl p-10 md:p-16 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #13151D, #1A1C28)' }}>
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] rounded-full blur-[100px]" style={{ background: 'rgba(99,102,241,0.12)' }} />
-          <div className="absolute bottom-0 left-0 w-[200px] h-[200px] rounded-full blur-[80px]" style={{ background: 'rgba(6,182,212,0.08)' }} />
-
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-            <div>
-              <h3 className="font-display text-3xl md:text-4xl text-white font-bold leading-tight">Ready to grow<br />with us?</h3>
-              <p className="mt-4 text-slate-400 text-base max-w-md leading-relaxed">Join thousands of happy customers and trusted contractors on our platform.</p>
+      {/* ═══════ SECTION 9: CTA BANNER ═══════ */}
+      <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 rounded-2xl p-10 md:p-16 text-center md:text-left border border-indigo-800/30 shadow-xl">
+          <div className="md:flex md:items-center md:justify-between">
+            <div className="mb-6 md:mb-0">
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                Are you a professional?
+              </h2>
+              <p className="mt-2 text-white/70 text-base max-w-md">
+                Join thousands of verified contractors and grow your business with Thekedaar.
+              </p>
             </div>
-            <MagneticButton
-              onClick={() => navigate("/select-service")}
-              className="h-[52px] px-8 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold self-start md:self-auto btn-shimmer shadow-lg text-sm uppercase tracking-wider items-center justify-center gap-2"
+            <button
+              onClick={() => navigate("/register/contractor")}
+              className="inline-flex items-center gap-2 h-12 px-8 rounded-xl bg-white text-[#222222] text-sm font-semibold hover:bg-gray-100 transition-colors"
             >
-              Get Started <FiArrowRight className="inline ml-1.5" />
-            </MagneticButton>
+              Register as Partner <FiArrowRight size={16} />
+            </button>
           </div>
         </div>
       </section>

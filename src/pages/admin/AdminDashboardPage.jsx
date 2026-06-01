@@ -16,7 +16,7 @@ import ReviewsPanel from "./panels/ReviewsPanel";
 import ModerationPanel from "./panels/ModerationPanel";
 import AnalyticsPanel from "./panels/AnalyticsPanel";
 import SettingsPanel from "./panels/SettingsPanel";
-import { DetailModal, BtnPrimary } from "./panels/AdminShared";
+import { DetailModal } from "./panels/AdminShared";
 
 /* ──────────── Sidebar config ──────────── */
 const SIDEBAR = [
@@ -154,36 +154,36 @@ export default function AdminDashboardPage() {
   async function handleDeleteReview(id) { if (!window.confirm("Delete this review?")) return; await withBusy(async () => { await adminAPI.deleteReview(id); toast.success("Review deleted"); await Promise.all([loadReviews(), loadOverview()]); }); }
   async function handleSaveSettings() { await withBusy(async () => { const res = await adminAPI.updateSettings(settings); setSettings(res.data.settings); toast.success("Settings saved"); }); }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]"><LoadingSpinner size="lg" /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-bg"><LoadingSpinner size="lg" /></div>;
 
   const currentLabel = SIDEBAR.find((s) => s.id === tab)?.label || "Admin";
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)]">
+    <main className="min-h-screen bg-bg transition-colors duration-200">
       <div className="flex">
         {/* ── Mobile sidebar overlay ── */}
         <AnimatePresence>
           {sidebarOpen && (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] md:hidden"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[90] md:hidden"
               onClick={() => setSidebarOpen(false)}
             />
           )}
         </AnimatePresence>
 
         {/* ── Sidebar ── */}
-        <aside className={`${sidebarOpen ? "translate-x-0 w-60" : "-translate-x-full w-60 md:translate-x-0 md:w-16"} fixed md:sticky top-0 left-0 z-[100] flex-shrink-0 border-r border-white/10 bg-[var(--color-surface)] h-screen overflow-y-auto transition-transform duration-300 md:transition-all`}>
-          <div className="p-4 border-b border-white/10 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center text-white font-bold text-lg shadow-lg flex-shrink-0">T</div>
-            {sidebarOpen && <h2 className="text-lg font-bold text-[var(--color-heading)] font-['Space_Grotesk'] truncate">Admin</h2>}
+        <aside className={`${sidebarOpen ? "translate-x-0 w-60" : "-translate-x-full w-60 md:translate-x-0 md:w-16"} fixed md:sticky top-0 left-0 z-[100] flex-shrink-0 border-r border-border bg-surface h-screen overflow-y-auto transition-transform duration-300 md:transition-all`}>
+          <div className="p-4 border-b border-border flex items-center gap-3 bg-bg-elevated">
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-lg shadow-sm flex-shrink-0">T</div>
+            {sidebarOpen && <h2 className="text-base font-bold text-heading truncate">Admin Controls</h2>}
           </div>
           <nav className="p-2 space-y-1 mt-2 mb-16">
             {SIDEBAR.map((item) => (
               <button
                 key={item.id}
                 onClick={() => { setTab(item.id); if (window.innerWidth <= 768) setSidebarOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${tab === item.id ? "bg-gradient-to-r from-indigo-500/15 to-cyan-400/10 text-indigo-400 border border-indigo-500/20" : "text-[var(--color-muted)] hover:text-[var(--color-body)] hover:bg-white/5"}`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${tab === item.id ? "bg-primary/10 text-primary border border-primary/20" : "text-muted hover:text-heading hover:bg-bg-elevated border border-transparent"}`}
               >
                 <item.icon size={18} className="flex-shrink-0" />
                 {sidebarOpen && <span className="truncate">{item.label}</span>}
@@ -191,8 +191,8 @@ export default function AdminDashboardPage() {
             ))}
           </nav>
           <div className="absolute bottom-4 left-0 right-0 px-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="w-full py-2 rounded-xl text-xs text-[var(--color-muted)] hover:bg-white/5 transition">
-              {sidebarOpen ? "← Collapse" : "→"}
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="w-full py-2 rounded-lg text-xs font-semibold text-muted hover:bg-bg-elevated transition border border-transparent hover:border-border">
+              {sidebarOpen ? "← Collapse Sidebar" : "→"}
             </button>
           </div>
         </aside>
@@ -201,21 +201,26 @@ export default function AdminDashboardPage() {
         <div className="flex-1 min-w-0 p-4 md:p-8 w-full md:w-auto">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 md:mb-8">
             <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 rounded-xl text-[var(--color-body)] hover:bg-white/5">
-                <FiMenu size={22} />
+              <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 -ml-2 rounded-lg text-heading hover:bg-bg-elevated border border-border">
+                <FiMenu size={20} />
               </button>
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-[var(--color-heading)] font-['Space_Grotesk']">{currentLabel}</h1>
-                <p className="hidden md:block text-sm text-[var(--color-muted)] mt-1">Full platform control and analytics</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-heading">{currentLabel}</h1>
+                <p className="hidden md:block text-xs text-muted mt-1 font-medium">Full platform control and analytics dashboard</p>
               </div>
             </div>
-            <BtnPrimary onClick={loadAll} disabled={busy}>
-              <span className="flex items-center gap-2"><FiRefreshCw size={14} className={busy ? "animate-spin" : ""} /><span className="hidden sm:inline">Refresh</span></span>
-            </BtnPrimary>
+            <button 
+              onClick={loadAll} 
+              disabled={busy} 
+              className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
+            >
+              <FiRefreshCw size={14} className={busy ? "animate-spin" : ""} />
+              <span className="hidden sm:inline">Refresh Data</span>
+            </button>
           </div>
 
           <AnimatePresence mode="wait">
-            <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
 
               {tab === "overview" && (
                 <OverviewPanel

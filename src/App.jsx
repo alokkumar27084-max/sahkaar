@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
@@ -13,10 +13,8 @@ import ProtectedRoute from "./components/common/ProtectedRoute";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import Icon from "./components/common/Icon";
 import LocationPromptModal from "./components/common/LocationPromptModal";
-import SplashScreen from "./components/common/SplashScreen";
 import PageWrapper from "./components/common/PageWrapper";
 import ErrorBoundary from "./components/common/ErrorBoundary";
-import CustomCursor from "./components/common/CustomCursor";
 import usePageTracking from "./hooks/usePageTracking";
 
 const HomePage = lazy(() => import("./pages/customer/HomePage"));
@@ -295,13 +293,13 @@ function AnimatedRoutes() {
           element={
             <PageWrapper>
               <div className="min-h-[68vh] flex items-center justify-center px-4">
-                <div className="glass-card p-10 md:p-14 max-w-lg text-center">
-                  <div className="mb-5 flex justify-center text-indigo-400">
-                    <Icon name="compass" className="w-14 h-14" />
+                <div className="card p-10 md:p-14 border border-border bg-surface max-w-lg text-center shadow-sm">
+                  <div className="mb-5 flex justify-center text-primary">
+                    <Icon name="compass" className="w-12 h-12" />
                   </div>
-                  <h2 className="font-display text-3xl text-[var(--color-heading)] font-bold mb-2">Page Not Found</h2>
-                  <p className="text-[var(--color-muted)] mb-6">This page does not exist or was moved.</p>
-                  <Link to="/" className="btn-primary">
+                  <h2 className="text-2xl font-extrabold text-heading mb-2">Page Not Found</h2>
+                  <p className="text-muted text-sm mb-6">This page does not exist or has been moved.</p>
+                  <Link to="/" className="btn-primary py-2.5 px-6 inline-block rounded-lg font-semibold">
                     Return Home
                   </Link>
                 </div>
@@ -315,23 +313,10 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
   const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "1091767343100-cdkm19c3r5fn3m6ha6nfqk38g16lj5cg.apps.googleusercontent.com";
 
   // Initialize Lenis — smooth but fast
   useLenisScroll();
-
-  useEffect(() => {
-    const hasShownSplash = sessionStorage.getItem('hasShownSplash');
-    if (hasShownSplash) {
-      setShowSplash(false);
-    }
-  }, []);
-
-  const handleSplashComplete = () => {
-    setShowSplash(false);
-    sessionStorage.setItem('hasShownSplash', 'true');
-  };
 
   return (
     <HelmetProvider>
@@ -343,13 +328,7 @@ export default function App() {
               <AuthProvider>
                 <ThemedToaster />
 
-                <AnimatePresence>
-                  {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-                </AnimatePresence>
-
                 <div className="app-shell">
-                  <CustomCursor />
-                  <div className="luxury-noise" />
                   <div className="content-layer">
                     <LocationPromptModal />
                     <NavbarWrapper />
@@ -360,8 +339,7 @@ export default function App() {
                       </ErrorBoundary>
                     </Suspense>
 
-                    {/* Conditionally show footer only on landing/info pages */}
-                    {!showSplash && <FooterWrapper />}
+                    <FooterWrapper />
                   </div>
                 </div>
               </AuthProvider>

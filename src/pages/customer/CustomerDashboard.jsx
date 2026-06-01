@@ -205,25 +205,22 @@ export default function CustomerDashboard() {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <main className="bg-[#090B19] text-[#ECEEF6] min-h-screen pt-24 pb-20 overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-cyan-500/5 blur-[120px] pointer-events-none" />
-
-      <div className="max-w-[1300px] mx-auto px-4 md:px-8 relative z-10">
+    <main className="bg-[var(--color-bg-elevated)] text-[var(--color-heading)] min-h-screen pt-24 pb-20 overflow-hidden relative">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-8 relative z-10">
 
         {/* Header Block */}
         <motion.div initial="hidden" animate="show" variants={fadeUp} className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <span className="text-indigo-400 font-black tracking-[0.3em] uppercase text-[10px] mb-2 block">Premium Client Workspace</span>
-            <h1 className="font-display text-4xl md:text-5xl font-black tracking-tight leading-none">
-              Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">{user?.name?.split(' ')[0]}</span>
+            <span className="text-[var(--color-primary)] font-bold tracking-widest uppercase text-[10px] mb-1.5 block">Premium Client Workspace</span>
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight leading-none text-[var(--color-heading)]">
+              Welcome Back, <span className="text-[var(--color-primary)]">{user?.name?.split(' ')[0]}</span>
             </h1>
-            <p className="text-slate-400 mt-3 text-sm font-semibold">Track scheduled visits, complete small handymen slots, or view SaaS constructions.</p>
+            <p className="text-[var(--color-muted)] mt-2 text-sm font-semibold">Track scheduled visits, complete small handymen slots, or view SaaS constructions.</p>
           </div>
         </motion.div>
 
         {/* Tab Selector */}
-        <div className="flex border-b border-white/5 mb-8 overflow-x-auto no-scrollbar gap-2">
+        <div className="flex border-b border-[var(--color-border)] mb-8 overflow-x-auto no-scrollbar gap-6">
           {[
             { id: "quick_bookings", label: "Quick Bookings", icon: FiZap, count: quickBookings.length },
             { id: "meetings", label: "Consultation Visits", icon: FiCalendar, count: meetings.length },
@@ -236,16 +233,16 @@ export default function CustomerDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2.5 px-6 py-4 border-b-2 font-black text-xs uppercase tracking-widest shrink-0 transition-all ${
+                className={`flex items-center gap-2.5 py-4 border-b-2 font-extrabold text-xs uppercase tracking-wider shrink-0 transition-all ${
                   isActive
-                    ? "border-indigo-500 text-indigo-400 bg-indigo-500/5"
-                    : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/[0.01]"
+                    ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                    : "border-transparent text-[var(--color-muted)] hover:text-[var(--color-heading)]"
                 }`}
               >
-                <Icon size={14} />
+                <Icon size={13} />
                 {tab.label}
                 {tab.count > 0 && (
-                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-black text-slate-300">
+                  <span className="ml-1.5 px-2 py-0.5 rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[9px] font-bold text-[var(--color-muted)]">
                     {tab.count}
                   </span>
                 )}
@@ -255,33 +252,34 @@ export default function CustomerDashboard() {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8">
 
           {/* LEFT SIDEBAR: Personal profile info & quick updates strip */}
           <div className="space-y-6">
 
             {/* Identity Card */}
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass-card p-6 relative overflow-hidden bg-white/[0.02] border border-white/5 rounded-[2rem] shadow-xl">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-cyan-500/5 blur-[40px] -mr-10 -mt-10 rounded-full pointer-events-none" />
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-card p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[var(--color-primary)]/5 to-cyan-500/5 blur-[40px] -mr-10 -mt-10 rounded-full pointer-events-none" />
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-indigo-500/10">
+                <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] flex items-center justify-center text-lg font-bold shadow-sm">
                   {user?.name?.[0]?.toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="font-display font-black text-lg text-white leading-tight">{user?.name}</h3>
-                  <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-widest">{user?.phone}</p>
+                  <h3 className="font-extrabold text-base text-[var(--color-heading)] leading-tight">{user?.name}</h3>
+                  <p className="text-[10px] text-[var(--color-muted)] font-bold mt-1 uppercase tracking-wider">{user?.phone}</p>
                 </div>
               </div>
-              <div className="mt-6 pt-6 border-t border-white/5 flex gap-2">
+              
+              <div className="mt-6 pt-6 border-t border-[var(--color-border)] flex flex-col gap-2">
                 <button
                   onClick={() => navigate("/search")}
-                  className="flex-1 py-3 text-center rounded-xl bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 active:scale-95 transition-all shadow-md shadow-indigo-500/15"
+                  className="w-full py-2.5 text-center rounded-lg bg-[var(--color-primary)] text-white font-bold text-[10px] uppercase tracking-wider hover:bg-[var(--color-primary)]/90 active:scale-95 transition-all shadow-sm"
                 >
                   Book Contractor
                 </button>
                 <button
                   onClick={() => navigate("/labour")}
-                  className="flex-1 py-3 text-center rounded-xl border border-white/10 hover:border-white/20 text-slate-300 font-black text-[10px] uppercase tracking-widest transition-all"
+                  className="w-full py-2.5 text-center rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-elevated)] text-[var(--color-heading)] font-bold text-[10px] uppercase tracking-wider transition-all"
                 >
                   Labour Chowk
                 </button>
@@ -289,12 +287,12 @@ export default function CustomerDashboard() {
             </motion.div>
 
             {/* Notification Widget */}
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] shadow-xl">
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-card p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="font-display text-sm font-black uppercase tracking-widest text-slate-300 flex items-center gap-2">
-                  <FiBell className="text-indigo-400 animate-bounce" /> Inbox Logs
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-heading)] flex items-center gap-2">
+                  <FiBell className="text-[var(--color-primary)] shrink-0" /> Inbox Logs
                   {unreadCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black">
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-bold">
                       {unreadCount}
                     </span>
                   )}
@@ -305,7 +303,7 @@ export default function CustomerDashboard() {
                       await notificationAPI.markAllRead();
                       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
                     }}
-                    className="text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:underline"
+                    className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)] hover:underline"
                   >
                     Clear All
                   </button>
@@ -313,23 +311,23 @@ export default function CustomerDashboard() {
               </div>
 
               {notifications.length === 0 ? (
-                <div className="py-8 text-center border border-dashed border-white/5 bg-white/[0.01] rounded-2xl">
-                  <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">No notifications yet.</p>
+                <div className="py-8 text-center border border-dashed border-[var(--color-border)] bg-[var(--color-bg-elevated)] rounded-xl">
+                  <p className="text-[var(--color-muted)] text-[10px] font-bold uppercase tracking-wider">No notifications yet.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                   {notifications.slice(0, 4).map((item) => (
                     <div
                       key={item.id}
-                      className={`p-3.5 rounded-xl border text-xs leading-relaxed transition-all ${
+                      className={`p-3 rounded-lg border text-xs leading-relaxed transition-all ${
                         item.is_read
-                          ? "border-white/5 bg-white/[0.01] text-slate-400"
-                          : "border-indigo-500/20 bg-indigo-500/5 text-slate-200"
+                          ? "border-[var(--color-border)] bg-[var(--color-bg-elevated)] text-[var(--color-muted)]"
+                          : "border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 text-[var(--color-heading)]"
                       }`}
                     >
                       <p className="font-semibold">{item.message}</p>
                       <div className="mt-2 flex items-center justify-between opacity-80">
-                        <span className="text-[9px] font-black uppercase text-slate-500">
+                        <span className="text-[9px] font-bold uppercase text-[var(--color-muted)]">
                           {new Date(item.created_at).toLocaleDateString()}
                         </span>
                         {!item.is_read && (
@@ -338,7 +336,7 @@ export default function CustomerDashboard() {
                               await notificationAPI.markRead(item.id);
                               setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, is_read: true } : n));
                             }}
-                            className="text-[9px] font-black uppercase text-indigo-400 hover:underline"
+                            className="text-[9px] font-bold uppercase text-[var(--color-primary)] hover:underline"
                           >
                             Mark Read
                           </button>
@@ -356,9 +354,9 @@ export default function CustomerDashboard() {
           <div className="space-y-6">
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20 bg-white/[0.02] border border-white/5 rounded-[2.5rem] shadow-xl">
+              <div className="flex flex-col items-center justify-center py-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-card">
                 <LoadingSpinner size="lg" />
-                <p className="mt-4 text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Fetching workspace state...</p>
+                <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted)]">Fetching workspace state...</p>
               </div>
             ) : (
               <AnimatePresence mode="wait">
@@ -367,35 +365,35 @@ export default function CustomerDashboard() {
                 {activeTab === "quick_bookings" && (
                   <motion.div key="quick" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
                     {quickBookings.length === 0 ? (
-                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
-                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
-                          <FiZap size={24} />
+                      <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 shadow-card">
+                        <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-xl flex items-center justify-center mx-auto mb-5 text-[var(--color-primary)]">
+                          <FiZap size={20} />
                         </div>
-                        <h3 className="font-display text-lg font-black">No Handyman Bookings</h3>
-                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                        <h3 className="text-lg font-bold text-[var(--color-heading)]">No Handyman Bookings</h3>
+                        <p className="mt-2 text-xs font-semibold text-[var(--color-muted)] max-w-sm mx-auto leading-relaxed">
                           Need minor electrician, plumber, AC servicing or salon bookings? Get standard slot confirmations instantly.
                         </p>
                         <button
                           onClick={() => navigate("/search?mode=quick")}
-                          className="mt-6 px-6 py-3 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 active:scale-95 transition-all shadow-lg shadow-indigo-500/10"
+                          className="mt-6 px-5 py-2.5 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[var(--color-primary)]/90 active:scale-95 transition-all shadow-sm"
                         >
-                          Find Handyman Strip
+                          Find Handyman Services
                         </button>
                       </div>
                     ) : (
                       quickBookings.map((qb) => (
-                        <motion.div key={qb.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                        <motion.div key={qb.id} variants={fadeUp} className="bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-2xl shadow-card relative overflow-hidden group">
 
                           {/* Top Row header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5 mb-5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border)] mb-4">
                             <div>
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded">
                                   {qb.service_name}
                                 </span>
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ref: {qb.id.slice(0, 8)}</span>
+                                <span className="text-[9px] font-semibold text-[var(--color-muted)] uppercase tracking-wider">Ref: {qb.id.slice(0, 8)}</span>
                               </div>
-                              <h3 className="font-display text-xl font-black text-white group-hover:text-indigo-400 transition-colors">
+                              <h3 className="text-lg font-extrabold text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-all">
                                 {qb.contractor_name}
                               </h3>
                             </div>
@@ -406,43 +404,43 @@ export default function CustomerDashboard() {
 
                           {/* Body items */}
                           <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="space-y-3.5">
+                            <div className="space-y-3">
                               <div className="flex items-start gap-3 text-xs">
-                                <FiCalendar className="text-indigo-400 mt-0.5 shrink-0" />
+                                <FiCalendar className="text-[var(--color-primary)] mt-0.5 shrink-0" />
                                 <div>
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Scheduled Visit</p>
-                                  <p className="font-bold text-slate-200 mt-0.5">
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Scheduled Visit</p>
+                                  <p className="font-bold text-[var(--color-heading)] mt-0.5">
                                     {new Date(qb.scheduled_date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })}
                                   </p>
                                 </div>
                               </div>
                               <div className="flex items-start gap-3 text-xs">
-                                <FiClock className="text-indigo-400 mt-0.5 shrink-0" />
+                                <FiClock className="text-[var(--color-primary)] mt-0.5 shrink-0" />
                                 <div>
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Selected Time Window</p>
-                                  <p className="font-bold text-slate-200 mt-0.5 capitalize">{qb.scheduled_time_slot}</p>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Selected Time Window</p>
+                                  <p className="font-bold text-[var(--color-heading)] mt-0.5 capitalize">{qb.scheduled_time_slot}</p>
                                 </div>
                               </div>
                               <div className="flex items-start gap-3 text-xs">
-                                <FiMapPin className="text-indigo-400 mt-0.5 shrink-0" />
+                                <FiMapPin className="text-[var(--color-primary)] mt-0.5 shrink-0" />
                                 <div>
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Location Address</p>
-                                  <p className="font-bold text-slate-200 mt-0.5 line-clamp-1">{qb.customer_address}</p>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Location Address</p>
+                                  <p className="font-bold text-[var(--color-heading)] mt-0.5 line-clamp-1">{qb.customer_address}</p>
                                 </div>
                               </div>
                             </div>
 
                             {/* Settlement panel */}
-                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
+                            <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-4 flex flex-col justify-between font-semibold">
                               <div>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Pricing Terms Set</p>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-2">Pricing Terms Set</p>
                                 <div className="flex justify-between items-baseline mb-1">
-                                  <span className="text-xs font-bold text-slate-400">Confirmation Fee</span>
-                                  <span className="text-xs font-black text-emerald-400 uppercase">Paid (â‚¹30)</span>
+                                  <span className="text-xs text-[var(--color-muted)]">Escrow Booking Fee</span>
+                                  <span className="text-xs font-bold text-emerald-600 uppercase">Paid (₹30)</span>
                                 </div>
                                 <div className="flex justify-between items-baseline">
-                                  <span className="text-xs font-bold text-slate-400">Direct Contractor Pricing</span>
-                                  <span className="text-sm font-black text-white">â‚¹{qb.service_price || "Quoted"}</span>
+                                  <span className="text-xs text-[var(--color-muted)]">Direct Job Pricing</span>
+                                  <span className="text-sm font-extrabold text-[var(--color-heading)]">₹{qb.service_price || "Quoted"}</span>
                                 </div>
                               </div>
 
@@ -451,7 +449,7 @@ export default function CustomerDashboard() {
                                   <>
                                     <a
                                       href={`tel:${qb.contractor_phone}`}
-                                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-colors"
+                                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] text-[10px] font-bold uppercase tracking-wider text-[var(--color-heading)] transition-all bg-[var(--color-surface)] shadow-sm"
                                     >
                                       <FiPhone size={12} /> Call
                                     </a>
@@ -459,7 +457,7 @@ export default function CustomerDashboard() {
                                       href={`https://wa.me/91${qb.contractor_phone.replace(/\D/g, "")}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-[10px] font-black uppercase tracking-widest text-emerald-400 transition-colors"
+                                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-[10px] font-bold uppercase tracking-wider text-emerald-600 transition-all border border-emerald-500/20"
                                     >
                                       <FiMessageCircle size={12} /> WhatsApp
                                     </a>
@@ -471,21 +469,21 @@ export default function CustomerDashboard() {
 
                           {/* Completing reviews option */}
                           {qb.status === "COMPLETED" && !qb.rating && (
-                            <div className="mt-5 pt-5 border-t border-white/5 flex justify-end">
+                            <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex justify-end">
                               <button
                                 onClick={() => setReviewingBooking(qb)}
-                                className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-indigo-600 transition-all active:scale-95 shadow-lg shadow-indigo-500/10"
+                                className="flex items-center gap-1.5 px-4 py-2 bg-[var(--color-primary)] text-white font-bold text-[10px] uppercase tracking-wider rounded-lg hover:bg-[var(--color-primary)]/90 transition-all active:scale-95 shadow-sm"
                               >
-                                <FiStar size={12} /> Leave Client Review
+                                <FiStar size={12} /> Leave Review
                               </button>
                             </div>
                           )}
 
                           {qb.rating && (
-                            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 text-xs">
+                            <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex items-center gap-2 text-xs font-semibold text-[var(--color-body)]">
                               <FiStar className="text-amber-500 fill-amber-500 shrink-0" size={13} />
-                              <span className="font-bold text-slate-300">You rated {qb.rating}/5 :</span>
-                              <span className="text-slate-400 italic">"{qb.review_text}"</span>
+                              <span>You rated {qb.rating}/5 ·</span>
+                              <span className="text-[var(--color-muted)] italic">"{qb.review_text}"</span>
                             </div>
                           )}
 
@@ -499,35 +497,35 @@ export default function CustomerDashboard() {
                 {activeTab === "meetings" && (
                   <motion.div key="meetings" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
                     {meetings.length === 0 ? (
-                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
-                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
-                          <FiCalendar size={24} />
+                      <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 shadow-card">
+                        <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-xl flex items-center justify-center mx-auto mb-5 text-[var(--color-primary)]">
+                          <FiCalendar size={20} />
                         </div>
-                        <h3 className="font-display text-lg font-black">No Consultations visits</h3>
-                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                        <h3 className="text-lg font-bold text-[var(--color-heading)]">No Consultation Visits</h3>
+                        <p className="mt-2 text-xs font-semibold text-[var(--color-muted)] max-w-sm mx-auto leading-relaxed">
                           Want an upfront face-to-face site estimate before launching a big project? Book an in-person meeting.
                         </p>
                         <button
                           onClick={() => navigate("/search")}
-                          className="mt-6 px-6 py-3 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 active:scale-95 transition-all"
+                          className="mt-6 px-5 py-2.5 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[var(--color-primary)]/90 active:scale-95 transition-all shadow-sm"
                         >
                           Find Contractor Profiles
                         </button>
                       </div>
                     ) : (
                       meetings.map((m) => (
-                        <motion.div key={m.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                        <motion.div key={m.id} variants={fadeUp} className="bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-2xl shadow-card relative overflow-hidden group">
 
                           {/* Top Row header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5 mb-5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border)] mb-4">
                             <div>
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded">
                                   {m.meeting_type?.replace("_", " ") || "In-Person Visit"}
                                 </span>
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">REF: {m.id.slice(0, 8)}</span>
+                                <span className="text-[9px] font-semibold text-[var(--color-muted)] uppercase tracking-wider">REF: {m.id.slice(0, 8)}</span>
                               </div>
-                              <h3 className="font-display text-xl font-black text-white group-hover:text-indigo-400 transition-colors">
+                              <h3 className="text-lg font-extrabold text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-all">
                                 {m.contractor_name}
                               </h3>
                             </div>
@@ -538,42 +536,42 @@ export default function CustomerDashboard() {
 
                           {/* Details */}
                           <div className="grid sm:grid-cols-2 gap-6">
-                            <div className="space-y-3.5">
+                            <div className="space-y-3">
                               <div className="flex items-start gap-3 text-xs">
-                                <FiCalendar className="text-indigo-400 mt-0.5 shrink-0" />
+                                <FiCalendar className="text-[var(--color-primary)] mt-0.5 shrink-0" />
                                 <div>
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Proposed Visit Date</p>
-                                  <p className="font-bold text-slate-200 mt-0.5">
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Proposed Visit Date</p>
+                                  <p className="font-bold text-[var(--color-heading)] mt-0.5">
                                     {new Date(m.proposed_date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
                                   </p>
                                 </div>
                               </div>
                               <div className="flex items-start gap-3 text-xs">
-                                <FiClock className="text-indigo-400 mt-0.5 shrink-0" />
+                                <FiClock className="text-[var(--color-primary)] mt-0.5 shrink-0" />
                                 <div>
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Time Window</p>
-                                  <p className="font-bold text-slate-200 mt-0.5 capitalize">{m.proposed_time_slot}</p>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Time Window</p>
+                                  <p className="font-bold text-[var(--color-heading)] mt-0.5 capitalize">{m.proposed_time_slot}</p>
                                 </div>
                               </div>
                               <div className="flex items-start gap-3 text-xs">
-                                <FiMapPin className="text-indigo-400 mt-0.5 shrink-0" />
+                                <FiMapPin className="text-[var(--color-primary)] mt-0.5 shrink-0" />
                                 <div>
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Meeting Location</p>
-                                  <p className="font-bold text-slate-200 mt-0.5 line-clamp-1">{m.proposed_location}</p>
+                                  <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Meeting Location</p>
+                                  <p className="font-bold text-[var(--color-heading)] mt-0.5 line-clamp-1">{m.proposed_location}</p>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
+                            <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-4 flex flex-col justify-between font-semibold">
                               <div>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Notes & Context</p>
-                                <p className="text-xs font-semibold text-slate-300 italic">
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-2">Notes & Context</p>
+                                <p className="text-xs text-[var(--color-body)] italic">
                                   "{m.customer_note || "No specific note provided."}"
                                 </p>
                                 {m.contractor_note && (
-                                  <div className="mt-3 bg-indigo-500/5 border border-indigo-500/10 p-2.5 rounded-lg text-[11px]">
-                                    <span className="font-black text-indigo-400 uppercase tracking-widest block mb-0.5">Contractor Note</span>
-                                    <p className="text-slate-300 font-medium">"{m.contractor_note}"</p>
+                                  <div className="mt-3 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 p-2.5 rounded-lg text-[11px]">
+                                    <span className="font-bold text-[var(--color-primary)] uppercase tracking-wider block mb-0.5">Contractor Response</span>
+                                    <p className="text-[var(--color-heading)] font-semibold">"{m.contractor_note}"</p>
                                   </div>
                                 )}
                               </div>
@@ -582,7 +580,7 @@ export default function CustomerDashboard() {
                                 {m.contractor_phone && (
                                   <a
                                     href={`tel:${m.contractor_phone}`}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-white/10 hover:border-white/20 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-colors"
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-surface)] text-[10px] font-bold uppercase tracking-wider text-[var(--color-heading)] bg-[var(--color-surface)] shadow-sm transition-all"
                                   >
                                     <FiPhone size={12} /> Call
                                   </a>
@@ -590,7 +588,7 @@ export default function CustomerDashboard() {
                                 {m.status !== "DECLINED" && m.status !== "ACCEPTED" && (
                                   <button
                                     onClick={() => setReschedulingMeeting(m)}
-                                    className="flex-1 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                                    className="flex-1 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all shadow-sm"
                                   >
                                     Reschedule
                                   </button>
@@ -609,78 +607,78 @@ export default function CustomerDashboard() {
                 {activeTab === "projects" && (
                   <motion.div key="projects" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
                     {projects.length === 0 ? (
-                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
-                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
-                          <FiBriefcase size={24} />
+                      <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 shadow-card">
+                        <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-xl flex items-center justify-center mx-auto mb-5 text-[var(--color-primary)]">
+                          <FiBriefcase size={20} />
                         </div>
-                        <h3 className="font-display text-lg font-black">No Active SaaS Projects</h3>
-                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                        <h3 className="text-lg font-bold text-[var(--color-heading)]">No Active Projects</h3>
+                        <p className="mt-2 text-xs font-semibold text-[var(--color-muted)] max-w-sm mx-auto leading-relaxed">
                           Your major construction, masonry, or interior project boards will show up here once initiated by your contractor.
                         </p>
                         <button
                           onClick={() => navigate("/search")}
-                          className="mt-6 px-6 py-3 bg-indigo-500 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 active:scale-95 transition-all"
+                          className="mt-6 px-5 py-2.5 bg-[var(--color-primary)] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[var(--color-primary)]/90 active:scale-95 transition-all shadow-sm"
                         >
-                          Find Contractor Profiles
+                          Find Contractors
                         </button>
                       </div>
                     ) : (
                       projects.map((proj) => (
-                        <motion.div key={proj.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                        <motion.div key={proj.id} variants={fadeUp} className="bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-2xl shadow-card relative overflow-hidden group">
 
                           {/* Top Row header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5 mb-5">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--color-border)] mb-4">
                             <div>
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded">
-                                  Active milestone tracking
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2 py-0.5 rounded">
+                                  Milestone Project Board
                                 </span>
-                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">ID: {proj.id.slice(0, 8)}</span>
+                                <span className="text-[9px] font-semibold text-[var(--color-muted)] uppercase tracking-wider">ID: {proj.id.slice(0, 8)}</span>
                               </div>
-                              <h3 className="font-display text-xl font-black text-white group-hover:text-indigo-400 transition-colors">
+                              <h3 className="text-lg font-extrabold text-[var(--color-heading)] group-hover:text-[var(--color-primary)] transition-all">
                                 {proj.title}
                               </h3>
-                              <p className="text-xs text-slate-400 font-bold mt-1">Lead Thekedaar: {proj.contractor_name}</p>
+                              <p className="text-xs text-[var(--color-muted)] font-semibold mt-0.5">Lead Thekedaar: {proj.contractor_name}</p>
                             </div>
 
                             <div className="flex flex-col items-end">
-                              <span className="text-lg font-black text-white">â‚¹{Number(proj.estimated_budget || 0).toLocaleString()}</span>
-                              <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider mt-0.5">Estimated Budget</span>
+                              <span className="text-base font-extrabold text-[var(--color-heading)]">₹{Number(proj.estimated_budget || 0).toLocaleString()}</span>
+                              <span className="text-[9px] font-bold text-[var(--color-muted)] uppercase tracking-wider mt-0.5">Budget</span>
                             </div>
                           </div>
 
                           {/* Body items */}
                           <div className="grid sm:grid-cols-2 gap-6 items-center">
                             <div>
-                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Project Brief</p>
-                              <p className="text-xs text-slate-300 leading-relaxed font-semibold">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)] mb-2">Project Brief</p>
+                              <p className="text-xs text-[var(--color-body)] leading-relaxed font-semibold">
                                 {proj.description || "No project description logged."}
                               </p>
 
-                              <div className="mt-4 grid grid-cols-2 gap-4 text-xs font-bold">
+                              <div className="mt-4 grid grid-cols-2 gap-4 text-xs font-semibold">
                                 <div>
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Start Date</span>
-                                  <p className="text-slate-300 mt-0.5">{proj.start_date ? new Date(proj.start_date).toLocaleDateString() : "Pending"}</p>
+                                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Start Date</span>
+                                  <p className="text-[var(--color-heading)] mt-0.5">{proj.start_date ? new Date(proj.start_date).toLocaleDateString() : "Pending"}</p>
                                 </div>
                                 <div>
-                                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Expected End</span>
-                                  <p className="text-slate-300 mt-0.5">{proj.expected_end_date ? new Date(proj.expected_end_date).toLocaleDateString() : "Pending"}</p>
+                                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Expected End</span>
+                                  <p className="text-[var(--color-heading)] mt-0.5">{proj.expected_end_date ? new Date(proj.expected_end_date).toLocaleDateString() : "Pending"}</p>
                                 </div>
                               </div>
                             </div>
 
                             {/* Progress bar panel */}
-                            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-5 flex flex-col justify-between h-full">
+                            <div className="bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-5 flex flex-col justify-between h-full font-semibold">
                               <div>
                                 <div className="flex justify-between items-baseline mb-2">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">System Escrow</span>
-                                  <span className="text-xs font-black text-white">{proj.escrow_opted ? "OPTED IN" : "NO ESCROW"}</span>
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)]">System Escrow</span>
+                                  <span className="text-[10px] font-bold text-[var(--color-heading)]">{proj.escrow_opted ? "OPTED IN" : "NO ESCROW"}</span>
                                 </div>
 
-                                <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-2 mt-4">
-                                  <div className="bg-indigo-500 h-full rounded-full" style={{ width: proj.status === 'COMPLETED' ? '100%' : '35%' }} />
+                                <div className="w-full bg-[var(--color-border)] h-2 rounded-full overflow-hidden mb-2 mt-4">
+                                  <div className="bg-[var(--color-primary)] h-full rounded-full" style={{ width: proj.status === 'COMPLETED' ? '100%' : '35%' }} />
                                 </div>
-                                <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                <div className="flex justify-between text-[10px] text-[var(--color-muted)] font-bold uppercase tracking-wider">
                                   <span>Gantt Progress</span>
                                   <span>{proj.status || "In Progress"}</span>
                                 </div>
@@ -688,7 +686,7 @@ export default function CustomerDashboard() {
 
                               <button
                                 onClick={() => navigate(`/project/${proj.id}`)}
-                                className="mt-6 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/10 transition-all active:scale-95"
+                                className="mt-6 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white font-bold text-[10px] uppercase tracking-wider shadow-sm transition-all active:scale-95"
                               >
                                 View Gantt Dashboard <FiExternalLink size={12} />
                               </button>
@@ -705,43 +703,43 @@ export default function CustomerDashboard() {
                 {activeTab === "disputes" && (
                   <motion.div key="disputes" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
                     {disputes.length === 0 ? (
-                      <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-[2.5rem] p-8">
-                        <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-5 text-indigo-400">
-                          <FiAlertTriangle size={24} />
+                      <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 shadow-card">
+                        <div className="w-12 h-12 bg-[var(--color-primary)]/10 rounded-xl flex items-center justify-center mx-auto mb-5 text-[var(--color-primary)]">
+                          <FiAlertTriangle size={20} />
                         </div>
-                        <h3 className="font-display text-lg font-black">No Dispute Tickets</h3>
-                        <p className="mt-2 text-xs font-semibold text-slate-500 max-w-sm mx-auto leading-relaxed">
+                        <h3 className="text-lg font-bold text-[var(--color-heading)]">No Dispute Tickets</h3>
+                        <p className="mt-2 text-xs font-semibold text-[var(--color-muted)] max-w-sm mx-auto leading-relaxed">
                           Mediation services are completely free. If you have active dispute issues with quality or payments, raise a desk case.
                         </p>
                       </div>
                     ) : (
                       disputes.map((d) => (
-                        <motion.div key={d.id} variants={fadeUp} className="glass-card bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] shadow-xl relative overflow-hidden group">
+                        <motion.div key={d.id} variants={fadeUp} className="bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-2xl shadow-card relative overflow-hidden group">
                           <div className="flex justify-between items-start mb-4">
                             <div>
-                              <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded">
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-rose-600 bg-rose-500/10 px-2.5 py-0.5 rounded">
                                 {d.reason}
                               </span>
-                              <h4 className="font-display text-base font-black text-white mt-2">
+                              <h4 className="text-sm font-extrabold text-[var(--color-heading)] mt-2">
                                 Booking Ref ID: {d.booking_ref_id}
                               </h4>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                            <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider ${
                               d.status === "RESOLVED"
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse"
+                                  ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                  : "bg-amber-500/10 text-amber-600 border border-amber-500/20 animate-pulse"
                             }`}>
                               {d.status}
                             </span>
                           </div>
 
-                          <p className="text-xs text-slate-300 font-semibold leading-relaxed">
+                          <p className="text-xs text-[var(--color-body)] font-semibold leading-relaxed">
                             {d.description}
                           </p>
 
                           {d.resolution_note && (
-                            <div className="mt-4 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15 text-xs text-slate-200">
-                              <span className="font-black text-emerald-400 uppercase tracking-widest block mb-1">Resolution Summary</span>
+                            <div className="mt-4 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/15 text-xs text-[var(--color-heading)]">
+                              <span className="font-bold text-emerald-600 uppercase tracking-wider block mb-1">Resolution Summary</span>
                               <p className="font-semibold">"{d.resolution_note}"</p>
                             </div>
                           )}
@@ -763,23 +761,23 @@ export default function CustomerDashboard() {
       {/* Review Modal */}
       <AnimatePresence>
         {reviewingBooking && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/75 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-xs">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card max-w-md w-full bg-[#13151D] border border-white/10 p-8 rounded-[2rem] shadow-2xl space-y-6 text-white"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="max-w-md w-full bg-[var(--color-surface)] border border-[var(--color-border)] p-6 md:p-8 rounded-2xl shadow-2xl space-y-6 text-[var(--color-heading)]"
             >
               <div>
-                <h3 className="font-display text-xl font-black uppercase tracking-tight flex items-center gap-2 text-indigo-400">
+                <h3 className="text-lg font-extrabold tracking-tight flex items-center gap-2 text-[var(--color-primary)]">
                   <FiStar /> Rate Service Work
                 </h3>
-                <p className="mt-1 text-xs text-slate-400 font-semibold">Share your feedback to help others select high-trust contractors.</p>
+                <p className="mt-1 text-xs text-[var(--color-muted)] font-semibold">Share your feedback to help others select high-trust contractors.</p>
               </div>
 
               <form onSubmit={handleReviewSubmit} className="space-y-4">
                 <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Star Rating</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Star Rating</span>
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -788,38 +786,38 @@ export default function CustomerDashboard() {
                         onClick={() => setReviewRating(star)}
                         className="text-2xl transition-transform hover:scale-110 active:scale-95"
                       >
-                        <FiStar className={star <= reviewRating ? "text-amber-500 fill-amber-500" : "text-slate-600"} />
+                        <FiStar className={star <= reviewRating ? "text-amber-500 fill-amber-500 shrink-0" : "text-[var(--color-border)] shrink-0"} />
                       </button>
                     ))}
                   </div>
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Comments</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Comments</span>
                   <textarea
                     rows="3"
                     required
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none resize-none"
+                    className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg px-4 py-3 text-sm font-semibold text-[var(--color-heading)] outline-none resize-none focus:border-[var(--color-primary)]"
                     placeholder="Describe promptness, cleanliness, and expertise..."
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
                   />
                 </label>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 font-semibold">
                   <button
                     type="button"
                     onClick={() => setReviewingBooking(null)}
-                    className="flex-1 py-3.5 rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest text-slate-400"
+                    className="flex-1 py-2.5 rounded-lg border border-[var(--color-border)] text-xs font-bold uppercase tracking-wider text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={reviewLoading}
-                    className="flex-1 py-3.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-md flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white text-xs font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1.5"
                   >
-                    {reviewLoading ? <LoadingSpinner size="xs" color="white" /> : <FiCheckCircle />}
+                    {reviewLoading ? <LoadingSpinner size="xs" /> : <FiCheckCircle />}
                     Submit Review
                   </button>
                 </div>
@@ -832,71 +830,71 @@ export default function CustomerDashboard() {
       {/* Reschedule Modal */}
       <AnimatePresence>
         {reschedulingMeeting && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/75 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40 backdrop-blur-xs">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card max-w-md w-full bg-[#13151D] border border-white/10 p-8 rounded-[2rem] shadow-2xl space-y-6 text-white"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="max-w-md w-full bg-[var(--color-surface)] border border-[var(--color-border)] p-6 md:p-8 rounded-2xl shadow-2xl space-y-6 text-[var(--color-heading)]"
             >
               <div>
-                <h3 className="font-display text-xl font-black uppercase tracking-tight flex items-center gap-2 text-indigo-400">
+                <h3 className="text-lg font-extrabold tracking-tight flex items-center gap-2 text-[var(--color-primary)]">
                   <FiCalendar /> Reschedule Visit
                 </h3>
-                <p className="mt-1 text-xs text-slate-400 font-semibold">Propose a new visit date and time slot to the contractor.</p>
+                <p className="mt-1 text-xs text-[var(--color-muted)] font-semibold">Propose a new visit date and time slot to the contractor.</p>
               </div>
 
               <form onSubmit={handleRescheduleSubmit} className="space-y-4">
                 <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">New Date</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">New Date</span>
                   <input
                     type="date"
                     required
                     min={new Date().toISOString().split("T")[0]}
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none"
+                    className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg px-4 py-3 text-sm font-semibold text-[var(--color-heading)] outline-none focus:border-[var(--color-primary)]"
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
                   />
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">New Time Window</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">New Time Window</span>
                   <select
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none"
+                    className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg px-4 py-3 text-sm font-semibold text-[var(--color-heading)] outline-none focus:border-[var(--color-primary)]"
                     value={newSlot}
                     onChange={(e) => setNewSlot(e.target.value)}
                   >
-                    <option value="morning">Morning (8 AM â€“ 12 PM)</option>
-                    <option value="afternoon">Afternoon (12 PM â€“ 5 PM)</option>
-                    <option value="evening">Evening (5 PM â€“ 9 PM)</option>
+                    <option value="morning">Morning (8 AM – 12 PM)</option>
+                    <option value="afternoon">Afternoon (12 PM – 5 PM)</option>
+                    <option value="evening">Evening (5 PM – 9 PM)</option>
                   </select>
                 </label>
 
                 <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">Short Note</span>
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">Short Note</span>
                   <textarea
                     rows="2"
-                    className="w-full bg-[#0E0F14] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white outline-none resize-none"
+                    className="w-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg px-4 py-3 text-sm font-semibold text-[var(--color-heading)] outline-none resize-none focus:border-[var(--color-primary)]"
                     placeholder="e.g. Rescheduling due to sudden change in my travel plans..."
                     value={rescheduleNote}
                     onChange={(e) => setRescheduleNote(e.target.value)}
                   />
                 </label>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-4 font-semibold">
                   <button
                     type="button"
                     onClick={() => setReschedulingMeeting(null)}
-                    className="flex-1 py-3.5 rounded-xl border border-white/10 text-xs font-black uppercase tracking-widest text-slate-400"
+                    className="flex-1 py-2.5 rounded-lg border border-[var(--color-border)] text-xs font-bold uppercase tracking-wider text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)]"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={rescheduleLoading}
-                    className="flex-1 py-3.5 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black uppercase tracking-widest shadow-md flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-white text-xs font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1.5"
                   >
-                    {rescheduleLoading ? <LoadingSpinner size="xs" color="white" /> : <FiCheckCircle />}
+                    {rescheduleLoading ? <LoadingSpinner size="xs" /> : <FiCheckCircle />}
                     Request Reschedule
                   </button>
                 </div>

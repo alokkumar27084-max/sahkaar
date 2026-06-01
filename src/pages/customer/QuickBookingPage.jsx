@@ -6,6 +6,7 @@ import {
   FiClock,
   FiMapPin,
   FiCheck,
+  FiCheckCircle,
   FiPhone,
   FiChevronLeft,
   FiChevronRight,
@@ -22,12 +23,13 @@ import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import { contractorAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { getAvatarUrl } from "../../utils/imageUtils";
 
 /* ─── constants ─── */
 const STEPS = [
-  { id: 1, label: "Service Details", icon: FiCalendar },
-  { id: 2, label: "Confirm & Pay", icon: FiCreditCard },
-  { id: 3, label: "Confirmed", icon: FiCheck },
+  { id: 1, label: "Details", icon: FiCalendar },
+  { id: 2, label: "Confirm", icon: FiCreditCard },
+  { id: 3, label: "Secured", icon: FiCheck },
 ];
 
 const TIME_SLOTS = [
@@ -51,32 +53,20 @@ function getTomorrowDate() {
 
 /* ─── animation variants ─── */
 const stepVariants = {
-  enter: (dir) => ({ x: dir > 0 ? 80 : -80, opacity: 0, scale: 0.96 }),
-  center: { x: 0, opacity: 1, scale: 1 },
-  exit: (dir) => ({ x: dir > 0 ? -80 : 80, opacity: 0, scale: 0.96 }),
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
-  visible: (i = 0) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
-  }),
+  enter: (dir) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
 };
 
 const successPop = {
-  hidden: { scale: 0, opacity: 0 },
+  hidden: { scale: 0.9, opacity: 0 },
   visible: {
     scale: 1,
     opacity: 1,
-    transition: { type: "spring", stiffness: 260, damping: 20, delay: 0.15 },
+    transition: { type: "spring", stiffness: 200, damping: 20, delay: 0.1 },
   },
 };
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   QuickBookingPage
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 export default function QuickBookingPage() {
   const { contractorId } = useParams();
   const [searchParams] = useSearchParams();
@@ -121,7 +111,6 @@ export default function QuickBookingPage() {
     return () => { active = false; };
   }, [contractorId, navigate]);
 
-  /* ── helpers ── */
   const goTo = useCallback((nextStep) => {
     setDirection(nextStep > step ? 1 : -1);
     setStep(nextStep);
@@ -191,7 +180,7 @@ export default function QuickBookingPage() {
       });
       const orderData = res.data.data || res.data;
 
-      // ── mock mode ──
+      // mock mode
       if (orderData.razorpayKey === "mock_key_only_for_dev") {
         toast.loading("Simulating payment…", { id: "mock_pay" });
         setTimeout(async () => {
@@ -214,7 +203,7 @@ export default function QuickBookingPage() {
         return;
       }
 
-      // ── real razorpay ──
+      // real razorpay
       const sdkLoaded = await loadRazorpayScript();
       if (!sdkLoaded) {
         toast.error("Could not load Razorpay. Please check your connection.");
@@ -299,16 +288,14 @@ export default function QuickBookingPage() {
     }
   }
 
-  /* ── derived ── */
   const displayName = contractor?.business_name || contractor?.name || contractor?.user_name || "Contractor";
   const initial = displayName[0]?.toUpperCase() || "?";
-  const photoUrl = contractor?.photo_url || contractor?.profile_photo;
+  const photoUrl = getAvatarUrl(contractor?.photo_url || contractor?.profile_photo);
   const contractorPhone = contractor?.phone || contractor?.user_phone || "";
   const whatsappLink = contractorPhone
     ? `https://wa.me/91${contractorPhone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(`Hi, I booked ${serviceName} on Thekedaar. My booking ID: ${bookingResult?.booking?.id || "N/A"}`)}`
     : "";
 
-  /* ━━━━━ loading state ━━━━━ */
   if (contractorLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] pt-24">
@@ -318,35 +305,35 @@ export default function QuickBookingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] px-4 pb-20 pt-24 md:px-6">
-      <div className="mx-auto max-w-2xl">
-        {/* ── back button ── */}
+    <main className="min-h-screen bg-[var(--color-bg)] px-4 pb-20 pt-24 md:px-6 transition-colors duration-300">
+      <div className="mx-auto max-w-xl">
+        {/* back button */}
         <button
           type="button"
           onClick={() => (step > 1 && step < 3 ? goTo(step - 1) : navigate(-1))}
-          className="mb-6 flex items-center gap-1.5 text-sm font-bold text-[var(--color-muted)] transition-colors hover:text-[var(--color-heading)]"
+          className="mb-6 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] transition-colors hover:text-[var(--color-heading)]"
         >
-          <FiChevronLeft size={18} />
+          <FiChevronLeft size={16} />
           {step > 1 && step < 3 ? "Back" : "Go Back"}
         </button>
 
-        {/* ── header ── */}
-        <section className="mb-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 md:p-8">
-          <p className="mb-1 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-accent)]">
+        {/* header block */}
+        <section className="mb-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-5 md:p-6 shadow-sm">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)]">
             Quick Booking
           </p>
-          <h1 className="font-display text-2xl font-black text-[var(--color-heading)] md:text-4xl">
+          <h1 className="font-display text-xl font-bold text-[var(--color-heading)] md:text-2xl">
             {serviceName}
           </h1>
           {servicePrice > 0 && (
-            <p className="mt-1 text-lg font-bold text-[var(--color-accent)]">
-              {money(servicePrice)}
+            <p className="mt-1 text-base font-semibold text-[var(--color-muted)]">
+              Base Price: {money(servicePrice)}
             </p>
           )}
         </section>
 
-        {/* ── step indicator ── */}
-        <div className="mb-8 flex items-center justify-between gap-2">
+        {/* step indicator */}
+        <div className="mb-8 flex items-center justify-between gap-2 px-2">
           {STEPS.map((s, i) => {
             const Icon = s.icon;
             const isActive = step === s.id;
@@ -356,23 +343,23 @@ export default function QuickBookingPage() {
                 <div className="flex flex-col items-center gap-1.5">
                   <motion.div
                     animate={{
-                      scale: isActive ? 1.12 : 1,
+                      scale: isActive ? 1.05 : 1,
                       backgroundColor: isDone
-                        ? "var(--color-accent)"
+                        ? "var(--color-primary)"
                         : isActive
-                        ? "var(--color-accent)"
+                        ? "var(--color-primary)"
                         : "var(--color-border)",
                     }}
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors"
                   >
                     {isDone ? (
-                      <FiCheck size={18} />
+                      <FiCheck size={16} />
                     ) : (
-                      <Icon size={16} className={isActive ? "text-white" : "text-[var(--color-muted)]"} />
+                      <Icon size={14} className={isActive ? "text-white" : "text-[var(--color-muted)]"} />
                     )}
                   </motion.div>
                   <span
-                    className={`text-[10px] font-bold uppercase tracking-wider ${
+                    className={`text-[9px] font-bold uppercase tracking-wider ${
                       isActive || isDone ? "text-[var(--color-heading)]" : "text-[var(--color-muted)]"
                     }`}
                   >
@@ -380,12 +367,12 @@ export default function QuickBookingPage() {
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className="mb-5 h-0.5 flex-1 rounded-full bg-[var(--color-border)] overflow-hidden">
+                  <div className="mb-4 h-0.5 flex-1 rounded-full bg-[var(--color-border)] overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full bg-[var(--color-accent)]"
+                      className="h-full rounded-full bg-[var(--color-primary)]"
                       initial={{ width: "0%" }}
                       animate={{ width: step > s.id ? "100%" : "0%" }}
-                      transition={{ duration: 0.5, ease: "easeInOut" }}
+                      transition={{ duration: 0.3 }}
                     />
                   </div>
                 )}
@@ -394,9 +381,9 @@ export default function QuickBookingPage() {
           })}
         </div>
 
-        {/* ── step content ── */}
+        {/* step content */}
         <AnimatePresence mode="wait" custom={direction}>
-          {/* ───────── STEP 1: Service Details ───────── */}
+          {/* STEP 1: Details */}
           {step === 1 && (
             <motion.div
               key="step-1"
@@ -405,12 +392,12 @@ export default function QuickBookingPage() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="space-y-5"
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="space-y-6"
             >
               {/* contractor card */}
-              <div className="glass-card rounded-2xl border border-[var(--color-border)] p-5">
-                <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-muted)]">
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-4 shadow-sm">
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
                   Your Professional
                 </p>
                 <div className="flex items-center gap-4">
@@ -418,19 +405,23 @@ export default function QuickBookingPage() {
                     <img
                       src={photoUrl}
                       alt={displayName}
-                      className="h-14 w-14 rounded-xl object-cover ring-2 ring-[var(--color-accent)]/20"
+                      className="h-12 w-12 rounded-[var(--radius-md)] object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-sm"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = getAvatarUrl("");
+                      }}
                     />
                   ) : (
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-lg font-black text-white">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-bold border border-[var(--color-border)]">
                       {initial}
                     </div>
                   )}
                   <div>
-                    <h3 className="text-lg font-black text-[var(--color-heading)]">{displayName}</h3>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--color-muted)]">
+                    <h3 className="text-base font-bold text-[var(--color-heading)]">{displayName}</h3>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--color-muted)] font-semibold">
                       {contractor?.rating && (
-                        <span className="flex items-center gap-0.5">
-                          <FiStar size={12} className="text-amber-500" />
+                        <span className="flex items-center gap-0.5 text-amber-500">
+                          <FiStar size={12} className="fill-amber-500" />
                           {contractor.rating}
                         </span>
                       )}
@@ -441,10 +432,10 @@ export default function QuickBookingPage() {
               </div>
 
               {/* preferred date */}
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0} className="glass-card rounded-2xl border border-[var(--color-border)] p-5">
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm">
                 <label className="block">
-                  <span className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">
-                    <FiCalendar size={14} /> Preferred Date
+                  <span className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                    <FiCalendar size={13} className="text-[var(--color-primary)]" /> Preferred Date
                   </span>
                   <input
                     type="date"
@@ -454,12 +445,12 @@ export default function QuickBookingPage() {
                     className="input-field w-full"
                   />
                 </label>
-              </motion.div>
+              </div>
 
               {/* time slot */}
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={1} className="glass-card rounded-2xl border border-[var(--color-border)] p-5">
-                <p className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">
-                  <FiClock size={14} /> Time Slot
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm">
+                <p className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                  <FiClock size={13} className="text-[var(--color-primary)]" /> Time Slot
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   {TIME_SLOTS.map((slot) => (
@@ -467,13 +458,13 @@ export default function QuickBookingPage() {
                       key={slot.id}
                       type="button"
                       onClick={() => setTimeSlot(slot.id)}
-                      className={`group relative rounded-xl border-2 p-3 text-center transition-all duration-200 ${
+                      className={`group relative rounded-[var(--radius-sm)] border-2 p-3 text-center transition-all duration-150 ${
                         timeSlot === slot.id
-                          ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10 shadow-lg shadow-[var(--color-accent)]/10"
-                          : "border-[var(--color-border)] bg-[var(--color-card)] hover:border-[var(--color-accent)]/40"
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary-muted)]"
+                          : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-hover)]"
                       }`}
                     >
-                      <span className="mb-1 block text-xl">{slot.icon}</span>
+                      <span className="mb-1 block text-lg">{slot.icon}</span>
                       <span
                         className={`block text-xs font-bold ${
                           timeSlot === slot.id ? "text-[var(--color-heading)]" : "text-[var(--color-muted)]"
@@ -481,25 +472,22 @@ export default function QuickBookingPage() {
                       >
                         {slot.label}
                       </span>
-                      <span className="block text-[10px] text-[var(--color-muted)]">{slot.time}</span>
+                      <span className="block text-[9px] text-[var(--color-muted)]">{slot.time}</span>
                       {timeSlot === slot.id && (
-                        <motion.div
-                          layoutId="slot-check"
-                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-white"
-                        >
-                          <FiCheck size={12} />
-                        </motion.div>
+                        <div className="absolute -right-1.5 -top-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[var(--color-primary)] text-white shadow-xs">
+                          <FiCheck size={10} />
+                        </div>
                       )}
                     </button>
                   ))}
                 </div>
-              </motion.div>
+              </div>
 
               {/* address */}
-              <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={2} className="glass-card rounded-2xl border border-[var(--color-border)] p-5">
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm">
                 <label className="block">
-                  <span className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">
-                    <FiMapPin size={14} /> Service Address
+                  <span className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                    <FiMapPin size={13} className="text-[var(--color-primary)]" /> Service Address
                   </span>
                   <textarea
                     value={address}
@@ -513,23 +501,19 @@ export default function QuickBookingPage() {
                   type="button"
                   onClick={handleDetectLocation}
                   disabled={detectingLocation}
-                  className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--color-accent)]/20 bg-[var(--color-accent)]/5 px-3.5 py-2 text-xs font-bold text-[var(--color-accent)] transition-all hover:bg-[var(--color-accent)]/10 disabled:opacity-50"
+                  className="mt-3 flex items-center gap-2 rounded-[var(--radius-xs)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 py-2 text-xs font-semibold text-[var(--color-body)] transition-all hover:bg-[var(--color-surface-hover)] disabled:opacity-50"
                 >
                   {detectingLocation ? (
-                    <LoadingSpinner size="sm" />
+                    <LoadingSpinner size="xs" />
                   ) : (
-                    <FiNavigation size={14} />
+                    <FiNavigation size={12} className="text-[var(--color-primary)]" />
                   )}
                   {detectingLocation ? "Detecting…" : "Detect my location"}
                 </button>
-              </motion.div>
+              </div>
 
               {/* next button */}
-              <motion.button
-                variants={fadeUp}
-                initial="hidden"
-                animate="visible"
-                custom={3}
+              <button
                 type="button"
                 onClick={() => {
                   if (!canProceedStep1) {
@@ -539,17 +523,15 @@ export default function QuickBookingPage() {
                   goTo(2);
                 }}
                 disabled={!canProceedStep1}
-                className={`btn-primary flex h-14 w-full items-center justify-center gap-2 text-base font-black ${
-                  !canProceedStep1 ? "cursor-not-allowed opacity-50" : ""
-                }`}
+                className="btn-primary flex h-12 w-full items-center justify-center gap-2 text-sm font-semibold tracking-wide disabled:opacity-50"
               >
                 Continue to Payment
-                <FiChevronRight size={18} />
-              </motion.button>
+                <FiChevronRight size={16} />
+              </button>
             </motion.div>
           )}
 
-          {/* ───────── STEP 2: Confirm & Pay ───────── */}
+          {/* STEP 2: Confirm & Pay */}
           {step === 2 && (
             <motion.div
               key="step-2"
@@ -558,56 +540,107 @@ export default function QuickBookingPage() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="space-y-5"
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="space-y-6"
             >
               {/* booking summary */}
-              <div className="glass-card rounded-2xl border border-[var(--color-border)] p-6">
-                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-muted)]">
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm">
+                <p className="mb-3 text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
                   Booking Summary
                 </p>
-                <div className="space-y-3">
-                  <SummaryRow icon={<FiUser size={15} />} label="Professional" value={displayName} />
-                  <SummaryRow icon={<FiStar size={15} />} label="Service" value={serviceName} />
+                <div className="space-y-2">
+                  <SummaryRow icon={<FiUser size={14} />} label="Professional" value={displayName} />
+                  <SummaryRow icon={<FiStar size={14} />} label="Service" value={serviceName} />
                   {servicePrice > 0 && (
-                    <SummaryRow icon={<FiCreditCard size={15} />} label="Service Price" value={money(servicePrice)} highlight />
+                    <SummaryRow icon={<FiCreditCard size={14} />} label="Service Price" value={money(servicePrice)} highlight />
                   )}
-                  <SummaryRow icon={<FiCalendar size={15} />} label="Date" value={new Date(preferredDate).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })} />
-                  <SummaryRow icon={<FiClock size={15} />} label="Time Slot" value={TIME_SLOTS.find((s) => s.id === timeSlot)?.label + " (" + TIME_SLOTS.find((s) => s.id === timeSlot)?.time + ")"} />
-                  <SummaryRow icon={<FiMapPin size={15} />} label="Address" value={address} />
+                  <SummaryRow icon={<FiCalendar size={14} />} label="Date" value={new Date(preferredDate).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })} />
+                  <SummaryRow icon={<FiClock size={14} />} label="Time Slot" value={TIME_SLOTS.find((s) => s.id === timeSlot)?.label + " (" + TIME_SLOTS.find((s) => s.id === timeSlot)?.time + ")"} />
+                  <SummaryRow icon={<FiMapPin size={14} />} label="Address" value={address} />
+                </div>
+              </div>
+
+              {/* Service Clarity Cards (What to Expect) */}
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm space-y-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary)]">
+                  Service Clarity
+                </p>
+                <h3 className="text-sm font-extrabold text-[var(--color-heading)]">What to expect & service clarity</h3>
+                
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  {/* Included Column */}
+                  <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] p-3.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2">
+                      <FiCheckCircle size={12} className="text-emerald-500" /> Included
+                    </span>
+                    <ul className="space-y-2 text-[11px] font-semibold text-[var(--color-body)]">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <span>Background-checked contractor</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <span>Post-service standard area cleanup</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <span>Verified booking reservation lock</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Excluded Column */}
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-rose-500 mb-2">
+                      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-bold shrink-0">✕</span> Excluded
+                    </span>
+                    <ul className="space-y-2 text-[11px] font-semibold text-[var(--color-body)]">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <span>Raw materials / parts replacement costs</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <span>Heavy machine / scaffoldings rental</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <span>Debris loading & transport offsite</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
 
               {/* payment card */}
-              <div className="glass-card rounded-2xl border border-[var(--color-border)] p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <FiCreditCard className="text-[var(--color-accent)]" size={18} />
-                  <h2 className="font-display text-xl font-black text-[var(--color-heading)]">Confirmation Fee</h2>
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-6 shadow-sm space-y-5">
+                <div className="flex items-center gap-2 border-b border-[var(--color-divider)] pb-3">
+                  <FiCreditCard className="text-[var(--color-primary)]" size={16} />
+                  <h2 className="font-display text-base font-bold text-[var(--color-heading)]">Confirmation Fee</h2>
                 </div>
 
-                <div className="mb-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+                <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-sm text-[var(--color-muted)]">Booking confirmation</span>
-                    <span className="text-3xl font-black text-[var(--color-heading)]">{money(CONFIRMATION_FEE)}</span>
+                    <span className="text-xs font-semibold text-[var(--color-body)]">Booking confirmation</span>
+                    <span className="text-2xl font-bold text-[var(--color-heading)]">{money(CONFIRMATION_FEE)}</span>
                   </div>
-                  <p className="mt-2 text-xs leading-relaxed text-[var(--color-muted)]">
-                    A small fee to confirm your booking. The service cost is settled directly with the contractor.
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--color-muted)]">
+                    A small fee to confirm your booking. The service cost is settled directly with the contractor on-site.
                   </p>
                 </div>
 
-                {/* trust badges */}
-                <div className="mb-5 space-y-2.5">
-                  <div className="flex gap-3 rounded-xl border border-indigo-500/15 bg-indigo-500/[0.06] p-3">
-                    <FiShield className="mt-0.5 shrink-0 text-indigo-500" size={16} />
-                    <p className="text-xs leading-relaxed text-[var(--color-text)]">
-                      <strong className="text-[var(--color-heading)]">Verified professional.</strong>{" "}
-                      All Thekedaar contractors are background-checked and reviewed.
+                {/* secure tags */}
+                <div className="space-y-2">
+                  <div className="flex gap-2.5 rounded-[var(--radius-sm)] border border-[var(--color-divider)] bg-[var(--color-bg)] p-3">
+                    <FiShield className="mt-0.5 shrink-0 text-[var(--color-primary)]" size={15} />
+                    <p className="text-xs leading-relaxed text-[var(--color-body)]">
+                      <strong className="text-[var(--color-heading)]">Verified professional.</strong> All Thekedaar contractors are background-checked and reviewed.
                     </p>
                   </div>
-                  <div className="flex gap-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
-                    <FiShield className="mt-0.5 shrink-0 text-emerald-600" size={16} />
-                    <p className="text-xs leading-relaxed text-[var(--color-text)]">
-                      Payments processed securely via Razorpay. Your card details are never stored.
+                  <div className="flex gap-2.5 rounded-[var(--radius-sm)] border border-[var(--color-divider)] bg-[var(--color-bg)] p-3">
+                    <FiShield className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" size={15} />
+                    <p className="text-xs leading-relaxed text-[var(--color-body)]">
+                      Secure checkout via Razorpay. Your card details are never saved or stored.
                     </p>
                   </div>
                 </div>
@@ -617,40 +650,38 @@ export default function QuickBookingPage() {
                   type="button"
                   onClick={handlePayment}
                   disabled={loading}
-                  className={`btn-primary flex h-14 w-full items-center justify-center gap-2 text-base font-black ${
-                    loading ? "cursor-not-allowed opacity-60" : ""
-                  }`}
+                  className="btn-primary flex h-12 w-full items-center justify-center gap-2 text-sm font-semibold tracking-wide disabled:opacity-50"
                 >
                   {loading ? (
-                    <LoadingSpinner size="sm" />
+                    <LoadingSpinner size="sm" color="white" />
                   ) : (
                     <>
                       Pay {money(CONFIRMATION_FEE)} via Razorpay
-                      <FiArrowRight size={18} />
+                      <FiArrowRight size={16} />
                     </>
                   )}
                 </button>
 
                 {/* simulate button */}
-                <div className="mt-3 text-center">
+                <div className="text-center">
                   <button
                     type="button"
                     onClick={handleSimulatePayment}
                     disabled={loading}
-                    className="text-xs font-bold text-[var(--color-accent)] underline underline-offset-2 transition-colors hover:text-[var(--color-heading)] disabled:opacity-50"
+                    className="text-xs font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] underline transition-colors"
                   >
                     Simulate Payment (Dev Mode)
                   </button>
                 </div>
 
-                <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
+                <p className="text-center text-[9px] font-bold uppercase tracking-wider text-[var(--color-subtle)]">
                   Secure checkout &bull; Powered by Razorpay
                 </p>
               </div>
             </motion.div>
           )}
 
-          {/* ───────── STEP 3: Confirmed ───────── */}
+          {/* STEP 3: Confirmed */}
           {step === 3 && (
             <motion.div
               key="step-3"
@@ -659,88 +690,76 @@ export default function QuickBookingPage() {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="space-y-6"
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="space-y-5"
             >
-              {/* success animation */}
+              {/* success notification */}
               <div className="flex flex-col items-center text-center">
                 <motion.div
                   variants={successPop}
                   initial="hidden"
                   animate="visible"
-                  className="mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-2xl shadow-emerald-500/30"
+                  className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-primary-muted)] text-[var(--color-primary)] border border-[var(--color-border)] shadow-xs"
                 >
-                  <FiCheck size={44} className="text-white" strokeWidth={3} />
+                  <FiCheck size={32} />
                 </motion.div>
-                <motion.h2
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                  className="font-display text-2xl font-black text-[var(--color-heading)] md:text-3xl"
-                >
+                <h2 className="font-display text-lg font-bold text-[var(--color-heading)]">
                   Booking Confirmed!
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.45, duration: 0.5 }}
-                  className="mt-2 max-w-md text-sm leading-relaxed text-[var(--color-muted)]"
-                >
+                </h2>
+                <p className="mt-1 max-w-sm text-xs leading-relaxed text-[var(--color-muted)] font-medium">
                   Your {serviceName} has been booked successfully. The contractor will reach out to you shortly.
-                </motion.p>
+                </p>
               </div>
 
               {/* booking details */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.55, duration: 0.5 }}
-                className="glass-card rounded-2xl border border-[var(--color-border)] p-6"
-              >
-                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-muted)]">
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm">
+                <p className="mb-3 text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
                   Booking Details
                 </p>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {bookingResult?.booking?.id && (
                     <SummaryRow
-                      icon={<FiCheck size={15} />}
+                      icon={<FiCheck size={14} />}
                       label="Booking ID"
                       value={`#${bookingResult.booking.id}`}
                       highlight
                     />
                   )}
-                  <SummaryRow icon={<FiUser size={15} />} label="Contractor" value={displayName} />
-                  <SummaryRow icon={<FiStar size={15} />} label="Service" value={serviceName} />
-                  <SummaryRow icon={<FiCalendar size={15} />} label="Date" value={new Date(preferredDate).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} />
-                  <SummaryRow icon={<FiClock size={15} />} label="Time" value={TIME_SLOTS.find((s) => s.id === timeSlot)?.label || timeSlot} />
-                  <SummaryRow icon={<FiMapPin size={15} />} label="Address" value={address} />
-                  <SummaryRow icon={<FiCreditCard size={15} />} label="Fee Paid" value={money(CONFIRMATION_FEE)} highlight />
+                  <SummaryRow icon={<FiUser size={14} />} label="Contractor" value={displayName} />
+                  <SummaryRow icon={<FiStar size={14} />} label="Service" value={serviceName} />
+                  <SummaryRow icon={<FiCalendar size={14} />} label="Date" value={new Date(preferredDate).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} />
+                  <SummaryRow icon={<FiClock size={14} />} label="Time" value={TIME_SLOTS.find((s) => s.id === timeSlot)?.label || timeSlot} />
+                  <SummaryRow icon={<FiMapPin size={14} />} label="Address" value={address} />
+                  <SummaryRow icon={<FiCreditCard size={14} />} label="Fee Paid" value={money(CONFIRMATION_FEE)} highlight />
                 </div>
-              </motion.div>
+              </div>
 
               {/* contact contractor */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.5 }}
-                className="glass-card rounded-2xl border border-[var(--color-border)] p-6"
-              >
-                <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--color-muted)]">
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm">
+                <p className="mb-3 text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
                   Contact Contractor
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   {photoUrl ? (
-                    <img src={photoUrl} alt={displayName} className="h-12 w-12 rounded-xl object-cover" />
+                    <img
+                      src={photoUrl}
+                      alt={displayName}
+                      className="h-11 w-11 rounded-[var(--radius-md)] object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-xs"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = getAvatarUrl("");
+                      }}
+                    />
                   ) : (
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-black text-white">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-bold border border-[var(--color-border)]">
                       {initial}
                     </div>
                   )}
-                  <div className="flex-1">
-                    <p className="font-bold text-[var(--color-heading)]">{displayName}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[var(--color-heading)] text-sm truncate">{displayName}</p>
                     {contractorPhone && (
-                      <p className="mt-0.5 flex items-center gap-1.5 text-sm text-[var(--color-muted)]">
-                        <FiPhone size={13} />
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-[var(--color-muted)] font-semibold">
+                        <FiPhone size={12} />
                         {contractorPhone}
                       </p>
                     )}
@@ -751,9 +770,9 @@ export default function QuickBookingPage() {
                   {contractorPhone && (
                     <a
                       href={`tel:${contractorPhone}`}
-                      className="flex items-center justify-center gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] py-3 text-sm font-bold text-[var(--color-heading)] transition-all hover:border-[var(--color-accent)]"
+                      className="btn-ghost border border-[var(--color-border)] text-xs rounded-[var(--radius-sm)] flex items-center justify-center gap-2 py-2.5 font-bold"
                     >
-                      <FiPhone size={16} />
+                      <FiPhone size={14} />
                       Call
                     </a>
                   )}
@@ -762,27 +781,24 @@ export default function QuickBookingPage() {
                       href={whatsappLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-bold text-white transition-all hover:bg-emerald-600"
+                      className="btn-secondary rounded-[var(--radius-sm)] flex items-center justify-center gap-2 py-2.5 text-xs text-white font-bold"
                     >
-                      <FiMessageCircle size={16} />
+                      <FiMessageCircle size={14} />
                       WhatsApp
                     </a>
                   )}
                 </div>
-              </motion.div>
+              </div>
 
               {/* track booking */}
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.85, duration: 0.5 }}
+              <button
                 type="button"
                 onClick={() => navigate("/customer/dashboard")}
-                className="btn-primary flex h-14 w-full items-center justify-center gap-2 text-base font-black"
+                className="btn-primary flex h-12 w-full items-center justify-center gap-2 text-sm font-semibold tracking-wide"
               >
                 Track Booking
-                <FiArrowRight size={18} />
-              </motion.button>
+                <FiArrowRight size={16} />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -791,16 +807,16 @@ export default function QuickBookingPage() {
   );
 }
 
-/* ── helper component ── */
+/* ── helper components ── */
 function SummaryRow({ icon, label, value, highlight = false }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-[var(--color-border)]/50 bg-[var(--color-bg)] px-4 py-3">
-      <span className="mt-0.5 shrink-0 text-[var(--color-accent)]">{icon}</span>
+    <div className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-[var(--color-divider)] bg-[var(--color-bg-elevated)] px-3.5 py-2.5">
+      <span className="mt-0.5 shrink-0 text-[var(--color-primary)]">{icon}</span>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">{label}</p>
+        <p className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-muted)]">{label}</p>
         <p
-          className={`mt-0.5 text-sm font-bold break-words ${
-            highlight ? "text-[var(--color-accent)]" : "text-[var(--color-heading)]"
+          className={`mt-0.5 text-xs font-bold break-words leading-tight ${
+            highlight ? "text-[var(--color-primary)]" : "text-[var(--color-heading)]"
           }`}
         >
           {value}
@@ -809,3 +825,4 @@ function SummaryRow({ icon, label, value, highlight = false }) {
     </div>
   );
 }
+

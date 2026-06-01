@@ -7,27 +7,29 @@ import { getImageUrl } from "../../../utils/imageUtils";
 export function BtnPrimary({ children, ...props }) {
   return (
     <button
-      className="px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-indigo-500 to-cyan-400 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+      className="btn-primary px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
       {...props}
     >
       {children}
     </button>
   );
 }
+
 export function BtnOutline({ children, className = "", ...props }) {
   return (
     <button
-      className={`px-3 py-1.5 rounded-lg text-xs font-medium border border-white/15 text-[var(--color-body)] hover:bg-white/5 transition disabled:opacity-40 ${className}`}
+      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border border-border text-heading bg-surface hover:bg-bg-elevated transition disabled:opacity-40 ${className}`}
       {...props}
     >
       {children}
     </button>
   );
 }
+
 export function BtnDanger({ children, className = "", ...props }) {
   return (
     <button
-      className={`px-3 py-1.5 rounded-lg text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition disabled:opacity-40 ${className}`}
+      className={`px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 hover:bg-rose-500 hover:text-white transition disabled:opacity-40 ${className}`}
       {...props}
     >
       {children}
@@ -39,15 +41,16 @@ export function BtnDanger({ children, className = "", ...props }) {
 export function AdminInput({ className = "", ...props }) {
   return (
     <input
-      className={`w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[var(--color-body)] placeholder-[var(--color-muted)] text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400/30 transition outline-none ${className}`}
+      className={`w-full px-4 py-2.5 rounded-lg bg-surface border border-border text-body placeholder-muted text-sm focus:border-primary transition outline-none ${className}`}
       {...props}
     />
   );
 }
+
 export function AdminSelect({ children, className = "", ...props }) {
   return (
     <select
-      className={`px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[var(--color-body)] text-sm focus:border-indigo-400 outline-none ${className}`}
+      className={`px-4 py-2.5 rounded-lg bg-surface border border-border text-body text-sm focus:border-primary outline-none transition ${className}`}
       {...props}
     >
       {children}
@@ -56,16 +59,16 @@ export function AdminSelect({ children, className = "", ...props }) {
 }
 
 /* ──────────── Stat Card ──────────── */
-export function StatCard({ label, value, icon: Icon, color = "from-indigo-500 to-cyan-400", sub }) {
+export function StatCard({ label, value, icon: Icon, color = "bg-primary/10 text-primary", sub }) {
   return (
-    <motion.div whileHover={{ y: -2, scale: 1.02 }} className="glass-card rounded-2xl p-5 flex items-center gap-4 border border-white/10">
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white shadow-lg flex-shrink-0`}>
-        <Icon size={22} />
+    <motion.div whileHover={{ y: -1 }} className="card p-5 flex items-center gap-4 border border-border bg-surface transition-all">
+      <div className={`w-12 h-12 rounded-lg ${color.includes("bg-gradient") ? "bg-primary/10 text-primary" : color} flex items-center justify-center shadow-sm flex-shrink-0`}>
+        <Icon size={20} />
       </div>
       <div>
-        <p className="text-sm text-[var(--color-muted)] font-medium">{label}</p>
-        <p className="text-2xl font-bold text-[var(--color-heading)] font-['Space_Grotesk']">{value}</p>
-        {sub && <p className="text-xs text-[var(--color-muted)] mt-0.5">{sub}</p>}
+        <p className="text-xs font-bold text-muted uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-bold text-heading mt-0.5">{value}</p>
+        {sub && <p className="text-[11px] text-muted font-medium mt-0.5">{sub}</p>}
       </div>
     </motion.div>
   );
@@ -75,16 +78,16 @@ export function StatCard({ label, value, icon: Icon, color = "from-indigo-500 to
 export function MiniChart({ data, label }) {
   const max = Math.max(...(data || []).map((d) => d.count), 1);
   return (
-    <div className="glass-card rounded-2xl p-5 border border-white/10">
-      <p className="text-sm font-semibold text-[var(--color-heading)] mb-3">{label}</p>
-      <div className="flex items-end gap-[2px] h-24">
+    <div className="card p-5 border border-border bg-surface">
+      <p className="text-sm font-bold text-heading mb-4">{label}</p>
+      <div className="flex items-end gap-[3px] h-24">
         {(data || []).slice(-30).map((d, i) => (
           <div key={i} className="flex-1 group relative">
             <div
-              className="w-full bg-gradient-to-t from-indigo-500 to-cyan-400 rounded-t-sm transition-all hover:opacity-80"
+              className="w-full bg-primary/80 rounded-t-sm transition-all hover:bg-primary"
               style={{ height: `${Math.max((d.count / max) * 100, 4)}%` }}
             />
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-[var(--color-surface)] text-[var(--color-body)] text-[10px] px-2 py-1 rounded shadow z-10 whitespace-nowrap">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-surface text-body border border-border text-[10px] px-2 py-1 rounded shadow-lg z-10 whitespace-nowrap">
               {d.count} · {new Date(d.date).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
             </div>
           </div>
@@ -117,50 +120,50 @@ export function DetailModal({ data, onClose }) {
       onClick={onClose}
     >
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-3xl w-full mt-16 glass-card rounded-2xl border border-white/10 shadow-2xl"
+        className="max-w-3xl w-full mt-16 bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-white/10">
+        <div className="flex items-center justify-between p-5 border-b border-border bg-bg-elevated">
           <div>
-            <h3 className="text-xl font-bold text-[var(--color-heading)] font-['Space_Grotesk']">
+            <h3 className="text-lg font-bold text-heading">
               {c.business_name || data.name || "Profile Details"}
             </h3>
-            <p className="text-sm text-[var(--color-muted)] mt-0.5">{data.phone} · {data.email}</p>
+            <p className="text-xs text-muted mt-0.5">{data.phone} · {data.email}</p>
           </div>
           <button
-            className="px-4 py-2 rounded-xl text-sm font-medium border border-white/10 text-[var(--color-body)] hover:bg-white/5 transition"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-border text-body hover:bg-bg-elevated transition"
             onClick={onClose}
           >
             Close
           </button>
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="p-6 space-y-6">
           {/* Identity */}
           <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-white/5 rounded-xl p-4 border border-white/5 space-y-1 text-sm text-[var(--color-body)]">
-              <p className="text-xs text-[var(--color-muted)] mb-2 uppercase tracking-wider font-bold">Identity</p>
-              <p><strong>Name:</strong> {data.name || data.user_name || "—"}</p>
-              <p><strong>Role:</strong> {data.role || "contractor"}</p>
-              <p><strong>Phone:</strong> {data.phone || "—"}</p>
-              <p><strong>Email:</strong> {data.email || "—"}</p>
+            <div className="bg-bg-elevated rounded-xl p-4 border border-border space-y-1.5 text-sm text-body">
+              <p className="text-xs text-muted mb-2.5 uppercase tracking-wider font-bold">Identity</p>
+              <p><strong className="text-heading font-medium">Name:</strong> {data.name || data.user_name || "—"}</p>
+              <p><strong className="text-heading font-medium">Role:</strong> {data.role || "contractor"}</p>
+              <p><strong className="text-heading font-medium">Phone:</strong> {data.phone || "—"}</p>
+              <p><strong className="text-heading font-medium">Email:</strong> {data.email || "—"}</p>
             </div>
-            <div className="bg-white/5 rounded-xl p-4 border border-white/5 space-y-1 text-sm text-[var(--color-body)]">
-              <p className="text-xs text-[var(--color-muted)] mb-2 uppercase tracking-wider font-bold">Business</p>
-              <p><strong>Business:</strong> {c.business_name || "—"}</p>
-              <p><strong>Category:</strong> {c.category || "—"}</p>
-              <p><strong>Location:</strong> {c.location_text || "—"}</p>
-              <p><strong>Rating:</strong> {c.rating ? `★ ${Number(c.rating).toFixed(1)}` : "N/A"}</p>
-              <p><strong>Experience:</strong> {c.experience_years ? `${c.experience_years} yrs` : "—"}</p>
-              <p><strong>Team Size:</strong> {c.team_size || 1}</p>
-              <div className="flex gap-2 mt-2">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${c.is_verified ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+            <div className="bg-bg-elevated rounded-xl p-4 border border-border space-y-1.5 text-sm text-body">
+              <p className="text-xs text-muted mb-2.5 uppercase tracking-wider font-bold">Business Info</p>
+              <p><strong className="text-heading font-medium">Business:</strong> {c.business_name || "—"}</p>
+              <p><strong className="text-heading font-medium">Category:</strong> {c.category || "—"}</p>
+              <p><strong className="text-heading font-medium">Location:</strong> {c.location_text || "—"}</p>
+              <p><strong className="text-heading font-medium">Rating:</strong> {c.rating ? `★ ${Number(c.rating).toFixed(1)}` : "N/A"}</p>
+              <p><strong className="text-heading font-medium">Experience:</strong> {c.experience_years ? `${c.experience_years} yrs` : "—"}</p>
+              <p><strong className="text-heading font-medium">Team Size:</strong> {c.team_size || 1}</p>
+              <div className="flex gap-2 mt-2.5">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${c.is_verified ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"}`}>
                   {c.is_verified ? "✓ Verified" : "Unverified"}
                 </span>
                 {c.tier && c.tier !== "standard" && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-[var(--color-body)] border border-white/10 capitalize font-bold">{c.tier}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 capitalize font-bold">{c.tier}</span>
                 )}
               </div>
             </div>
@@ -168,18 +171,18 @@ export function DetailModal({ data, onClose }) {
 
           {/* Description */}
           {c.description && (
-            <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-              <p className="text-xs text-[var(--color-muted)] mb-2 uppercase tracking-wider font-bold">Bio</p>
-              <p className="text-sm text-[var(--color-body)] leading-relaxed">{c.description}</p>
+            <div className="bg-bg-elevated rounded-xl p-4 border border-border">
+              <p className="text-xs text-muted mb-2 uppercase tracking-wider font-bold">Bio</p>
+              <p className="text-sm text-body leading-relaxed">{c.description}</p>
             </div>
           )}
 
           {/* ID Proof */}
           {idProof && (
             <div>
-              <p className="text-xs text-[var(--color-muted)] mb-2 uppercase tracking-wider font-bold">ID Proof</p>
-              <a href={idProof} target="_blank" rel="noreferrer" className="inline-block rounded-xl overflow-hidden border border-amber-500/30 hover:border-amber-400 transition">
-                <img src={idProof} alt="ID Proof" className="h-32 object-contain bg-white/5" />
+              <p className="text-xs text-muted mb-2 uppercase tracking-wider font-bold">ID Proof Document</p>
+              <a href={idProof} target="_blank" rel="noreferrer" className="inline-block rounded-xl overflow-hidden border border-border hover:border-primary/50 transition">
+                <img src={idProof} alt="ID Proof" className="h-32 object-contain bg-bg-elevated" />
               </a>
             </div>
           )}
@@ -187,11 +190,11 @@ export function DetailModal({ data, onClose }) {
           {/* Portfolio */}
           {unique.length > 0 && (
             <div>
-              <p className="text-xs text-[var(--color-muted)] mb-2 uppercase tracking-wider font-bold">Portfolio ({unique.length} photos)</p>
+              <p className="text-xs text-muted mb-2.5 uppercase tracking-wider font-bold">Portfolio Gallery ({unique.length} items)</p>
               <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
                 {unique.map((m, i) => (
-                  <a key={i} href={m} target="_blank" rel="noreferrer" className="rounded-xl overflow-hidden border border-white/10 group">
-                    <img src={m} alt="" className="w-full h-24 object-cover group-hover:scale-105 transition-transform" />
+                  <a key={i} href={m} target="_blank" rel="noreferrer" className="rounded-xl overflow-hidden border border-border group bg-bg-elevated">
+                    <img src={m} alt="" className="w-full h-20 object-cover group-hover:scale-105 transition-transform duration-300" />
                   </a>
                 ))}
               </div>

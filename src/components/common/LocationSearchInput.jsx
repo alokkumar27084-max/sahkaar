@@ -13,6 +13,7 @@ export default function LocationSearchInput({
   const [predictions, setPredictions] = useState([]);
   const [loadingPredictions, setLoadingPredictions] = useState(false);
   const [mapsReady, setMapsReady] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const canUseGoogleMaps = useMemo(() => hasGoogleMapsKey(), []);
 
@@ -59,9 +60,21 @@ export default function LocationSearchInput({
     }
   };
 
+  const filterDuplicatePredictions = (preds) => {
+    const seen = new Set();
+    return preds.filter((p) => {
+      const desc = p.description || "";
+      const key = desc.toLowerCase().trim();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
   useEffect(() => {
     let active = true;
-    if (!value || value.trim().length < 3) {
+    // Only fetch predictions if focused AND value has meaningful input
+    if (!isFocused || !value || value.trim().length < 3) {
       setPredictions([]);
       return undefined;
     }
@@ -79,13 +92,12 @@ export default function LocationSearchInput({
               includedCountries: ["in"],
             });
             if (active && newPredictions && newPredictions.length > 0) {
-              setPredictions(
-                newPredictions.slice(0, 5).map((pred) => ({
-                  place_id: pred.placeId,
-                  description: pred.text.toString(),
-                  source: "google_new",
-                }))
-              );
+              const mapped = newPredictions.slice(0, 5).map((pred) => ({
+                place_id: pred.placeId,
+                description: pred.text.toString(),
+                source: "google_new",
+              }));
+              setPredictions(filterDuplicatePredictions(mapped));
               setLoadingPredictions(false);
               return;
             }
@@ -102,13 +114,18 @@ export default function LocationSearchInput({
             async (results, status) => {
               if (!active) return;
               if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
-                setPredictions(results.slice(0, 5));
+                const mapped = results.slice(0, 5).map((pred) => ({
+                  place_id: pred.place_id || pred.placeId,
+                  description: pred.description,
+                  source: "google_legacy",
+                }));
+                setPredictions(filterDuplicatePredictions(mapped));
                 setLoadingPredictions(false);
               } else {
                 // If legacy AutocompleteService fails, use Nominatim as a robust fallback
                 const osmPredictions = await fetchNominatimPredictions(value);
                 if (active) {
-                  setPredictions(osmPredictions);
+                  setPredictions(filterDuplicatePredictions(osmPredictions));
                   setLoadingPredictions(false);
                 }
               }
@@ -123,7 +140,7 @@ export default function LocationSearchInput({
       // 2. OpenStreetMap Nominatim fallback (if maps not ready, restricted or failed)
       const osmPredictions = await fetchNominatimPredictions(value);
       if (active) {
-        setPredictions(osmPredictions);
+        setPredictions(filterDuplicatePredictions(osmPredictions));
         setLoadingPredictions(false);
       }
     }, 300);
@@ -132,7 +149,7 @@ export default function LocationSearchInput({
       active = false;
       window.clearTimeout(timer);
     };
-  }, [mapsReady, value]);
+  }, [mapsReady, value, isFocused]);
 
   async function handlePredictionClick(prediction) {
     if (prediction.source === "nominatim") {
@@ -212,6 +229,8 @@ export default function LocationSearchInput({
         value={value}
         onChange={(event) => onChange?.(event.target.value)}
         onKeyDown={handleKeyDown}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setTimeout(() => setIsFocused(false), 200)}
         placeholder={placeholder}
         disabled={disabled}
         className={`input-field !pl-10 ${className}`}
