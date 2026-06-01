@@ -15,7 +15,7 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Badge from "../../components/common/Badge";
 import StarRating from "../../components/common/StarRating";
 import Icon from "../../components/common/Icon";
-import { getImageUrl } from "../../utils/imageUtils";
+import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
 import {
   FiBell,
@@ -346,11 +346,14 @@ export default function ContractorDashboard() {
                 <h3 className="font-display font-bold text-[var(--color-muted)] uppercase tracking-wider text-[9px] mb-4">Contractor Identity</h3>
                 
                 <div className="flex items-center gap-4 mb-4">
-                  <img
-                    src={getImageUrl(profile.photo_url || profile.image_url)}
+                   <img
+                    src={getAvatarUrl(profile.photo_url || profile.image_url)}
                     alt={user?.name || "Contractor"}
                     className="w-16 h-16 rounded-2xl object-cover border-2 border-[var(--color-border)] shadow-md bg-[var(--color-bg)]"
-                    onError={(e) => { e.currentTarget.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.id}`; }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = getAvatarUrl("");
+                    }}
                   />
                   <div>
                     <h4 className="font-display font-extrabold text-lg text-[var(--color-heading)] leading-tight">{user?.name}</h4>

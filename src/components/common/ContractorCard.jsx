@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FiArrowRight, FiCreditCard, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiStar } from "react-icons/fi";
 import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
-import { getImageUrl } from "../../utils/imageUtils";
+import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
 
 export default function ContractorCard({ contractor, showCompare = false, isCompared = false, onCompare }) {
   const navigate = useNavigate();
@@ -41,18 +41,16 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
       
       {/* 1. Photo Section (Airbnb style) */}
       <div className="relative w-full sm:w-36 h-40 sm:h-36 shrink-0 rounded-xl overflow-hidden bg-[var(--color-bg-elevated)]">
-        {contractor.photo_url ? (
-          <img
-            src={getImageUrl(contractor.photo_url)}
-            alt={resolvedName}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/20 dark:to-indigo-900/20 text-3xl font-black text-indigo-500 dark:text-indigo-400">
-            {resolvedName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <img
+          src={getAvatarUrl(contractor.photo_url)}
+          alt={resolvedName}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = getAvatarUrl("");
+          }}
+        />
         {contractor.is_available && (
           <span className="absolute bottom-2.5 left-2.5 flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#1A1A1A]" title="Available Now" />
         )}

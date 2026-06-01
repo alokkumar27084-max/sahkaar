@@ -20,7 +20,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { contractorAPI, reviewAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
-import { getImageUrl } from "../../utils/imageUtils";
+import { getImageUrl, getAvatarUrl, getSafeImageUrl } from "../../utils/imageUtils";
 import StarRating from "../../components/common/StarRating";
 import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -220,11 +220,12 @@ export default function ContractorProfilePage() {
             {/* Left Column: Avatar + Name + Tags */}
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 text-center sm:text-left">
               <img
-                src={getImageUrl(contractor.photo_url)}
+                src={getAvatarUrl(contractor.photo_url)}
                 alt={name}
                 className="h-28 w-28 rounded-2xl border-4 border-[var(--color-surface)] object-cover shadow-md shrink-0 bg-[var(--color-bg-elevated)]"
                 onError={(event) => {
-                  event.currentTarget.src = "/default-contractor.png";
+                  event.target.onerror = null;
+                  event.target.src = getAvatarUrl("");
                 }}
               />
               <div className="min-w-0">
@@ -525,9 +526,13 @@ export default function ContractorProfilePage() {
                           className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm group hover:shadow-md cursor-pointer transition-shadow"
                         >
                           <img
-                            src={getImageUrl(item.image_url)}
+                            src={getSafeImageUrl(item.image_url)}
                             alt={item.title || "Work snapshot"}
                             className="h-52 w-full object-cover transition-transform duration-300 group-hover:scale-103"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = getSafeImageUrl("");
+                            }}
                           />
                           {(item.title || item.description) && (
                             <div className="p-4 border-t border-[var(--color-border)]">
@@ -545,9 +550,13 @@ export default function ContractorProfilePage() {
                             className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                           >
                             <img
-                              src={getImageUrl(url)}
+                              src={getSafeImageUrl(url)}
                               alt={`Portfolio project ${index + 1}`}
                               className="h-52 w-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = getSafeImageUrl("");
+                              }}
                             />
                           </div>
                         ))}
@@ -696,7 +705,7 @@ export default function ContractorProfilePage() {
         <button
           type="button"
           onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })}
-          className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2"
+          className="btn-primary"
         >
           <FiCreditCard size={14} />
           <span>Book Now</span>

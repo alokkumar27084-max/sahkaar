@@ -6,7 +6,7 @@ import { FiSend, FiUser, FiInfo, FiArrowLeft, FiPlus, FiCheck, FiX, FiFileText, 
 import { useNavigate, useLocation } from "react-router-dom";
 import { gsap } from "gsap";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { getImageUrl } from "../../utils/imageUtils";
+import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
 
 const SOCKET_URL = process.env.REACT_APP_API_URL
@@ -384,7 +384,7 @@ export default function ChatLayout() {
                                     >
                                         <div className="w-11 h-11 rounded-lg bg-bg-elevated border border-border flex items-center justify-center flex-shrink-0 relative overflow-hidden group-hover:border-primary/50 transition-all">
                                             {chat.other_party_photo ? (
-                                                <img src={getImageUrl(chat.other_party_photo)} alt="" className="w-full h-full object-cover" />
+                                                <img src={getAvatarUrl(chat.other_party_photo)} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = getAvatarUrl(null); }} />
                                             ) : (
                                                 <FiUser className="text-muted" size={20} />
                                             )}
@@ -432,7 +432,7 @@ export default function ChatLayout() {
                                         )}
                                         <div className="w-10 h-10 rounded-lg bg-bg-elevated border border-border flex items-center justify-center flex-shrink-0 relative overflow-hidden">
                                             {activeChatData?.other_party_photo ? (
-                                                <img src={getImageUrl(activeChatData.other_party_photo)} alt="" className="w-full h-full object-cover" />
+                                                <img src={getAvatarUrl(activeChatData.other_party_photo)} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = getAvatarUrl(null); }} />
                                             ) : (
                                                 <FiUser className="text-muted" size={18} />
                                             )}
@@ -707,7 +707,7 @@ export default function ChatLayout() {
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 rounded-lg bg-bg-elevated border border-border flex items-center justify-center overflow-hidden shadow-sm">
                                         {activeChatData?.other_party_photo ? (
-                                            <img src={getImageUrl(activeChatData.other_party_photo)} alt="" className="w-full h-full object-cover" />
+                                            <img src={getAvatarUrl(activeChatData.other_party_photo)} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.onerror = null; e.target.src = getAvatarUrl(null); }} />
                                         ) : (
                                             <FiUser className="text-muted" size={24} />
                                         )}

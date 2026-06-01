@@ -57,7 +57,12 @@ export default function HomePage() {
   };
 
   const handleCategoryClick = (categoryId) => {
-    navigate(`/search?category=${categoryId}&mode=project`);
+    // Labour Squad should redirect to /labour instead of /search
+    if (categoryId === "labour_group") {
+      navigate(`/labour`);
+    } else {
+      navigate(`/search?category=${categoryId}&mode=project`);
+    }
   };
 
   const handleQuickServiceClick = (categoryId) => {
@@ -92,20 +97,20 @@ export default function HomePage() {
     }
   ], [lang]);
 
-  // Category images — using placeholder Unsplash images
+  // Curated premium Indian stock images for local informal categories
   const categoryImages = {
-    construction: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
-    electrical: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=400&fit=crop",
-    plumbing: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&h=400&fit=crop",
-    painting: "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&h=400&fit=crop",
-    events: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&h=400&fit=crop",
-    carpentry: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=400&fit=crop",
-    farming: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=600&h=400&fit=crop",
-    transport: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&h=400&fit=crop",
-    cleaning: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop",
+    construction: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&h=400&fit=crop",
+    electrical: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&h=400&fit=crop",
+    plumbing: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&h=400&fit=crop",
+    painting: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=400&fit=crop",
+    events: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&h=400&fit=crop",
+    carpentry: "https://images.unsplash.com/photo-1534224039826-c7a0eda0e6b3?w=600&h=400&fit=crop",
+    farming: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600&h=400&fit=crop",
+    transport: "https://images.unsplash.com/photo-1597404294360-feeefa0443eb?w=600&h=400&fit=crop",
+    cleaning: "https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=600&h=400&fit=crop",
     labour_group: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
-    property: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop",
-    other: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600&h=400&fit=crop",
+    property: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop",
+    other: "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=400&fit=crop",
   };
 
   const BACKDROPS = [
@@ -137,50 +142,42 @@ export default function HomePage() {
 
   const [activeBackdrop, setActiveBackdrop] = useState(BACKDROPS[0]);
 
+  // Auto-cycle through backdrop videos on completion
+  const handleVideoEnd = () => {
+    setActiveBackdrop((prev) => {
+      const currentIndex = BACKDROPS.findIndex((b) => b.id === prev.id);
+      const nextIndex = (currentIndex + 1) % BACKDROPS.length;
+      return BACKDROPS[nextIndex];
+    });
+  };
+
   return (
     <main className="bg-[var(--color-bg)]">
       <SEOHead
-        title="Thekedaar — Home Services, Delivered"
-        description="Find verified contractors, plumbers, electricians and home service professionals near you."
+        title="Thekedaar — India's Premier Informal Contractor Marketplace"
+        description="Find verified local builders, shuttering masons, wiring electricians, tractor logistics, and daily quick helpers near you."
       />
 
       {/* ═══════ SECTION 1: HERO ═══════ */}
       <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden bg-[#0A0A0A]">
-        {/* Video / Image Background */}
+        {/* Video / Image Background - Zoomed to crop watermarks */}
         <div className="absolute inset-0">
           <video
             key={activeBackdrop.id}
             autoPlay
-            loop
             muted
             playsInline
+            onEnded={handleVideoEnd}
             poster={activeBackdrop.poster}
-            className="w-full h-full object-cover transition-opacity duration-500"
+            className="w-full h-full object-cover scale-[1.08] origin-center transition-opacity duration-500"
           >
             <source src={activeBackdrop.src} type="video/mp4" />
           </video>
           {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/45 to-black/75" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/80" />
         </div>
 
-        {/* Dynamic Backdrop Pill Switchers */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-2 max-w-full px-4">
-          {BACKDROPS.map((b) => (
-            <button
-              key={b.id}
-              onClick={() => setActiveBackdrop(b)}
-              className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md transition-all duration-300 border uppercase tracking-wider ${
-                activeBackdrop.id === b.id
-                  ? "bg-white text-black border-white shadow-lg shadow-black/20"
-                  : "bg-black/40 text-white/80 border-white/10 hover:bg-black/60 hover:text-white"
-              }`}
-            >
-              {b.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Hero Content */}
+        {/* Hero Content - No manual backdrop selector pills */}
         <div className="relative z-10 w-full max-w-[var(--max-width)] mx-auto px-5 md:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -190,19 +187,19 @@ export default function HomePage() {
             {/* Trust badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 mb-8">
               <FiCheckCircle className="text-green-400" size={14} />
-              <span className="text-white/80 text-xs font-semibold uppercase tracking-wider">
-                Trusted by {realStats?.customers || "10,000"}+ homeowners
+              <span className="text-white/85 text-xs font-semibold uppercase tracking-wider">
+                India's Trust-Based Contractor Network
               </span>
             </div>
 
-            {/* Headline */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-6">
-              Home services,<br />
-              <span className="text-indigo-400">delivered.</span>
+            {/* Headline - taglined */}
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-6 font-display">
+              Har Kaam Ka Ek<br />
+              <span className="text-indigo-400">Thekedaar.</span>
             </h1>
 
-            <p className="text-white/60 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-medium">
-              Connect with verified contractors and home service professionals in your area.
+            <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-medium">
+              India's premier marketplace for informal contractors & daily-wage expert hires. Connect directly, zero commission.
             </p>
           </motion.div>
 
@@ -214,20 +211,20 @@ export default function HomePage() {
             onSubmit={handleSearch}
             className="relative max-w-2xl mx-auto"
           >
-            <div className="flex items-center bg-white rounded-2xl shadow-xl overflow-hidden">
-              <FiSearch className="ml-5 text-gray-400 shrink-0" size={20} />
+            <div className="flex items-center bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-1">
+              <FiSearch className="ml-4 text-gray-400 shrink-0" size={20} />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => setShowTrending(true)}
                 onBlur={() => setTimeout(() => setShowTrending(false), 200)}
-                placeholder="Search for plumbers, electricians, painters..."
-                className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-4 text-gray-900 text-sm md:text-base placeholder:text-gray-400 font-medium"
+                placeholder="Search for builders, wiring, plumbers, material logistics..."
+                className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-3 text-gray-900 text-sm md:text-base placeholder:text-gray-400 font-semibold"
               />
               <button
                 type="submit"
-                className="h-10 md:h-12 px-6 md:px-8 mr-2 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white text-sm font-bold transition-colors shrink-0"
+                className="h-12 md:h-14 px-6 md:px-8 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0"
               >
                 Search
               </button>
@@ -280,20 +277,20 @@ export default function HomePage() {
       {/* ═══════ SECTION 2: CORE SERVICE CATEGORIES (Image Grid) ═══════ */}
       <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
         <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold text-[var(--color-heading)] tracking-tight">
-            What are you looking for?
+          <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
+            Kaunsa Theka Dena Hai?
           </h2>
-          <p className="mt-3 text-[var(--color-muted)] text-base">
-            Browse our most popular service categories
+          <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
+            Browse our 12 trust-based informal contractor sectors
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
-              className="group relative aspect-[4/3] rounded-xl overflow-hidden cursor-pointer"
+              className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-[var(--color-border)]"
             >
               <img
                 src={categoryImages[cat.id]}
@@ -301,11 +298,14 @@ export default function HomePage() {
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h3 className="text-white font-semibold text-sm md:text-base">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <h3 className="text-white font-bold text-base md:text-lg font-display">
                   {t(cat.key)}
                 </h3>
+                <p className="text-white/60 text-[10px] uppercase font-bold mt-1 tracking-wider hidden sm:block">
+                  100% Digitally Verified
+                </p>
               </div>
             </button>
           ))}
@@ -313,14 +313,14 @@ export default function HomePage() {
       </section>
 
       {/* ═══════ SECTION 3: HOW IT WORKS ═══════ */}
-      <section className="bg-[var(--color-bg-elevated)]">
-        <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl md:text-3xl font-bold text-[var(--color-heading)] tracking-tight">
-              How Thekedaar works
+      <section className="bg-[var(--color-bg-elevated)] relative overflow-hidden py-16 md:py-24 border-y border-[var(--color-divider)]">
+        <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
+              Kaam Kaise Hota Hai?
             </h2>
-            <p className="mt-3 text-[var(--color-muted)] text-base">
-              Get the job done in 3 simple steps
+            <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
+              Secure verbal and trust-based contracting in 3 easy steps
             </p>
           </div>
 
@@ -329,28 +329,28 @@ export default function HomePage() {
               {
                 step: "01",
                 title: "Tell us what you need",
-                desc: "Choose a service category and describe your requirements. It takes less than a minute.",
+                desc: "Choose a service category, describe your specific project or daily work. It takes less than a minute.",
                 icon: <FiSearch size={24} />,
               },
               {
                 step: "02",
-                title: "Get matched with pros",
-                desc: "We connect you with verified, nearby professionals. Compare ratings, prices, and reviews.",
+                title: "Get matched with local pros",
+                desc: "Connect directly with verified nearby contractors. Compare local rates, professional ratings, and previous work.",
                 icon: <FiCheckCircle size={24} />,
               },
               {
                 step: "03",
-                title: "Get it done",
-                desc: "Book, track progress, and pay securely through the platform. Quality guaranteed.",
+                title: "Quality checking & pay",
+                desc: "Pay securely via milestones or on completion. Handover payments only when quality checks pass.",
                 icon: <FiShield size={24} />,
               },
             ].map((item) => (
-              <div key={item.step} className="text-center md:text-left">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 mb-5">
+              <div key={item.step} className="card p-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-md hover:shadow-xl transition-all duration-300">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 mb-6 shadow-sm border border-[var(--color-border)]">
                   {item.icon}
                 </div>
-                <div className="text-xs font-semibold text-[var(--color-muted)] mb-2">STEP {item.step}</div>
-                <h3 className="text-lg font-bold text-[var(--color-heading)] mb-2">{item.title}</h3>
+                <div className="text-xs font-bold text-[var(--color-muted)] mb-2 tracking-widest uppercase">STEP {item.step}</div>
+                <h3 className="text-lg font-bold text-[var(--color-heading)] mb-2 font-display">{item.title}</h3>
                 <p className="text-[var(--color-muted)] text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
@@ -360,18 +360,18 @@ export default function HomePage() {
 
       {/* ═══════ SECTION 4: QUICK SERVICES HORIZONTAL SCROLL ═══════ */}
       <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-10">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-[var(--color-heading)] tracking-tight">
-              Popular quick services
+            <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
+              Daily Hires & Emergency Services
             </h2>
-            <p className="mt-1 text-[var(--color-muted)] text-sm">Book instantly, starting from ₹199</p>
+            <p className="mt-2 text-[var(--color-muted)] text-sm font-semibold">Book local daily-wage experts & on-call repairs instantly</p>
           </div>
           <button
             onClick={() => navigate("/select-service")}
-            className="hidden md:flex items-center gap-1 text-sm font-semibold text-[var(--color-primary)] hover:underline"
+            className="hidden md:flex items-center gap-1.5 text-sm font-bold text-[var(--color-primary)] hover:underline"
           >
-            See all <FiChevronRight size={16} />
+            See all <FiChevronRight size={18} />
           </button>
         </div>
 
@@ -382,14 +382,14 @@ export default function HomePage() {
               onClick={() => handleQuickServiceClick(service.id)}
               className="flex-shrink-0 w-[160px] md:w-[180px] snap-start group"
             >
-              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-5 text-center hover:shadow-md hover:-translate-y-1 transition-all duration-200">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-3 text-indigo-600 dark:text-indigo-400">
+              <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 text-center shadow-md hover:shadow-lg hover:-translate-y-1.5 transition-all duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mx-auto mb-4 text-indigo-600 dark:text-indigo-400 shadow-sm border border-[var(--color-border)]">
                   <Icon name={service.icon} className="w-6 h-6" />
                 </div>
-                <h4 className="text-xs font-semibold text-[var(--color-heading)] mb-1 line-clamp-2 min-h-[32px]">
-                  {service.label}
+                <h4 className="text-xs font-bold text-[var(--color-heading)] mb-2 line-clamp-2 min-h-[32px] font-display">
+                  {t(service.labelKey)}
                 </h4>
-                <p className="text-xs text-[var(--color-primary)] font-semibold">
+                <p className="text-xs text-[var(--color-primary)] font-bold">
                   From ₹{service.price}
                 </p>
               </div>
@@ -400,7 +400,7 @@ export default function HomePage() {
         {/* Mobile see all */}
         <button
           onClick={() => navigate("/select-service")}
-          className="md:hidden mt-4 w-full py-3 rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+          className="md:hidden mt-6 w-full py-3.5 rounded-xl border border-[var(--color-border)] text-sm font-bold text-[var(--color-heading)] bg-[var(--color-surface)] shadow-sm active:shadow-inner hover:bg-[var(--color-bg-elevated)] transition-all"
         >
           See all services →
         </button>
@@ -531,13 +531,13 @@ export default function HomePage() {
 
       {/* ═══════ SECTION 9: CTA BANNER ═══════ */}
       <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
-        <div className="bg-[var(--color-heading)] rounded-2xl p-10 md:p-16 text-center md:text-left">
+        <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-blue-950 rounded-2xl p-10 md:p-16 text-center md:text-left border border-indigo-800/30 shadow-xl">
           <div className="md:flex md:items-center md:justify-between">
             <div className="mb-6 md:mb-0">
               <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
                 Are you a professional?
               </h2>
-              <p className="mt-2 text-white/60 text-base max-w-md">
+              <p className="mt-2 text-white/70 text-base max-w-md">
                 Join thousands of verified contractors and grow your business with Thekedaar.
               </p>
             </div>

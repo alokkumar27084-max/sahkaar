@@ -6,7 +6,7 @@ import { sanitizeForm, isValidImageFile } from "../../utils/validators";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Icon from "../../components/common/Icon";
 import toast from "react-hot-toast";
-import { getImageUrl } from "../../utils/imageUtils";
+import { getImageUrl, getAvatarUrl, getSafeImageUrl } from "../../utils/imageUtils";
 import { useGeolocation } from "../../hooks/useGeolocation";
 
 export default function ContractorEditPage() {
@@ -233,9 +233,13 @@ export default function ContractorEditPage() {
         <div className="grid md:grid-cols-2 gap-5 mb-6">
           <label className="flex flex-col items-center justify-center border border-[var(--color-border)] bg-[var(--color-bg-elevated)] rounded-xl p-5 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all">
             <img
-              src={getImageUrl(profile?.photo_url || profile?.image_url)}
+              src={getAvatarUrl(profile?.photo_url || profile?.image_url)}
               alt="profile"
               className="w-20 h-20 rounded-full object-cover mx-auto border-2 border-[var(--color-border)] shadow-sm"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = getAvatarUrl("");
+              }}
             />
             <p className="text-xs font-bold text-[var(--color-heading)] mt-3">Change Profile Photo</p>
             <p className="text-[10px] text-[var(--color-muted)] font-semibold mt-0.5">JPG, PNG under 5MB</p>
@@ -277,7 +281,15 @@ export default function ContractorEditPage() {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => onDropAt(idx)}
                 >
-                  <img src={getImageUrl(url)} alt={`portfolio-${idx + 1}`} className="w-full h-24 object-cover rounded-md" />
+                  <img
+                    src={getSafeImageUrl(url)}
+                    alt={`portfolio-${idx + 1}`}
+                    className="w-full h-24 object-cover rounded-md"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = getSafeImageUrl("");
+                    }}
+                  />
                   <div className="flex justify-between items-center gap-1 mt-2">
                     <div className="flex gap-0.5">
                       <button type="button" onClick={() => movePortfolioItem(idx, -1)} className="p-1 text-[10px] bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border)] text-[var(--color-heading)] hover:bg-[var(--color-surface)]">

@@ -17,6 +17,7 @@ import {
 import { labourAPI, quickBookingAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { WHATSAPP_URL } from "../../utils/constants";
+import { getAvatarUrl } from "../../utils/imageUtils";
 
 export default function LabourProfilePage() {
   const { id } = useParams();
@@ -182,9 +183,13 @@ export default function LabourProfilePage() {
         <div className="card bg-[var(--color-surface)] border border-[var(--color-border)] p-6 md:p-8 rounded-[var(--radius-lg)] shadow-sm">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
             <img
-              src={crew.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${crew.id}`}
+              src={getAvatarUrl(crew.photo_url)}
               alt={crew.name}
               className="w-24 h-24 rounded-[var(--radius-md)] object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-sm"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = getAvatarUrl("");
+              }}
             />
             <div className="space-y-2 flex-1">
               <div className="flex flex-wrap items-center gap-3">

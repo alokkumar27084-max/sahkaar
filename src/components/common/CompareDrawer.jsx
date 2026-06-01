@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiArrowUpRight, FiCheck, FiChevronDown, FiChevronUp, FiMessageCircle } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
+import { getAvatarUrl } from "../../utils/imageUtils";
 
 function formatPrice(value) {
   if (!value) return "—";
@@ -64,7 +65,7 @@ export default function CompareDrawer({ contractors, onRemove, onClear }) {
             <div className="flex -space-x-3">
               {contractors.map(c => (
                 <div key={c.id} className="w-10 h-10 rounded-full border-4 border-[#0D1021] bg-slate-800 overflow-hidden ring-1 ring-white/10">
-                  <img src={c.photo_url || `https://ui-avatars.com/api/?name=${c.name || 'C'}`} alt="Pro" className="w-full h-full object-cover" />
+                  <img src={getAvatarUrl(c.photo_url)} alt="Pro" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>

@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import { profileAPI } from "../../services/api";
+import { getAvatarUrl } from "../../utils/imageUtils";
 
 const fadeUp = {
   hidden: { opacity: 0 },
@@ -108,7 +109,7 @@ export default function MyProfilePage() {
 
   const isNewProfile = !profile;
   const isEditing = editing || isNewProfile;
-  const currentAvatar = avatarPreview || profile?.avatar_url;
+  const currentAvatar = avatarPreview || getAvatarUrl(profile?.avatar_url);
 
   return (
     <main className="min-h-screen bg-[var(--color-bg)] pt-24 pb-20 transition-colors duration-300">
@@ -144,7 +145,15 @@ export default function MyProfilePage() {
               >
                 <div className="w-20 h-20 rounded-[var(--radius-md)] overflow-hidden bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex items-center justify-center shadow-xs">
                   {currentAvatar ? (
-                    <img src={currentAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                    <img
+                      src={currentAvatar}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = getAvatarUrl("");
+                      }}
+                    />
                   ) : (
                     <span className="text-[var(--color-primary)] text-2xl font-display font-bold">
                       {(form.display_name || user?.name || "U")[0].toUpperCase()}

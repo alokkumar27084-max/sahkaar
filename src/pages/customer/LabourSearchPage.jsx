@@ -18,6 +18,7 @@ import {
 import { useGeolocation } from "../../hooks/useGeolocation";
 import { labourAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { getAvatarUrl } from "../../utils/imageUtils";
 
 export default function LabourSearchPage() {
   const { lat: gpsLat, lng: gpsLng, address: gpsAddress, request: requestGps, loading: gpsLoading } = useGeolocation();
@@ -226,11 +227,12 @@ export default function LabourSearchPage() {
                       {/* Header info */}
                       <div className="flex gap-4 items-center mb-5">
                         <img
-                          src={crew.photo_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${crew.id}`}
+                          src={getAvatarUrl(crew.photo_url)}
                           alt={crew.name}
                           className="w-14 h-14 rounded-xl object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-sm"
                           onError={(e) => {
-                            e.target.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${crew.id}`;
+                            e.target.onerror = null;
+                            e.target.src = getAvatarUrl("");
                           }}
                         />
                         <div>

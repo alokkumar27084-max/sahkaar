@@ -70,7 +70,7 @@ export default function ServiceSelectPage() {
     if (serviceId === "quick" || serviceId === "project") {
       nextParams.set("mode", serviceId);
       navigate(`/search?${nextParams.toString()}`);
-    } else {
+    } else if (serviceId === "labour") {
       navigate(`/labour?${nextParams.toString()}`);
     }
   };
@@ -145,7 +145,7 @@ export default function ServiceSelectPage() {
                 </div>
 
                 {/* Continue button */}
-                <button className="w-full h-11 rounded-xl bg-[var(--color-heading)] text-white group-hover:bg-[var(--color-primary)] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300">
+                <button className="w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-500/10 hover:from-indigo-500 hover:to-indigo-600 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300">
                   <span>Explore category</span>
                   <FiArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </button>

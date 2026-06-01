@@ -2,78 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800;14..32,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 /* ═══════════════════════════════════════════════════════════
-   THEKEDAAR — CLEAN MARKETPLACE DESIGN SYSTEM
-   Version: 5.0 — Airbnb / Urban Company inspired
-   Font: Inter (single family, all weights)
+   THEKEDAAR — SOFT UI NEUMORPHIC DESIGN SYSTEM
+   Version: 6.0 — Premium Local Contractor Marketplace
+   Fonts: Outfit (Display) & Plus Jakarta Sans (Body)
    ═══════════════════════════════════════════════════════════ */
 
 /* ─── Design Tokens ─── */
 @layer base {
   :root {
-    /* Brand */
-    --color-primary: #6366F1;
-    --color-primary-hover: #4F46E5;
-    --color-primary-muted: rgba(99, 102, 241, 0.08);
-    --color-accent: #06B6D4;
-    --color-accent-hover: #0891B2;
-    --color-accent-muted: rgba(6, 182, 212, 0.08);
+    /* Brand - Highly Premium */
+    --color-primary: #4F46E5;
+    --color-primary-hover: #4338CA;
+    --color-primary-muted: rgba(79, 70, 229, 0.08);
+    --color-accent: #0891B2;
+    --color-accent-hover: #0E7490;
+    --color-accent-muted: rgba(8, 145, 178, 0.08);
 
-    /* Surfaces — Clean whites */
-    --color-bg: #FFFFFF;
-    --color-bg-elevated: #F7F7F7;
-    --color-surface: #FFFFFF;
-    --color-surface-hover: #F7F7F7;
+    /* Neumorphic Soft UI Canvas - Monochromatic Soft Gray-Blue */
+    --color-bg: #E5E9F0;
+    --color-bg-elevated: #ECEFF4;
+    --color-surface: #E5E9F0;
+    --color-surface-hover: #ECEFF4;
 
-    /* Text — Airbnb-inspired high contrast */
-    --color-heading: #222222;
-    --color-body: #484848;
-    --color-muted: #717171;
-    --color-subtle: #B0B0B0;
+    /* Text - Balanced High Contrast */
+    --color-heading: #1E293B;
+    --color-body: #334155;
+    --color-muted: #64748B;
+    --color-subtle: #94A3B8;
 
-    /* Borders & Dividers — Subtle */
-    --color-border: #DDDDDD;
-    --color-border-hover: #C0C0C0;
-    --color-divider: #EBEBEB;
+    /* Borders & Dividers - Extremely subtle and soft */
+    --color-border: rgba(163, 177, 198, 0.35);
+    --color-border-hover: rgba(163, 177, 198, 0.6);
+    --color-divider: rgba(163, 177, 198, 0.2);
 
     /* Status */
-    --color-success: #008A05;
-    --color-error: #C13515;
-    --color-warning: #E8A317;
+    --color-success: #16A34A;
+    --color-error: #DC2626;
+    --color-warning: #D97706;
 
-    /* Shadows — Flat, clean, no glows */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.05);
-    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
-    --shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.12);
+    /* Neumorphic Dual-Tone Elevation Shadows */
+    --shadow-neumorphic-raised: 8px 8px 16px #bec2ca, -8px -8px 16px #ffffff;
+    --shadow-neumorphic-pressed: inset 6px 6px 12px #bec2ca, inset -6px -6px 12px #ffffff;
+    
+    --shadow-xs: 2px 2px 5px #bec2ca, -2px -2px 5px #ffffff;
+    --shadow-sm: 4px 4px 8px #bec2ca, -4px -4px 8px #ffffff;
+    --shadow-card: var(--shadow-neumorphic-raised);
+    --shadow-card-hover: 12px 12px 24px #bec2ca, -12px -12px 24px #ffffff;
+    --shadow-md: var(--shadow-neumorphic-raised);
+    --shadow-lg: 12px 12px 24px #bec2ca, -12px -12px 24px #ffffff;
+    --shadow-xl: 16px 16px 32px #bec2ca, -16px -16px 32px #ffffff;
 
-    /* Radius — Rounded but not excessive */
-    --radius-xs: 4px;
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 20px;
-    --radius-2xl: 24px;
+    /* Radius — Generous Rounded Corners for Soft UI */
+    --radius-xs: 6px;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 26px;
+    --radius-2xl: 32px;
     --radius-pill: 9999px;
 
     /* Transitions */
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: 150ms var(--ease-out);
-    --transition-base: 200ms var(--ease-out);
-    --transition-slow: 350ms var(--ease-out);
+    --transition-base: 250ms var(--ease-out);
+    --transition-slow: 400ms var(--ease-out);
 
     /* Layout */
     --header-height: 64px;
     --max-width: 1280px;
   }
 
-  /* ─── Dark Mode — Neutral, never blue-tinted ─── */
+  /* ─── Dark Mode — Premium Bluish Obsidian Neumorphism & Glassmorphism ─── */
   .dark {
     --color-primary: #818CF8;
     --color-primary-hover: #6366F1;
@@ -82,35 +85,39 @@
     --color-accent-hover: #06B6D4;
     --color-accent-muted: rgba(34, 211, 238, 0.10);
 
-    /* Deep neutral surfaces */
-    --color-bg: #0A0A0A;
-    --color-bg-elevated: #141414;
-    --color-surface: #1A1A1A;
-    --color-surface-hover: #222222;
+    /* Deep midnight obsidian Soft UI base */
+    --color-bg: #0B0F19;
+    --color-bg-elevated: #111827;
+    --color-surface: #0B0F19;
+    --color-surface-hover: #172237;
 
     /* Text */
-    --color-heading: #F5F5F5;
-    --color-body: #A3A3A3;
-    --color-muted: #737373;
-    --color-subtle: #525252;
+    --color-heading: #F8FAFC;
+    --color-body: #E2E8F0;
+    --color-muted: #94A3B8;
+    --color-subtle: #475569;
 
-    /* Borders */
-    --color-border: #2A2A2A;
-    --color-border-hover: #3A3A3A;
-    --color-divider: #1F1F1F;
+    /* Glowing Indigo Glassmorphic Borders */
+    --color-border: rgba(99, 102, 241, 0.15);
+    --color-border-hover: rgba(99, 102, 241, 0.3);
+    --color-divider: rgba(99, 102, 241, 0.08);
 
     /* Status */
     --color-success: #22C55E;
     --color-error: #EF4444;
     --color-warning: #F59E0B;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.20), 0 1px 2px rgba(0, 0, 0, 0.15);
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.20), 0 4px 12px rgba(0, 0, 0, 0.15);
-    --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.20), 0 8px 24px rgba(0, 0, 0, 0.18);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
-    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.30), 0 4px 10px rgba(0, 0, 0, 0.20);
-    --shadow-xl: 0 20px 50px -12px rgba(0, 0, 0, 0.40);
+    /* Bluish Neumorphic Dual-Tone Elevation Shadows for Dark Mode */
+    --shadow-neumorphic-raised: 8px 8px 16px #030509, -8px -8px 16px #131A2B;
+    --shadow-neumorphic-pressed: inset 6px 6px 12px #030509, inset -6px -6px 12px #131A2B;
+
+    --shadow-xs: 2px 2px 5px #030509, -2px -2px 5px #131A2B;
+    --shadow-sm: 4px 4px 8px #030509, -4px -4px 8px #131A2B;
+    --shadow-card: var(--shadow-neumorphic-raised);
+    --shadow-card-hover: 12px 12px 24px #030509, -12px -12px 24px #131A2B;
+    --shadow-md: var(--shadow-neumorphic-raised);
+    --shadow-lg: 12px 12px 24px #030509, -12px -12px 24px #131A2B;
+    --shadow-xl: 16px 16px 32px #030509, -16px -16px 32px #131A2B;
   }
 }
 
@@ -122,7 +129,7 @@
 }
 
 html {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   scroll-padding-top: calc(var(--header-height) + 16px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -233,14 +240,14 @@ select {
    ═══════════════════════════════════════════ */
 
 .font-display {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
   font-weight: 700;
 }
 
 .section-title {
   margin: 0;
   color: var(--color-heading);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
   font-weight: 700;
   font-size: clamp(1.5rem, 4vw, 2.25rem);
   line-height: 1.2;
@@ -263,33 +270,34 @@ select {
 }
 
 /* ═══════════════════════════════════════════
-   CARDS — Clean Marketplace
+   CARDS — Neumorphic Soft UI
    ═══════════════════════════════════════════ */
 
 .glass-card,
 .card,
 .surface-panel {
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1.5px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-neumorphic-raised);
   position: relative;
   overflow: hidden;
   transition:
-    transform 0.2s var(--ease-out),
-    box-shadow 0.2s var(--ease-out),
-    border-color 0.2s ease;
+    transform 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out),
+    border-color 0.25s ease;
 }
 
 .glass-card:hover,
 .card:hover,
 .hover-lift:hover {
   box-shadow: var(--shadow-card-hover);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  border-color: var(--color-border-hover);
 }
 
 /* ═══════════════════════════════════════════
-   BUTTONS — Clean System
+   BUTTONS — Tactile Soft UI
    ═══════════════════════════════════════════ */
 
 .btn-base,
@@ -301,85 +309,124 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border-radius: var(--radius-sm);
-  border: 1.5px solid transparent;
-  font-family: 'Inter', sans-serif;
+  gap: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 14px;
   font-weight: 600;
   line-height: 1;
-  min-height: 44px;
-  padding: 0 20px;
+  min-height: 46px;
+  padding: 0 24px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
   text-decoration: none;
+  background: var(--color-surface);
+  color: var(--color-heading);
+  box-shadow: var(--shadow-neumorphic-raised);
   transition:
-    transform 0.15s var(--ease-out),
-    box-shadow 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+    transform 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .btn-primary {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
   color: #FFFFFF;
-  box-shadow: none;
+  border-color: transparent;
+  box-shadow: 4px 4px 12px rgba(79, 70, 229, 0.25), -4px -4px 12px rgba(255, 255, 255, 0.8);
+}
+
+.dark .btn-primary {
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.4), -4px -4px 12px rgba(255, 255, 255, 0.05);
 }
 
 .btn-primary:hover {
-  background: var(--color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 16px rgba(79, 70, 229, 0.35), -6px -6px 16px rgba(255, 255, 255, 0.9);
+}
+
+.dark .btn-primary:hover {
+  box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.5), -6px -6px 16px rgba(255, 255, 255, 0.08);
 }
 
 .btn-primary:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0);
+  box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.1);
 }
 
 .btn-secondary {
-  background: var(--color-accent);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover));
   color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 4px 4px 12px rgba(8, 145, 178, 0.25), -4px -4px 12px rgba(255, 255, 255, 0.8);
+}
+
+.dark .btn-secondary {
+  box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.4), -4px -4px 12px rgba(255, 255, 255, 0.05);
 }
 
 .btn-secondary:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 16px rgba(8, 145, 178, 0.35), -6px -6px 16px rgba(255, 255, 255, 0.9);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.2), inset -4px -4px 8px rgba(255, 255, 255, 0.1);
 }
 
 .btn-ghost {
   background: transparent;
   color: var(--color-body);
   border-color: transparent;
+  box-shadow: none;
 }
 
 .btn-ghost:hover {
   background: var(--color-bg-elevated);
   color: var(--color-heading);
+  box-shadow: var(--shadow-neumorphic-raised);
+}
+
+.btn-ghost:active {
+  box-shadow: var(--shadow-neumorphic-pressed);
 }
 
 .btn-outline-cyan {
   background: transparent;
   color: var(--color-accent);
   border-color: var(--color-accent);
+  box-shadow: var(--shadow-neumorphic-raised);
 }
 
 .btn-outline-cyan:hover {
   background: var(--color-accent);
   color: #FFFFFF;
-  transform: translateY(-1px);
+  border-color: transparent;
+  transform: translateY(-2px);
+}
+
+.btn-outline-cyan:active {
+  box-shadow: var(--shadow-neumorphic-pressed);
 }
 
 .btn-amber {
   background: var(--color-warning);
   color: #1A1A1A;
+  border-color: transparent;
 }
 
 .btn-amber:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 12px rgba(217, 119, 6, 0.3), -4px -4px 12px rgba(255, 255, 255, 0.8);
+}
+
+.btn-amber:active {
+  box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Button shimmer — subtle sweep on hover */
@@ -423,22 +470,23 @@ select {
 }
 
 /* ═══════════════════════════════════════════
-   INPUTS — Clean
+   INPUTS — Tactile Channels
    ═══════════════════════════════════════════ */
 
 .input-field {
   width: 100%;
-  height: 48px;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  height: 50px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   background: var(--color-bg);
   color: var(--color-heading);
-  padding: 0 16px;
+  padding: 0 18px;
   font-size: 15px;
-  font-weight: 400;
+  font-weight: 500;
+  box-shadow: var(--shadow-neumorphic-pressed);
   transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    border-color 0.2s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
 }
 
 .input-field::placeholder {
@@ -451,13 +499,9 @@ select {
 }
 
 .input-field:focus {
-  border-color: var(--color-heading);
-  box-shadow: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-neumorphic-pressed), 0 0 0 3px var(--color-primary-muted);
   outline: none;
-}
-
-.dark .input-field:focus {
-  border-color: var(--color-heading);
 }
 
 .input-field.error {

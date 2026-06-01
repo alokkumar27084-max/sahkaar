@@ -23,6 +23,7 @@ import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import { contractorAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import { getAvatarUrl } from "../../utils/imageUtils";
 
 /* ─── constants ─── */
 const STEPS = [
@@ -289,7 +290,7 @@ export default function QuickBookingPage() {
 
   const displayName = contractor?.business_name || contractor?.name || contractor?.user_name || "Contractor";
   const initial = displayName[0]?.toUpperCase() || "?";
-  const photoUrl = contractor?.photo_url || contractor?.profile_photo;
+  const photoUrl = getAvatarUrl(contractor?.photo_url || contractor?.profile_photo);
   const contractorPhone = contractor?.phone || contractor?.user_phone || "";
   const whatsappLink = contractorPhone
     ? `https://wa.me/91${contractorPhone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(`Hi, I booked ${serviceName} on Thekedaar. My booking ID: ${bookingResult?.booking?.id || "N/A"}`)}`
@@ -405,6 +406,10 @@ export default function QuickBookingPage() {
                       src={photoUrl}
                       alt={displayName}
                       className="h-12 w-12 rounded-[var(--radius-md)] object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-sm"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = getAvatarUrl("");
+                      }}
                     />
                   ) : (
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-bold border border-[var(--color-border)]">
@@ -736,7 +741,15 @@ export default function QuickBookingPage() {
                 </p>
                 <div className="flex items-center gap-3">
                   {photoUrl ? (
-                    <img src={photoUrl} alt={displayName} className="h-11 w-11 rounded-[var(--radius-md)] object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-xs" />
+                    <img
+                      src={photoUrl}
+                      alt={displayName}
+                      className="h-11 w-11 rounded-[var(--radius-md)] object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-xs"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = getAvatarUrl("");
+                      }}
+                    />
                   ) : (
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-primary-muted)] text-[var(--color-primary)] font-bold border border-[var(--color-border)]">
                       {initial}

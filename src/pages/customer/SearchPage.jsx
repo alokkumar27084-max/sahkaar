@@ -669,11 +669,11 @@ export default function SearchPage() {
                           >
                             <div 
                               className={`w-full rounded-t-sm transition-all duration-300 ${
-                                isActive ? "bg-primary" : "bg-muted/30"
+                                isActive ? "bg-[var(--color-primary)]" : "bg-[var(--color-muted)]/30"
                               }`}
                               style={{ height: `${(count / 92) * 100}%` }}
                             />
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-surface border border-border text-[9px] font-bold px-1.5 py-0.5 rounded shadow z-10 whitespace-nowrap text-heading">
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[9px] font-bold px-1.5 py-0.5 rounded shadow z-10 whitespace-nowrap text-[var(--color-heading)]">
                               ₹{bucketPrice} ({count} pros)
                             </div>
                           </div>

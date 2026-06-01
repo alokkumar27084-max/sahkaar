@@ -19,7 +19,7 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { contractorAPI } from "../../services/api";
-import { getImageUrl } from "../../utils/imageUtils";
+import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 /* ── Constants ── */
@@ -261,11 +261,12 @@ export default function MeetingBookingPage() {
           <div className="flex items-center gap-4">
             {contractor.photo_url ? (
               <img
-                src={getImageUrl(contractor.photo_url)}
+                src={getAvatarUrl(contractor.photo_url)}
                 alt={displayName}
                 className="h-12 w-12 rounded-[var(--radius-md)] object-cover bg-[var(--color-bg-elevated)] border border-[var(--color-border)] shadow-xs"
                 onError={(e) => {
-                  e.currentTarget.style.display = "none";
+                  e.target.onerror = null;
+                  e.target.src = getAvatarUrl("");
                 }}
               />
             ) : (
