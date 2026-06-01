@@ -98,20 +98,21 @@ export default function HomePage() {
   ], [lang]);
 
   // Curated premium Indian stock images for local informal categories
+  
   const categoryImages = {
-    construction: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&h=400&fit=crop",
-    electrical: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&h=400&fit=crop",
-    plumbing: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&h=400&fit=crop",
-    painting: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=400&fit=crop",
-    events: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&h=400&fit=crop",
-    carpentry: "https://images.unsplash.com/photo-1534224039826-c7a0eda0e6b3?w=600&h=400&fit=crop",
-    farming: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600&h=400&fit=crop",
-    transport: "https://images.unsplash.com/photo-1597404294360-feeefa0443eb?w=600&h=400&fit=crop",
-    cleaning: "https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=600&h=400&fit=crop",
+    construction: "https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=600&h=400&fit=crop",
+    electrical: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=400&fit=crop",
+    plumbing: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
+    painting: "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&h=400&fit=crop",
+    events: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&h=400&fit=crop",
+    carpentry: "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?w=600&h=400&fit=crop",
+    farming: "https://images.unsplash.com/photo-1595508064774-5ff825520bb0?w=600&h=400&fit=crop",
+    transport: "https://images.unsplash.com/photo-1601628828688-632f38a5a7d0?w=600&h=400&fit=crop",
+    cleaning: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop",
     labour_group: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
-    property: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop",
-    other: "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=400&fit=crop",
-  };
+    property: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600&h=400&fit=crop",
+    other: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=600&h=400&fit=crop",
+};
 
   const BACKDROPS = [
     {
@@ -195,7 +196,7 @@ export default function HomePage() {
             {/* Headline - taglined */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-6 font-display">
               Har Kaam Ka Ek<br />
-              <span className="text-indigo-400">Thekedaar.</span>
+              <span className="text-indigo-400">Thekedaar</span>
             </h1>
 
             <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-medium">
@@ -278,10 +279,10 @@ export default function HomePage() {
       <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
-            Kaunsa Theka Dena Hai?
+            Choose Your Thekedaar...
           </h2>
           <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
-            Browse our 12 trust-based informal contractor sectors
+            Browse our trust-based informal contractor sectors
           </p>
         </div>
 
@@ -317,7 +318,7 @@ export default function HomePage() {
         <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
-              Kaam Kaise Hota Hai?
+              How do we work?
             </h2>
             <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
               Secure verbal and trust-based contracting in 3 easy steps
