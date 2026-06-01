@@ -262,7 +262,7 @@ export default function ContractorDashboard() {
   ];
 
   return (
-    <main className="bg-[#090B19] text-[#ECEEF6] min-h-screen pt-24 pb-20 overflow-hidden relative">
+    <main className="bg-[var(--color-bg-elevated)] text-[var(--color-heading)] min-h-screen pt-24 pb-20 overflow-hidden relative">
       <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-amber-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-orange-500/5 blur-[120px] pointer-events-none" />
 
@@ -271,27 +271,27 @@ export default function ContractorDashboard() {
         {/* Contractor header banner */}
         <motion.div initial="hidden" animate="show" variants={fadeUp} className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <span className="text-amber-500 font-black tracking-[0.3em] uppercase text-[10px] mb-2 block">Thekedaar Headquarters</span>
-            <h1 className="font-display text-4xl md:text-5xl font-black tracking-tight leading-none">
-              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">{user?.name?.split(' ')[0]}</span>
+            <span className="text-amber-500 font-bold tracking-[0.2em] uppercase text-[10px] mb-2 block">Thekedaar Headquarters</span>
+            <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight leading-none text-[var(--color-heading)]">
+              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500">{user?.name?.split(' ')[0]}</span>
             </h1>
-            <p className="text-slate-400 mt-3 text-sm font-semibold">Manage your availability, schedule consultations, log milestone work logs, and grow revenue.</p>
+            <p className="text-[var(--color-muted)] mt-3 text-sm font-semibold">Manage your availability, schedule consultations, log milestone work logs, and grow revenue.</p>
           </div>
           
           {profile && (
-            <div className="glass-card pl-4 pr-2 py-2 rounded-2xl flex items-center gap-3 bg-white/[0.02] border border-white/5 shadow-xl">
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] pl-4 pr-2 py-2 rounded-2xl flex items-center gap-3 shadow-sm">
               <div className="flex flex-col items-end mr-1">
-                <p className="text-[9px] font-black text-slate-500 tracking-widest uppercase mb-0.5">Availability Status</p>
-                <p className={`text-xs font-black ${profile.is_available ? "text-emerald-400 animate-pulse" : "text-amber-500"}`}>
+                <p className="text-[9px] font-bold text-[var(--color-muted)] tracking-widest uppercase mb-0.5">Availability Status</p>
+                <p className={`text-xs font-bold ${profile.is_available ? "text-emerald-600 animate-pulse" : "text-amber-500"}`}>
                   {profile.is_available ? "ACCEPTING JOBS" : "MARKED BUSY"}
                 </p>
               </div>
               <button
                 onClick={toggleAvailability}
                 disabled={toggling}
-                className={`relative w-[50px] h-7 rounded-full transition-colors flex items-center shadow-inner ${profile.is_available ? "bg-emerald-500" : "bg-white/10"}`}
+                className={`relative w-[50px] h-7 rounded-full transition-colors flex items-center shadow-inner ${profile.is_available ? "bg-emerald-500" : "bg-[var(--color-border)]"}`}
               >
-                <span className={`w-5 h-5 bg-white rounded-full shadow-md transition-all absolute top-1 ${profile.is_available ? "right-1" : "left-1"}`} />
+                <span className={`w-5 h-5 bg-[var(--color-surface)] rounded-full shadow-md transition-all absolute top-1 ${profile.is_available ? "right-1" : "left-1"}`} />
               </button>
             </div>
           )}

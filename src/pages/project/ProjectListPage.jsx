@@ -9,9 +9,7 @@ import {
   FiDollarSign,
   FiLock,
   FiChevronRight,
-  FiAlertCircle,
-  FiCheckCircle,
-  FiInfo
+  FiX
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { projectAPI } from "../../services/api";
@@ -33,8 +31,8 @@ export default function ProjectListPage() {
     start_date: "",
     expected_end_date: "",
     escrow_opted: false,
-    contractor_id: "", // Calculated dynamically or mock
-    customer_phone_email: "" // To find or link the customer
+    contractor_id: "",
+    customer_phone_email: ""
   });
 
   const isContractor = user?.role === "contractor";
@@ -61,8 +59,6 @@ export default function ProjectListPage() {
   const handleCreateProjectSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Find contractor details if needed
-      // For now, contractor is user, we need to pass their contractor id
       const dbRes = await projectAPI.create({
         title: form.title,
         description: form.description,
@@ -70,14 +66,14 @@ export default function ProjectListPage() {
         start_date: form.start_date,
         expected_end_date: form.expected_end_date,
         escrow_opted: form.escrow_opted,
-        contractor_id: user.contractorId || 1, // Fallback if missing
-        customer_id: 1 // Link mock client user
+        contractor_id: user.contractorId || 1,
+        customer_id: 1
       });
 
       if (dbRes.data?.ok) {
-        toast.success("Milestone project manager created successfully!");
+        toast.success("Project workspace created successfully!");
         setShowCreateModal(false);
-        setForm({ title: "", description: "", estimated_budget: "", start_date: "", expected_end_date: "", escrow_opted: false });
+        setForm({ title: "", description: "", estimated_budget: "", start_date: "", expected_end_date: "", escrow_opted: false, customer_phone_email: "" });
         fetchProjects();
       }
     } catch (err) {
@@ -94,80 +90,80 @@ export default function ProjectListPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] pt-24 pb-16 px-4 md:px-8 transition-colors duration-500">
-      <div className="max-w-[1100px] mx-auto space-y-8">
+    <main className="min-h-screen bg-[var(--color-bg)] pt-24 pb-16 px-4 md:px-6 transition-colors duration-300">
+      <div className="max-w-[850px] mx-auto space-y-6">
         
         {/* Header Strip */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-r from-indigo-500/5 to-transparent border border-[var(--color-border)] shadow-sm">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-500 mb-2 block">Enterprise Workspace</span>
-            <h1 className="font-display text-3xl md:text-4xl font-black text-[var(--color-heading)] tracking-tight leading-none">
-              SaaS Milestone Projects
+        <div className="card bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-[var(--radius-lg)] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)]">Enterprise Workspace</span>
+            <h1 className="font-display text-2xl font-bold text-[var(--color-heading)] tracking-tight">
+              Milestone Planners
             </h1>
-            <p className="mt-3 text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">
-              Manage material billing, worker attendance, and escrow payouts.
+            <p className="text-xs text-[var(--color-muted)] font-semibold leading-relaxed">
+              Track material billing, work timelines, and secure milestone payments.
             </p>
           </div>
 
           {isContractor && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-6 py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
+              className="btn-primary flex items-center gap-1.5 py-3 px-5 text-sm font-semibold rounded-[var(--radius-sm)] shadow-xs shrink-0 self-start sm:self-auto"
             >
-              <FiPlus /> New Project Planner
+              <FiPlus /> New Planner
             </button>
           )}
         </div>
 
         {/* Project Listings Grid */}
-        <div className="grid gap-6">
+        <div className="space-y-4">
           {projects.length === 0 ? (
-            <div className="text-center py-20 bg-[var(--color-card)] border border-[var(--color-border)] rounded-[2.5rem] p-8">
-              <div className="w-16 h-16 bg-indigo-500/10 text-indigo-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                <FiBriefcase size={24} />
+            <div className="text-center py-16 card bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-lg)] p-8 shadow-sm">
+              <div className="w-12 h-12 bg-[var(--color-primary-muted)] text-[var(--color-primary)] rounded-[var(--radius-md)] flex items-center justify-center mx-auto mb-4 border border-[var(--color-border)]">
+                <FiBriefcase size={20} />
               </div>
-              <h3 className="font-display text-xl font-black text-[var(--color-heading)]">No SaaS Projects Found</h3>
-              <p className="mt-2 text-xs font-black uppercase tracking-widest text-[var(--color-muted)] max-w-sm mx-auto leading-relaxed">
-                Projects are automatically initialized after an agreement or meeting schedule is finalized.
+              <h3 className="font-display text-base font-bold text-[var(--color-heading)]">No Planners Found</h3>
+              <p className="mt-1 text-xs text-[var(--color-muted)] max-w-xs mx-auto leading-relaxed font-semibold">
+                Project workspaces are automatically initialized after an agreement or meeting schedule is finalized.
               </p>
             </div>
           ) : (
-            projects.map((p, idx) => (
+            projects.map((p) => (
               <div
                 key={p.id}
-                className="glass-card border border-[var(--color-border)] bg-[var(--color-card)] p-6 rounded-[2rem] hover:border-indigo-500/30 hover:scale-[1.01] transition-all duration-500 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden group"
+                className="card bg-[var(--color-surface)] border border-[var(--color-border)] p-5 rounded-[var(--radius-lg)] shadow-sm hover:border-[var(--color-border-hover)] hover:shadow-card-hover transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="font-display text-xl font-black text-[var(--color-heading)] tracking-tight group-hover:text-indigo-400 transition-colors">
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-display text-base font-bold text-[var(--color-heading)] tracking-tight truncate">
                       {p.title}
                     </h3>
-                    <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${
-                      p.status === "PLANNING" ? "bg-amber-500/10 text-amber-500" :
-                      p.status === "IN_PROGRESS" ? "bg-indigo-500/10 text-indigo-500" : "bg-emerald-500/10 text-emerald-500"
+                    <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[var(--radius-pill)] border ${
+                      p.status === "PLANNING" ? "bg-amber-500/10 border-amber-500/20 text-amber-500" :
+                      p.status === "IN_PROGRESS" ? "bg-[var(--color-primary-muted)] border-[var(--color-primary)]/20 text-[var(--color-primary)]" : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
                     }`}>
                       {p.status}
                     </span>
                     {p.escrow_opted && (
-                      <span className="text-[8px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <FiLock size={10} /> Escrow
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 px-2 py-0.5 rounded-[var(--radius-pill)] flex items-center gap-0.5">
+                        <FiLock size={9} /> Escrow
                       </span>
                     )}
                   </div>
                   
-                  <p className="text-xs text-[var(--color-muted)] leading-relaxed font-semibold max-w-2xl line-clamp-2">
+                  <p className="text-xs text-[var(--color-muted)] leading-relaxed font-semibold line-clamp-2">
                     {p.description || "No description logged. View dashboard to track milestone execution details."}
                   </p>
 
-                  <div className="flex flex-wrap gap-4 text-[10px] font-bold text-[var(--color-body)] uppercase tracking-wider pt-2 border-t border-[var(--color-border)]">
-                    <span className="flex items-center gap-1.5"><FiCalendar className="text-indigo-500" /> Start: {p.start_date ? new Date(p.start_date).toLocaleDateString() : "TBD"}</span>
-                    <span className="flex items-center gap-1.5"><FiDollarSign className="text-indigo-500" /> Budget: ₹{p.estimated_budget}</span>
+                  <div className="flex flex-wrap gap-4 text-[9px] font-bold text-[var(--color-muted)] uppercase tracking-wider pt-2 border-t border-[var(--color-divider)]">
+                    <span className="flex items-center gap-1"><FiCalendar className="text-[var(--color-primary)]" /> Start: {p.start_date ? new Date(p.start_date).toLocaleDateString("en-IN") : "TBD"}</span>
+                    <span className="flex items-center gap-1"><FiDollarSign className="text-[var(--color-primary)]" /> Budget: ₹{Number(p.estimated_budget || 0).toLocaleString("en-IN")}</span>
                   </div>
                 </div>
 
                 <Link
                   to={`/project/${p.id}`}
-                  className="flex items-center gap-1 px-5 py-3 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white font-bold text-xs uppercase tracking-widest transition-all"
+                  className="btn-ghost border border-[var(--color-border)] text-xs rounded-[var(--radius-sm)] flex items-center justify-center gap-1 py-2.5 px-4 font-bold shrink-0 self-start md:self-auto"
                 >
                   Workspace <FiChevronRight />
                 </Link>
@@ -181,58 +177,67 @@ export default function ProjectListPage() {
       {/* Create project modal (Contractor Only) */}
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-xs">
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card max-w-lg w-full bg-[var(--color-card)] border border-[var(--color-border)] p-8 rounded-[2rem] shadow-xl space-y-6"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="card max-w-md w-full bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-[var(--radius-lg)] shadow-xl space-y-4 relative"
             >
-              <h3 className="font-display text-2xl font-black text-[var(--color-heading)] uppercase tracking-tight">Create SaaS Project</h3>
-              <p className="text-xs font-bold uppercase tracking-widest text-[var(--color-muted)] leading-relaxed">Initialize a comprehensive milestones and ledger logbook for your client.</p>
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                className="absolute right-4 top-4 text-[var(--color-muted)] hover:text-[var(--color-heading)] p-1 rounded-full hover:bg-[var(--color-bg-elevated)] transition-colors"
+              >
+                <FiX size={16} />
+              </button>
 
-              <form onSubmit={handleCreateProjectSubmit} className="space-y-4">
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Project Name / Title</span>
-                  <input required className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-heading)] font-bold focus:border-indigo-500 outline-none" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. 2BHK Home Renovation" />
-                </label>
+              <div className="space-y-1">
+                <h3 className="font-display text-lg font-bold text-[var(--color-heading)]">Create Project Workspace</h3>
+                <p className="text-[11px] text-[var(--color-muted)] leading-relaxed font-semibold">Initialize a milestones tracking planner for your client.</p>
+              </div>
 
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Client Contact (Email or Mobile)</span>
-                  <input required className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-heading)] font-bold focus:border-indigo-500 outline-none" value={form.customer_phone_email} onChange={e => setForm(p => ({ ...p, customer_phone_email: e.target.value }))} placeholder="Find client to link project..." />
-                </label>
+              <form onSubmit={handleCreateProjectSubmit} className="space-y-3.5">
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">Project Name / Title</label>
+                  <input required className="input-field" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. 2BHK Home Renovation" />
+                </div>
 
-                <label className="block">
-                  <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Description</span>
-                  <textarea rows="3" required className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-heading)] font-bold focus:border-indigo-500 outline-none resize-none" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief details on layout and works..." />
-                </label>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">Client Contact (Email or Mobile)</label>
+                  <input required className="input-field" value={form.customer_phone_email} onChange={e => setForm(p => ({ ...p, customer_phone_email: e.target.value }))} placeholder="Find client to link project..." />
+                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Estimated Budget (₹)</span>
-                    <input required type="number" min="1" className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-heading)] font-bold focus:border-indigo-500 outline-none" value={form.estimated_budget} onChange={e => setForm(p => ({ ...p, estimated_budget: e.target.value }))} placeholder="Project Value" />
-                  </label>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">Description</label>
+                  <textarea rows="3" required className="input-field h-auto py-2 resize-none" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief details on layout and works..." />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">Estimated Budget (₹)</label>
+                    <input required type="number" min="1" className="input-field" value={form.estimated_budget} onChange={e => setForm(p => ({ ...p, estimated_budget: e.target.value }))} placeholder="Project Value" />
+                  </div>
                   
-                  <label className="block flex items-center gap-3 pt-6 pl-4">
-                    <input type="checkbox" className="w-5 h-5 rounded accent-indigo-500 cursor-pointer" checked={form.escrow_opted} onChange={e => setForm(p => ({ ...p, escrow_opted: e.target.checked }))} />
-                    <span className="text-xs font-black uppercase tracking-widest text-[var(--color-heading)] cursor-pointer">Escrow Payments</span>
-                  </label>
+                  <div className="flex items-center gap-2 pt-5 pl-2">
+                    <input type="checkbox" id="escrow_check" className="w-4 h-4 accent-[var(--color-primary)] cursor-pointer" checked={form.escrow_opted} onChange={e => setForm(p => ({ ...p, escrow_opted: e.target.checked }))} />
+                    <label htmlFor="escrow_check" className="text-xs font-semibold text-[var(--color-heading)] cursor-pointer">Escrow Payments</label>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Start Date</span>
-                    <input required type="date" className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-heading)] font-bold focus:border-indigo-500 outline-none" value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} />
-                  </label>
-                  <label className="block">
-                    <span className="mb-2 block text-[10px] font-black uppercase tracking-widest text-[var(--color-muted)]">Expected Finish</span>
-                    <input required type="date" className="w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-sm text-[var(--color-heading)] font-bold focus:border-indigo-500 outline-none" value={form.expected_end_date} onChange={e => setForm(p => ({ ...p, expected_end_date: e.target.value }))} />
-                  </label>
+                <div className="grid grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">Start Date</label>
+                    <input required type="date" className="input-field" value={form.start_date} onChange={e => setForm(p => ({ ...p, start_date: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">Expected Finish</label>
+                    <input required type="date" className="input-field" value={form.expected_end_date} onChange={e => setForm(p => ({ ...p, expected_end_date: e.target.value }))} />
+                  </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3.5 rounded-xl border border-[var(--color-border)] text-xs font-black uppercase tracking-widest text-[var(--color-muted)]">Cancel</button>
-                  <button type="submit" className="flex-1 py-3.5 rounded-xl bg-indigo-500 text-white text-xs font-black uppercase tracking-widest shadow-md">Create Workspace</button>
+                <div className="flex gap-3 pt-3">
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="btn-ghost flex-1 h-11 text-xs font-semibold rounded-[var(--radius-sm)] border border-[var(--color-border)] py-2">Cancel</button>
+                  <button type="submit" className="btn-primary flex-1 h-11 text-xs font-semibold rounded-[var(--radius-sm)] py-2">Create Planner</button>
                 </div>
               </form>
             </motion.div>
@@ -243,3 +248,4 @@ export default function ProjectListPage() {
     </main>
   );
 }
+

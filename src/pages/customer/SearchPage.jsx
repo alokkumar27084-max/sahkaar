@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiSearch, FiSliders, FiStar, FiCheckCircle, FiX, FiGrid, FiMap, FiNavigation, FiZap, FiClipboard, FiRepeat } from "react-icons/fi";
+import {
+  FiSearch,
+  FiSliders,
+  FiStar,
+  FiCheckCircle,
+  FiX,
+  FiGrid,
+  FiMap,
+  FiNavigation,
+  FiZap,
+  FiClipboard,
+  FiRepeat,
+  FiChevronLeft
+} from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
-import { authAPI, contractorAPI } from "../../services/api";
+import { contractorAPI, authAPI } from "../../services/api";
 import { CATEGORIES, SORT_OPTIONS } from "../../utils/constants";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import ContractorCard from "../../components/common/ContractorCard";
@@ -55,12 +68,10 @@ export default function SearchPage() {
   const [viewMode, setViewMode] = useState("split"); // 'split', 'list', 'map'
   const [hoveredContractorId, setHoveredContractorId] = useState(null);
   
-  // Adaptive View Handling for Mobile
   const isMobile = useIsMobileSearchLayout();
   const effectiveViewMode = isMobile && viewMode === "split" ? "list" : viewMode;
 
-  // Search Params
-  const mode = searchParams.get("mode") || ""; // 'quick', 'project', or ''
+  const mode = searchParams.get("mode") || ""; 
   const query = searchParams.get("q") || "";
   const category = searchParams.get("category") || "";
   const sort = searchParams.get("sort") || "distance";
@@ -71,39 +82,37 @@ export default function SearchPage() {
   const urlLat = searchParams.get("lat");
   const urlLng = searchParams.get("lng");
   const page = Number(searchParams.get("page") || "1");
-  // Redirect to service selection only if mode is missing AND there is no search query or category domain already selected
+
   useEffect(() => {
     if (!mode && !query && !category) {
       navigate(`/select-service?${searchParams.toString()}`, { replace: true });
     } else if (!mode && (query || category)) {
-      // Default to project mode when arriving with a query or category but no mode
       const next = new URLSearchParams(searchParams);
       next.set("mode", "project");
       setSearchParams(next, { replace: true });
     }
   }, [mode, query, category, searchParams, navigate, setSearchParams]);
 
-  // Mode-specific configuration
   const modeConfig = useMemo(() => {
     if (mode === "quick") return {
       label: "Quick Handyman Mode",
-      icon: <FiZap size={16} />,
+      icon: <FiZap size={15} />,
       prosLabel: "Quick Pros",
-      bannerBg: "bg-gradient-to-r from-indigo-500/15 to-violet-500/15",
-      bannerBorder: "border-indigo-500/30",
-      bannerText: "text-indigo-300",
-      bannerAccent: "text-indigo-400",
+      bannerBg: "bg-indigo-50 dark:bg-indigo-950/20",
+      bannerBorder: "border-indigo-100 dark:border-indigo-950",
+      bannerText: "text-indigo-600 dark:text-indigo-400",
+      bannerAccent: "text-indigo-600 dark:text-indigo-400",
       switchTo: "project",
       switchLabel: "Switch to Project Mode",
     };
     if (mode === "project") return {
       label: "Project Contractor Mode",
-      icon: <FiClipboard size={16} />,
+      icon: <FiClipboard size={15} />,
       prosLabel: "Project Contractors",
-      bannerBg: "bg-gradient-to-r from-cyan-500/15 to-teal-500/15",
-      bannerBorder: "border-cyan-500/30",
-      bannerText: "text-cyan-300",
-      bannerAccent: "text-cyan-400",
+      bannerBg: "bg-teal-50 dark:bg-teal-950/20",
+      bannerBorder: "border-teal-100 dark:border-teal-950",
+      bannerText: "text-teal-600 dark:text-teal-400",
+      bannerAccent: "text-teal-600 dark:text-teal-400",
       switchTo: "quick",
       switchLabel: "Switch to Quick Mode",
     };
@@ -111,7 +120,6 @@ export default function SearchPage() {
   }, [mode]);
 
   const savedLoc = useMemo(() => readSavedLocation(), []);
-  // Priority: URL Params > Last Session Selection > User Profile Default
   const effectiveLat = urlLat || savedLoc?.lat || user?.location_lat || null;
   const effectiveLng = urlLng || savedLoc?.lng || user?.location_lng || null;
   const hasSearchLocation = effectiveLat != null && effectiveLng != null;
@@ -119,7 +127,6 @@ export default function SearchPage() {
   const [qInput, setQInput] = useState(query);
   useEffect(() => setQInput(query), [query]);
 
-  // GPS Manual Detection
   const handleDetectLocation = useCallback(() => {
     toast.loading("Detecting your location...", { id: "geo-toast" });
     getLocation();
@@ -133,7 +140,6 @@ export default function SearchPage() {
     }
   }, [geoError, clearGeoError]);
 
-  // Persist Location
   const persistSearchLocation = useCallback(async (selection, source = "browser_gps", nextAccuracy = null) => {
     if (!selection?.lat || !selection?.lng) return;
     setSavingLocation(true);
@@ -178,7 +184,6 @@ export default function SearchPage() {
     setManualLocationInput(address);
     saveLocationSnapshot({ address, lat, lng });
     
-    // Auto-update search params if we just got a browser location and didn't have one
     if (lat && lng && !urlLat && !urlLng) {
       const next = new URLSearchParams(searchParams);
       next.set("lat", String(lat));
@@ -187,14 +192,12 @@ export default function SearchPage() {
     }
   }, [address, lat, lng, urlLat, urlLng, searchParams, setSearchParams]);
 
-  // Automatic Location Request if missing
   useEffect(() => {
     if (!hasSearchLocation && !geoLoading) {
       getLocation();
     }
   }, [hasSearchLocation, geoLoading, getLocation]);
 
-  // Data Fetching
   const runSearch = useCallback(async () => {
     if (!hasSearchLocation) {
       setContractors([]);
@@ -274,119 +277,115 @@ export default function SearchPage() {
       <SEOHead title={seoTitle} description="Find the best verified contractors in your area." />
       
       {/* ═══════ SEARCH HEADER — Sticky ═══════ */}
-      <header className="fixed top-[76px] left-0 right-0 z-[100] min-h-20 bg-[var(--color-bg)]/90 backdrop-blur-3xl border-b border-[var(--color-border)] flex items-center py-3 md:py-4 px-4 md:px-6">
-        <div className="flex-1 flex flex-col md:flex-row items-stretch md:items-center gap-3 md:gap-4 max-w-[1600px] mx-auto w-full">
+      <header className="fixed top-16 left-0 right-0 z-[100] h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center px-4 md:px-6">
+        <div className="flex-1 flex items-center gap-3.5 max-w-[1600px] mx-auto w-full h-full">
           
-          {/* Row 1 / Left block: Back Button & Service Search Input */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+          {/* Back button */}
+          <button 
+            onClick={() => navigate("/")} 
+            className="w-10 h-10 shrink-0 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-heading)] hover:bg-[var(--color-border)] transition-all"
+            title="Go Back"
+          >
+            <FiChevronLeft size={20} />
+          </button>
+
+          {/* Search Query Input */}
+          <div className="flex-1 flex items-center gap-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl h-11 px-4 min-w-0">
+            <FiSearch className="text-[var(--color-muted)] shrink-0" size={16} />
+            <input 
+              type="text" 
+              value={qInput}
+              onChange={(e) => setQInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && updateParam("q", qInput)}
+              placeholder="What services do you need?" 
+              className="bg-transparent border-none outline-none text-sm w-full min-w-0 text-[var(--color-heading)] placeholder:text-[var(--color-muted)] focus:ring-0"
+            />
+            {qInput && (
+              <button 
+                onClick={() => { setQInput(""); updateParam("q", ""); }}
+                className="text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors"
+              >
+                <FiX size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Location Autocomplete */}
+          <div className="hidden md:flex flex-1 max-w-xs items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl h-11 px-4 relative">
+            <LocationSearchInput 
+              value={manualLocationInput} 
+              onChange={setManualLocationInput} 
+              onSelect={(sel) => persistSearchLocation(sel, "manual")}
+              placeholder="Delhi NCR, India..."
+              className="!bg-transparent !border-none !h-full !text-sm text-[var(--color-heading)] placeholder:text-[var(--color-muted)] w-full focus:outline-none focus:ring-0 !pl-0"
+            />
+          </div>
+
+          {/* GPS Button */}
+          <button
+            onClick={handleDetectLocation}
+            disabled={geoLoading}
+            title="Detect location"
+            className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center border transition-all ${
+              geoLoading 
+                ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-850 text-indigo-600 dark:text-indigo-400 animate-pulse" 
+                : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-body)] hover:bg-[var(--color-bg-elevated)] active:scale-95"
+            }`}
+          >
+            <FiNavigation 
+              size={15} 
+              className={`${geoLoading ? "animate-spin text-indigo-400" : "hover:text-indigo-500 transition-colors"}`} 
+            />
+          </button>
+
+          {/* View Toggles */}
+          <div className="hidden lg:flex items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-1 gap-1 h-11">
             <button 
-              onClick={() => navigate("/")} 
-              className="w-11 h-11 shrink-0 rounded-xl bg-[var(--color-surface)] flex items-center justify-center hover:bg-[var(--color-surface)]/80 transition-colors"
-              title="Go Back"
+              onClick={() => setViewMode("split")}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${viewMode === "split" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-muted)] hover:text-[var(--color-heading)]"}`}
             >
-              <FiX size={20} />
+              <FiGrid size={14} /> Split
             </button>
-
-            {/* Query Search */}
-            <div className="flex-1 flex items-center gap-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl h-12 px-4 shadow-inner min-w-0">
-              <FiSearch className="text-[var(--color-muted)] shrink-0" size={16} />
-              <input 
-                type="text" 
-                value={qInput}
-                onChange={(e) => setQInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && updateParam("q", qInput)}
-                placeholder="What do you need?" 
-                className="bg-transparent border-none outline-none text-sm w-full min-w-0 text-[var(--color-heading)] placeholder:text-[var(--color-muted)]"
-              />
-              {qInput && (
-                <button 
-                  onClick={() => { setQInput(""); updateParam("q", ""); }}
-                  className="text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors"
-                >
-                  <FiX size={14} />
-                </button>
-              )}
-            </div>
+            <button 
+              onClick={() => setViewMode("map")}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${viewMode === "map" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-muted)] hover:text-[var(--color-heading)]"}`}
+            >
+              <FiMap size={14} /> Map
+            </button>
           </div>
 
-          {/* Row 2 / Right block: Location Autocomplete, GPS Locate, View Toggle & Filters */}
-          <div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
-            
-            {/* Location Autocomplete Search */}
-            <div className="flex-1 md:flex-initial flex items-center bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl h-12 px-4 shadow-inner min-w-[200px] md:min-w-[260px] relative">
-              <LocationSearchInput 
-                value={manualLocationInput} 
-                onChange={setManualLocationInput} 
-                onSelect={(sel) => persistSearchLocation(sel, "manual")}
-                placeholder="Search location or area..."
-                className="!bg-transparent !border-none !h-full !text-xs !font-bold text-[var(--color-heading)] placeholder:text-[var(--color-muted)] w-full focus:outline-none !pl-0"
-              />
-            </div>
-
-            {/* Geolocation Button */}
-            <button
-              onClick={handleDetectLocation}
-              disabled={geoLoading}
-              title="Detect my current location"
-              className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center border transition-all ${
-                geoLoading 
-                  ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400 animate-pulse" 
-                  : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-body)] hover:bg-[var(--color-surface)]/80 hover:border-[var(--color-muted)]/30 active:scale-95"
-              }`}
-            >
-              <FiNavigation 
-                size={18} 
-                className={`${geoLoading ? "animate-spin text-indigo-400" : "hover:text-indigo-400 transition-colors"}`} 
-              />
-            </button>
-
-            {/* View Toggles */}
-            <div className="hidden lg:flex items-center bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-1 gap-1">
-              <button 
-                onClick={() => setViewMode("split")}
-                className={`px-3 py-2 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "split" ? "bg-indigo-500 text-white shadow-lg" : "text-[var(--color-muted)] hover:text-[var(--color-body)]"}`}
-              >
-                <FiGrid size={14} /> Split
-              </button>
-              <button 
-                onClick={() => setViewMode("map")}
-                className={`px-3 py-2 rounded-lg flex items-center gap-2 text-xs font-bold transition-all ${viewMode === "map" ? "bg-indigo-500 text-white shadow-lg" : "text-[var(--color-muted)] hover:text-[var(--color-body)]"}`}
-              >
-                <FiMap size={14} /> Map
-              </button>
-            </div>
-
-            {/* Filters Button */}
-            <button onClick={() => setShowFilters(true)} className="h-12 px-4 rounded-2xl bg-indigo-500 text-white flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all">
-              <FiSliders size={18} />
-              <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest">Filters</span>
-            </button>
-          </div>
+          {/* Filters Toggle Button */}
+          <button onClick={() => setShowFilters(true)} className="h-11 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all">
+            <FiSliders size={15} />
+            <span className="text-xs font-bold uppercase tracking-wider">Filters</span>
+          </button>
           
         </div>
       </header>
 
       {/* ═══════ MODE INDICATOR BANNER ═══════ */}
       {modeConfig && (
-        <div className={`fixed top-[calc(76px+5rem)] md:top-[calc(76px+5rem)] left-0 right-0 z-[99] ${modeConfig.bannerBg} border-b ${modeConfig.bannerBorder} backdrop-blur-xl`}>
-          <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-2.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
+        <div className={`fixed top-32 left-0 right-0 z-[99] h-9 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] flex items-center px-4 md:px-6`}>
+          <div className="max-w-[1600px] mx-auto w-full flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
               <span className={modeConfig.bannerAccent}>{modeConfig.icon}</span>
-              <span className={`text-xs font-black uppercase tracking-widest ${modeConfig.bannerText}`}>{modeConfig.label}</span>
+              <span className="font-bold text-[10px] uppercase tracking-wider text-[var(--color-muted)]">
+                {modeConfig.label}
+              </span>
             </div>
             <Link
               to={`/search?mode=${modeConfig.switchTo}${urlLat ? `&lat=${urlLat}` : ""}${urlLng ? `&lng=${urlLng}` : ""}`}
-              className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${modeConfig.bannerAccent} hover:underline transition-colors`}
+              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] hover:underline transition-colors"
             >
-              <FiRepeat size={12} />
-              {modeConfig.switchLabel}
+              <FiRepeat size={11} />
+              <span>{modeConfig.switchLabel}</span>
             </Link>
           </div>
         </div>
       )}
 
       {/* ═══════ MAIN CONTENT ═══════ */}
-      <main className={`${modeConfig ? "pt-[260px] md:pt-[196px]" : "pt-[220px] md:pt-[156px]"} flex h-[100dvh] overflow-hidden bg-[var(--color-bg)]`}>
+      <main className={`${modeConfig ? "pt-[164px]" : "pt-[128px]"} flex h-[100dvh] overflow-hidden bg-[var(--color-bg)]`}>
         
         {/* LEFT PANEL — LISTING */}
         <section 
@@ -395,13 +394,13 @@ export default function SearchPage() {
         >
           
           {/* Quick Filter Strip */}
-          <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 no-scrollbar">
+          <div className="flex items-center gap-2 my-5 overflow-x-auto pb-1 no-scrollbar">
             {[
-              { id: "verified", label: "Verified", active: verified, icon: <FiCheckCircle/> },
-              { id: "featured", label: "Top Choice", active: featured, icon: <FiStar/> },
-              { id: "near", label: "Nearby", active: radiusKm <= 5, icon: <FiNavigation/> },
-              ...(mode === "quick" ? [{ id: "available", label: "Available Now", active: searchParams.get("available") === "true", icon: <FiZap/> }] : []),
-              ...(mode === "project" ? [{ id: "labour_group", label: "Agencies & Teams", active: searchParams.get("labour_group") === "true", icon: <FiClipboard/> }] : []),
+              { id: "verified", label: "Verified", active: verified, icon: <FiCheckCircle size={14}/> },
+              { id: "featured", label: "Top Choice", active: featured, icon: <FiStar size={14}/> },
+              { id: "near", label: "Nearby", active: radiusKm <= 5, icon: <FiNavigation size={14}/> },
+              ...(mode === "quick" ? [{ id: "available", label: "Available Now", active: searchParams.get("available") === "true", icon: <FiZap size={14}/> }] : []),
+              ...(mode === "project" ? [{ id: "labour_group", label: "Agencies & Teams", active: searchParams.get("labour_group") === "true", icon: <FiClipboard size={14}/> }] : []),
             ].map(f => (
               <button 
                 key={f.id}
@@ -412,7 +411,7 @@ export default function SearchPage() {
                   if (f.id === "available") updateParam("available", searchParams.get("available") !== "true");
                   if (f.id === "labour_group") updateParam("labour_group", searchParams.get("labour_group") !== "true");
                 }}
-                className={`flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-wider transition-all shrink-0 ${f.active ? "bg-indigo-500 border-indigo-500 text-white" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-muted)]/50"}`}
+                className={`flex items-center gap-2 h-9 px-3.5 rounded-full border text-xs font-bold transition-all shrink-0 ${f.active ? "bg-[var(--color-primary)] border-transparent text-white" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-heading)]"}`}
               >
                 {f.icon} {f.label}
               </button>
@@ -420,23 +419,23 @@ export default function SearchPage() {
           </div>
 
           {/* Results Summary */}
-          <div className="mb-6 flex items-end justify-between">
+          <div className="mb-5 flex items-end justify-between">
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-[var(--color-heading)]">
-                {loading ? "Finding..." : `${contractors.length} ${modeConfig?.prosLabel || "Pros"} nearby`}
+              <h1 className="text-xl font-bold tracking-tight text-[var(--color-heading)]">
+                {loading ? "Finding Pros..." : `${contractors.length} ${modeConfig?.prosLabel || "Professionals"} nearby`}
               </h1>
-              <p className="text-xs text-[var(--color-muted)] font-medium mt-1">
-                {savingLocation ? "Saving search area..." : `Showing best matches in ${searchLocationLabel || "your area"}`}
+              <p className="text-xs text-[var(--color-muted)] font-medium mt-0.5">
+                {savingLocation ? "Saving area..." : `Showing results in ${searchLocationLabel || "your area"}`}
               </p>
-              {error && <p className="text-xs text-rose-400 font-semibold mt-2">{error}</p>}
+              {error && <p className="text-xs text-red-500 font-semibold mt-2">{error}</p>}
             </div>
             <div className="flex items-center gap-2">
                <select 
                 value={sort} 
                 onChange={(e) => updateParam("sort", e.target.value)}
-                className="bg-transparent text-[10px] font-black uppercase tracking-widest text-indigo-400 outline-none cursor-pointer"
+                className="bg-transparent text-[11px] font-bold uppercase tracking-wider text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] outline-none cursor-pointer"
                >
-                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value} className="bg-[var(--color-bg)]">{t(o.labelKey)}</option>)}
+                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value} className="bg-[var(--color-surface)] text-[var(--color-body)]">{t(o.labelKey)}</option>)}
                </select>
             </div>
           </div>
@@ -444,8 +443,8 @@ export default function SearchPage() {
           {/* Listing Grid */}
           <div className="space-y-4">
             {loading && page === 1 ? (
-              [1,2,3,4].map(i => (
-                <div key={i} className="h-40 w-full rounded-3xl bg-[var(--color-surface)] border border-[var(--color-border)] animate-pulse" />
+              [1, 2, 3, 4].map(i => (
+                <div key={i} className="h-44 w-full rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] animate-pulse" />
               ))
             ) : contractors.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
@@ -461,24 +460,26 @@ export default function SearchPage() {
                 ))}
               </div>
             ) : !loading && (
-              <div className="py-20 text-center">
-                <div className="w-20 h-20 rounded-full bg-[var(--color-surface)] flex items-center justify-center mx-auto mb-6">
-                  <FiSearch className="text-[var(--color-muted)]" size={32} />
+              <div className="py-20 text-center bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8">
+                <div className="w-16 h-16 rounded-full bg-[var(--color-bg-elevated)] flex items-center justify-center mx-auto mb-5">
+                  <FiSearch className="text-[var(--color-muted)]" size={26} />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-[var(--color-heading)]">No results found</h3>
-                <p className="text-[var(--color-muted)] text-sm max-w-xs mx-auto mb-8">Try expanding your radius or checking a different category.</p>
-                <button onClick={() => updateParam("radius_km", 25)} className="min-h-[44px] px-6 py-3 rounded-xl bg-indigo-500 text-white font-bold text-xs uppercase tracking-widest">Expand to 25km</button>
+                <h3 className="text-lg font-bold mb-1.5 text-[var(--color-heading)]">No professionals found</h3>
+                <p className="text-[var(--color-muted)] text-sm max-w-xs mx-auto mb-6">Try expanding your search area or adjusting your filters.</p>
+                <button onClick={() => updateParam("radius_km", 25)} className="h-10 px-6 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-sm">
+                  Expand to 25 km
+                </button>
               </div>
             )}
 
             {contractors.length >= page * PAGE_SIZE && (
-              <button onClick={loadMore} className="w-full min-h-[44px] py-4 rounded-2xl border border-dashed border-[var(--color-border)] text-[var(--color-muted)] font-bold text-xs uppercase tracking-widest hover:border-indigo-500/50 hover:text-indigo-400 transition-all mt-6">
-                {loading ? "Loading..." : "Load More Pros"}
+              <button onClick={loadMore} className="w-full h-12 rounded-xl border border-dashed border-[var(--color-border)] text-[var(--color-muted)] font-bold text-xs uppercase tracking-wider hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-all mt-6">
+                {loading ? "Loading more..." : "Load More Professionals"}
               </button>
             )}
           </div>
         </section>
-
+ 
         {/* RIGHT PANEL — MAP */}
         <section className={`transition-all duration-500 relative ${effectiveViewMode === "list" ? "w-0 overflow-hidden" : effectiveViewMode === "map" ? "flex-1" : "flex-1 hidden lg:block"}`}>
            <ContractorMapPanel 
@@ -488,27 +489,27 @@ export default function SearchPage() {
               highlightedId={hoveredContractorId}
            />
            
-           {/* Map Floating UI — Center on mobile */}
+           {/* Map Floating UI for mobile */}
            <div className="absolute bottom-10 left-6 right-6 pointer-events-none lg:bottom-6 lg:left-6">
              <div className="flex justify-center lg:justify-start">
                 <button 
                   onClick={() => setViewMode(effectiveViewMode === "map" ? "list" : "map")}
-                  className="pointer-events-auto flex lg:hidden items-center gap-3 min-h-[44px] px-8 py-4 rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-heading)] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl backdrop-blur-2xl"
+                  className="pointer-events-auto flex lg:hidden items-center gap-2.5 h-11 px-6 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-heading)] text-xs font-bold shadow-xl backdrop-blur-md"
                 >
-                  <FiGrid className="text-indigo-400" /> Show List
+                  <FiGrid className="text-[var(--color-primary)]" /> Show List
                 </button>
              </div>
            </div>
         </section>
 
-        {/* Global Mobile View Toggle — Visible when in List mode on phone */}
+        {/* Global Mobile View Toggle */}
         {isMobile && effectiveViewMode === "list" && (
           <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] left-0 right-0 z-[150] pointer-events-none flex justify-center">
             <button 
               onClick={() => setViewMode("map")}
-              className="pointer-events-auto flex items-center gap-3 min-h-[44px] px-8 py-4 rounded-full bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-heading)] text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5"
+              className="pointer-events-auto flex items-center gap-2.5 h-11 px-6 rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-heading)] text-xs font-bold shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-5"
             >
-              <FiMap className="text-indigo-400" /> View Map
+              <FiMap className="text-[var(--color-primary)]" /> View Map
             </button>
           </div>
         )}
@@ -521,34 +522,35 @@ export default function SearchPage() {
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowFilters(false)}
-              className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-[10000] bg-black/40"
             />
             <motion.aside 
               initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 z-[10001] w-full max-w-md bg-[var(--color-bg-elevated)] border-l border-[var(--color-border)] shadow-2xl flex flex-col"
+              className="fixed top-0 right-0 bottom-0 z-[10001] w-full max-w-md bg-[var(--color-surface)] border-l border-[var(--color-border)] shadow-2xl flex flex-col"
             >
-              {/* Filter Header — Fixed */}
-              <div className="flex items-center justify-between p-8 border-b border-[var(--color-border)]">
-                <h2 className="text-2xl font-black uppercase tracking-tighter text-[var(--color-heading)]">Refine Search</h2>
-                <button onClick={() => setShowFilters(false)} className="w-11 h-11 rounded-full bg-[var(--color-surface)] flex items-center justify-center hover:bg-[var(--color-surface)]/80 transition-colors">
-                  <FiX size={20} />
+              {/* Filter Header */}
+              <div className="flex items-center justify-between p-6 border-b border-[var(--color-border)]">
+                <h2 className="text-xl font-bold text-[var(--color-heading)]">Filters</h2>
+                <button onClick={() => setShowFilters(false)} className="w-9 h-9 rounded-xl bg-[var(--color-bg-elevated)] flex items-center justify-center hover:bg-[var(--color-border)] transition-colors">
+                  <FiX size={18} />
                 </button>
               </div>
 
-              {/* Filter Content — Scrollable (Hidden Scrollbar) */}
+              {/* Filter Content */}
               <div 
-                className="flex-1 overflow-y-auto p-8 no-scrollbar scroll-smooth"
+                className="flex-1 overflow-y-auto p-6 custom-scrollbar scroll-smooth"
                 data-lenis-prevent
               >
-                <div className="space-y-12 pb-12">
+                <div className="space-y-8 pb-10">
+                  
                   {/* Categories */}
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Service Category</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 block">Service Category</label>
                     <div className="grid grid-cols-2 gap-2">
                       <button 
                         onClick={() => updateParam("category", "")}
-                        className={`min-h-[44px] px-4 py-3 rounded-xl border text-[11px] font-bold transition-all text-left ${!category ? "bg-indigo-500 border-indigo-500 text-white" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)]"}`}
+                        className={`h-10 px-3 rounded-xl border text-xs font-semibold transition-all text-left ${!category ? "bg-[var(--color-primary)] border-transparent text-white" : "bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-body)] hover:border-[var(--color-heading)]"}`}
                       >
                         All Services
                       </button>
@@ -556,7 +558,7 @@ export default function SearchPage() {
                         <button 
                           key={cat.id}
                           onClick={() => updateParam("category", cat.id)}
-                          className={`flex items-center gap-2 min-h-[44px] px-4 py-3 rounded-xl border text-[11px] font-bold transition-all text-left ${category === cat.id ? "bg-indigo-500 border-indigo-500 text-white" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-muted)]/30"}`}
+                          className={`flex items-center gap-2 h-10 px-3 rounded-xl border text-xs font-semibold transition-all text-left min-w-0 ${category === cat.id ? "bg-[var(--color-primary)] border-transparent text-white" : "bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-body)] hover:border-[var(--color-heading)]"}`}
                         >
                           <Icon name={cat.icon} className="w-3.5 h-3.5 shrink-0" />
                           <span className="truncate">{t(cat.key)}</span>
@@ -567,13 +569,13 @@ export default function SearchPage() {
 
                   {/* Sort Order */}
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Sort By</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 block">Sort By</label>
                     <div className="flex flex-col gap-2">
                       {SORT_OPTIONS.map((opt) => (
                         <button 
                           key={opt.value} 
                           onClick={() => updateParam("sort", opt.value)}
-                          className={`text-left min-h-[44px] px-4 py-3 rounded-xl text-xs font-bold transition-all ${sort === opt.value ? "bg-indigo-500 text-white shadow-lg" : "bg-[var(--color-surface)] text-[var(--color-muted)] hover:border-[var(--color-muted)]/30 border border-transparent"}`}
+                          className={`text-left h-10 px-4 rounded-xl text-xs font-semibold transition-all ${sort === opt.value ? "bg-[var(--color-primary)] text-white shadow-sm" : "bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-body)] hover:border-[var(--color-heading)]"}`}
                         >
                           {t(opt.labelKey)}
                         </button>
@@ -581,38 +583,38 @@ export default function SearchPage() {
                     </div>
                   </div>
 
-                  {/* Proximity */}
+                  {/* Radius */}
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Search Radius</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 block">Search Radius</label>
                     <div className="flex flex-wrap gap-2">
                       {RADIUS_OPTIONS.map(km => (
                         <button 
                           key={km}
                           onClick={() => updateParam("radius_km", km)}
-                          className={`flex-1 min-w-[60px] min-h-[44px] py-3 rounded-xl border text-xs font-bold transition-all ${radiusKm === km ? "bg-indigo-500 border-indigo-500 text-white" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)]"}`}
+                          className={`flex-1 min-w-[60px] h-10 rounded-xl border text-xs font-semibold transition-all ${radiusKm === km ? "bg-[var(--color-primary)] border-transparent text-white" : "bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-body)] hover:border-[var(--color-heading)]"}`}
                         >
-                          {km}km
+                          {km} km
                         </button>
                       ))}
                     </div>
                   </div>
 
                   {/* Trust & Preferences */}
-                  <div className="space-y-6">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 block">Trust & Preferences</label>
+                  <div className="space-y-4">
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] block">Preferences</label>
                     
                     <div className="space-y-4">
                       {[
-                        { key: "verified", checked: verified, label: "Verified Only" },
-                        { key: "featured", checked: featured, label: "Top Choices" },
+                        { key: "verified", checked: verified, label: "Verified Professionals Only" },
+                        { key: "featured", checked: featured, label: "Top-Rated Choices" },
                         { key: "labour_group", checked: searchParams.get("labour_group") === "true", label: "Agencies & Teams" },
                         { key: "available", checked: searchParams.get("available") === "true", label: "Available Now" },
-                        { key: "min_rating", checked: rating >= 4, label: "Top Rated (4+ Stars)" }
+                        { key: "min_rating", checked: rating >= 4, label: "High Rated (4+ Stars)" }
                       ].map((item) => (
-                        <label key={item.key} className="flex items-center justify-between group cursor-pointer">
-                          <span className="text-sm font-bold text-[var(--color-body)]">{item.label}</span>
-                          <div className={`w-12 h-6 rounded-full p-1 transition-colors ${item.checked ? "bg-indigo-500" : "bg-[var(--color-surface)]"}`}>
-                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${item.checked ? "translate-x-6" : "translate-x-0"}`} />
+                        <label key={item.key} className="flex items-center justify-between cursor-pointer py-1">
+                          <span className="text-sm font-semibold text-[var(--color-body)]">{item.label}</span>
+                          <div className={`w-11 h-6 rounded-full p-1 transition-colors ${item.checked ? "bg-[var(--color-primary)]" : "bg-[var(--color-bg-elevated)] border border-[var(--color-border)]"}`}>
+                            <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${item.checked ? "translate-x-5" : "translate-x-0"}`} />
                           </div>
                           <input 
                             type="checkbox" 
@@ -627,7 +629,7 @@ export default function SearchPage() {
 
                   {/* Experience */}
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Minimum Experience</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 block">Minimum Experience</label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { label: "Any", val: 0 },
@@ -640,7 +642,7 @@ export default function SearchPage() {
                         <button 
                           key={exp.val}
                           onClick={() => updateParam("min_experience", exp.val)}
-                          className={`min-h-[44px] py-3 rounded-xl border text-[10px] font-bold transition-all ${Number(searchParams.get("min_experience") || 0) === exp.val ? "bg-indigo-500 border-indigo-500 text-white" : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)]"}`}
+                          className={`h-10 rounded-xl border text-[11px] font-semibold transition-all ${Number(searchParams.get("min_experience") || 0) === exp.val ? "bg-[var(--color-primary)] border-transparent text-white" : "bg-[var(--color-bg-elevated)] border-[var(--color-border)] text-[var(--color-body)] hover:border-[var(--color-heading)]"}`}
                         >
                           {exp.label}
                         </button>
@@ -650,42 +652,41 @@ export default function SearchPage() {
 
                   {/* Price Range */}
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 block">Budget Range (Daily Rate)</label>
-                    <div className="space-y-4">
-                       <div className="flex gap-2">
-                         <input 
-                           type="number" 
-                           placeholder="Min ₹"
-                           className="w-1/2 min-h-[44px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-xs text-[var(--color-heading)] outline-none focus:border-indigo-500 transition-colors"
-                           onChange={(e) => updateParam("min_price", e.target.value)}
-                         />
-                         <input 
-                           type="number" 
-                           placeholder="Max ₹"
-                           className="w-1/2 min-h-[44px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl px-4 py-3 text-xs text-[var(--color-heading)] outline-none focus:border-indigo-500 transition-colors"
-                           onChange={(e) => updateParam("max_price", e.target.value)}
-                         />
-                       </div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 block">Budget Range (Daily Rate)</label>
+                    <div className="flex gap-2.5">
+                      <input 
+                        type="number" 
+                        placeholder="Min ₹"
+                        className="w-1/2 h-11 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl px-3.5 text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                        onChange={(e) => updateParam("min_price", e.target.value)}
+                      />
+                      <input 
+                        type="number" 
+                        placeholder="Max ₹"
+                        className="w-1/2 h-11 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl px-3.5 text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                        onChange={(e) => updateParam("max_price", e.target.value)}
+                      />
                     </div>
                   </div>
+
                 </div>
               </div>
 
-              {/* Filter Footer — Fixed */}
-              <div className="p-8 border-t border-[var(--color-border)] space-y-4 bg-[var(--color-bg-elevated)]">
+              {/* Filter Footer */}
+              <div className="p-6 border-t border-[var(--color-border)] bg-[var(--color-bg-elevated)] flex flex-col gap-2.5">
                 <button 
                   onClick={() => setShowFilters(false)}
-                  className="w-full py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-indigo-500/20 active:scale-95 transition-all"
+                  className="w-full h-11 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] rounded-xl text-white font-bold text-xs uppercase tracking-wider shadow-sm transition-all"
                 >
                   Apply Filters
                 </button>
                 
                 <button 
                   onClick={() => {
-                    setSearchParams(new URLSearchParams({ lat: String(effectiveLat), lng: String(effectiveLng) }));
+                    setSearchParams(new URLSearchParams({ lat: String(effectiveLat), lng: String(effectiveLng), mode }));
                     setShowFilters(false);
                   }}
-                  className="w-full min-h-[44px] py-4 text-[var(--color-muted)] font-bold text-[10px] uppercase tracking-widest hover:text-[var(--color-heading)] transition-colors"
+                  className="w-full h-11 text-[var(--color-muted)] hover:text-[var(--color-heading)] font-bold text-xs uppercase tracking-wider transition-colors"
                 >
                   Clear All Filters
                 </button>

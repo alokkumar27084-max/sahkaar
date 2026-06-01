@@ -4,29 +4,19 @@ import { motion } from 'framer-motion';
 const pageVariants = {
     initial: {
         opacity: 0,
-        y: 20,
-        filter: "blur(8px)",
-        scale: 0.99,
     },
     animate: {
         opacity: 1,
-        y: 0,
-        filter: "blur(0px)",
-        scale: 1,
         transition: {
-            duration: 0.7,
-            ease: [0.16, 1, 0.3, 1],
-            staggerChildren: 0.05,
+            duration: 0.2,
+            ease: [0.4, 0, 0.2, 1],
         },
     },
     exit: {
         opacity: 0,
-        y: -15,
-        filter: "blur(6px)",
-        scale: 0.995,
         transition: {
-            duration: 0.5,
-            ease: [0.7, 0, 0.84, 0],
+            duration: 0.15,
+            ease: [0.4, 0, 0.2, 1],
         },
     },
 };

@@ -10,36 +10,40 @@ export default function OverviewPanel({ stats, contractors, reports, busy, onVer
     <div className="space-y-6">
       {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Users" value={stats?.total_users || 0} icon={FiUsers} color="from-indigo-500 to-indigo-600" />
-        <StatCard label="Contractors" value={stats?.total_contractors || 0} icon={FiUserCheck} color="from-cyan-500 to-teal-500" />
-        <StatCard label="Verified" value={stats?.verified_contractors || 0} icon={FiCheckCircle} color="from-emerald-500 to-green-500" />
-        <StatCard label="Pending" value={stats?.pending_contractors || 0} icon={FiAlertTriangle} color="from-amber-500 to-orange-500" />
+        <StatCard label="Total Users" value={stats?.total_users || 0} icon={FiUsers} color="bg-primary/10 text-primary border border-primary/20" />
+        <StatCard label="Contractors" value={stats?.total_contractors || 0} icon={FiUserCheck} color="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20" />
+        <StatCard label="Verified" value={stats?.verified_contractors || 0} icon={FiCheckCircle} color="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" />
+        <StatCard label="Pending" value={stats?.pending_contractors || 0} icon={FiAlertTriangle} color="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" />
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Customers" value={stats?.total_customers || 0} icon={FiUsers} color="from-violet-500 to-purple-500" />
-        <StatCard label="Admins" value={stats?.total_admins || 0} icon={FiUsers} color="from-rose-500 to-pink-500" />
-        <StatCard label="Reviews Today" value={stats?.reviews_today || 0} icon={FiStar} color="from-yellow-500 to-amber-500" />
-        <StatCard label="Featured" value={stats?.active_featured || 0} icon={FiAward} color="from-blue-500 to-indigo-500" />
+        <StatCard label="Customers" value={stats?.total_customers || 0} icon={FiUsers} color="bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20" />
+        <StatCard label="Admins" value={stats?.total_admins || 0} icon={FiUsers} color="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20" />
+        <StatCard label="Reviews Today" value={stats?.reviews_today || 0} icon={FiStar} color="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" />
+        <StatCard label="Featured" value={stats?.active_featured || 0} icon={FiAward} color="bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-5">
         {/* Pending verifications */}
-        <div className="glass-card rounded-2xl p-5 border border-white/10">
-          <h3 className="font-semibold text-[var(--color-heading)] mb-4 flex items-center gap-2">
-            <FiUserCheck size={16} className="text-amber-400" /> Pending Verifications
+        <div className="card p-5 border border-border bg-surface">
+          <h3 className="font-bold text-heading mb-4 flex items-center gap-2">
+            <FiUserCheck size={16} className="text-amber-500" /> Pending Verifications
           </h3>
-          <div className="space-y-2 max-h-72 overflow-y-auto">
+          <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
             {contractors.filter((c) => c.verification_status === "pending").slice(0, 8).map((c) => (
-              <div key={c.id} className="flex flex-col gap-2 p-3 rounded-xl bg-white/5 border border-white/5">
+              <div key={c.id} className="flex flex-col gap-2 p-3.5 rounded-xl bg-bg-elevated border border-border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-[var(--color-heading)]">{c.business_name || c.user_name || "Contractor"}</p>
-                    <p className="text-xs text-[var(--color-muted)]">{c.phone || "No phone"} · {c.category || "—"}</p>
+                    <p className="text-sm font-bold text-heading">{c.business_name || c.user_name || "Contractor"}</p>
+                    <p className="text-xs text-muted mt-0.5">{c.phone || "No phone"} · {c.category || "—"}</p>
                   </div>
-                  <BtnOutline onClick={() => onViewContractor(c)}>View</BtnOutline>
+                  <BtnOutline onClick={() => onViewContractor(c)}>View Details</BtnOutline>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => onVerify(c, "approved")} disabled={busy} className="flex-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 py-1.5 text-xs rounded-lg font-medium transition">
+                <div className="flex gap-2 mt-1">
+                  <button 
+                    onClick={() => onVerify(c, "approved")} 
+                    disabled={busy} 
+                    className="flex-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white py-1.5 text-xs rounded-lg font-bold transition disabled:opacity-40"
+                  >
                     ✓ Approve
                   </button>
                   <BtnDanger onClick={() => onVerify(c, "rejected")} disabled={busy} className="flex-1 !py-1.5 rounded-lg">
@@ -49,33 +53,33 @@ export default function OverviewPanel({ stats, contractors, reports, busy, onVer
               </div>
             ))}
             {!contractors.some((c) => c.verification_status === "pending") && (
-              <p className="text-sm text-[var(--color-muted)] py-4 text-center">No pending verifications ✓</p>
+              <p className="text-sm text-muted py-8 text-center font-medium">No pending verifications ✓</p>
             )}
           </div>
         </div>
 
         {/* Pending reports */}
-        <div className="glass-card rounded-2xl p-5 border border-white/10">
-          <h3 className="font-semibold text-[var(--color-heading)] mb-4 flex items-center gap-2">
-            <FiAlertTriangle size={16} className="text-red-400" /> Pending Reports
+        <div className="card p-5 border border-border bg-surface">
+          <h3 className="font-bold text-heading mb-4 flex items-center gap-2">
+            <FiAlertTriangle size={16} className="text-rose-500" /> Pending Reports
           </h3>
-          <div className="space-y-2 max-h-72 overflow-y-auto">
+          <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
             {reports.filter((r) => r.status === "pending").slice(0, 8).map((r) => (
-              <div key={r.id} className="p-3 rounded-xl bg-white/5 border border-white/5">
-                <p className="text-sm text-[var(--color-body)]">{r.reason || "No reason given"}</p>
-                <p className="text-xs text-[var(--color-muted)] mt-1">
+              <div key={r.id} className="p-3.5 rounded-xl bg-bg-elevated border border-border">
+                <p className="text-sm text-body font-medium leading-relaxed">{r.reason || "No reason given"}</p>
+                <p className="text-xs text-muted mt-1.5">
                   Reporter: {r.reporter_name || "Unknown"} · Contractor: {r.business_name || `#${r.contractor_id}`}
                 </p>
-                <div className="flex gap-2 mt-2">
-                  <BtnOutline onClick={() => onResolve(r.id, "resolved")} disabled={busy}>
-                    <FiCheckCircle className="inline mr-1" /> Resolve
+                <div className="flex gap-2 mt-3">
+                  <BtnOutline onClick={() => onResolve(r.id, "resolved")} disabled={busy} className="flex items-center gap-1">
+                    <FiCheckCircle size={12} /> Resolve Report
                   </BtnOutline>
-                  <BtnDanger onClick={() => onResolve(r.id, "rejected")} disabled={busy}>Reject</BtnDanger>
+                  <BtnDanger onClick={() => onResolve(r.id, "rejected")} disabled={busy}>Reject Report</BtnDanger>
                 </div>
               </div>
             ))}
             {!reports.some((r) => r.status === "pending") && (
-              <p className="text-sm text-[var(--color-muted)] py-4 text-center">No pending reports ✓</p>
+              <p className="text-sm text-muted py-8 text-center font-medium">No pending reports ✓</p>
             )}
           </div>
         </div>

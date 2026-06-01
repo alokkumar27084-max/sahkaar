@@ -25,136 +25,151 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
     navigate("/chat", { state: { initChatWith: contractor.id } });
   }
 
+  const handleCardClick = () => {
+    navigate(`/contractor/${contractor.id}`);
+  };
+
   return (
     <article
-      className={`group relative overflow-hidden rounded-3xl border transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10 ${isCompared
-          ? "border-indigo-500 bg-indigo-500/5 ring-1 ring-indigo-500/50"
-          : "border-white/10 bg-white/[0.02] hover:border-white/20"
-        }`}
+      onClick={handleCardClick}
+      className={`group bg-[var(--color-surface)] border rounded-2xl p-5 transition-all duration-300 hover:shadow-lg hover:border-[var(--color-primary)]/30 flex flex-col sm:flex-row gap-5 relative cursor-pointer ${
+        isCompared
+          ? "border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
+          : "border-[var(--color-border)]"
+      }`}
     >
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-5">
-            {/* Avatar Section */}
-            <div className="relative shrink-0">
-              {contractor.photo_url ? (
-                <img
-                  src={getImageUrl(contractor.photo_url)}
-                  alt={resolvedName}
-                  className="h-20 w-20 rounded-2xl object-cover ring-1 ring-white/10 transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 text-2xl font-black text-indigo-300 border border-indigo-500/30">
-                  {resolvedName.charAt(0).toUpperCase()}
-                </div>
-              )}
-              {contractor.is_available && (
-                <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-[#090B19] bg-emerald-500" title="Available Now" />
-              )}
-            </div>
-
-            {/* Name & Title Section */}
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="truncate font-display text-xl font-black text-white">{resolvedName}</h3>
-                {contractor.is_verified && (
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-500/30" title="Verified">
-                    <FiShield size={10} />
-                  </div>
-                )}
-              </div>
-              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
-                {resolvedCategory}
-              </p>
-              <div className="mt-3 flex items-center gap-3">
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/5 border border-white/5">
-                  <FiStar className="text-amber-400 fill-amber-400" size={12} />
-                  <span className="text-xs font-black text-white">{rating.toFixed(1)}</span>
-                </div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  {resolvedReviewCount} reviews
-                </span>
-              </div>
-            </div>
+      
+      {/* 1. Photo Section (Airbnb style) */}
+      <div className="relative w-full sm:w-36 h-40 sm:h-36 shrink-0 rounded-xl overflow-hidden bg-[var(--color-bg-elevated)]">
+        {contractor.photo_url ? (
+          <img
+            src={getImageUrl(contractor.photo_url)}
+            alt={resolvedName}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-950/20 dark:to-indigo-900/20 text-3xl font-black text-indigo-500 dark:text-indigo-400">
+            {resolvedName.charAt(0).toUpperCase()}
           </div>
-
-          {showCompare && (
-            <button
-              type="button"
-              onClick={() => onCompare?.(contractor, !isCompared)}
-              className={`shrink-0 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${isCompared
-                  ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"
-                  : "bg-white/5 text-slate-400 border border-white/10 hover:border-white/30"
-                }`}
-            >
-              Compare
-            </button>
-          )}
-        </div>
-
-        {/* Info Grid */}
-        <div className="mt-6 grid grid-cols-3 gap-4 border-t border-white/5 pt-6">
-          <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Proximity</p>
-            <p className="text-sm font-bold text-white flex items-center gap-1">
-              <FiMapPin size={12} className="text-cyan-400" />
-              {distanceKm != null ? `${Number(distanceKm).toFixed(1)}km` : "Local"}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Starting Rate</p>
-            <p className="text-sm font-bold text-white">
-              {dailyRate ? `₹${Number(dailyRate).toLocaleString("en-IN")}` : "Custom"}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Exp</p>
-            <p className="text-sm font-bold text-white">
-              {contractor.experience_years ? `${contractor.experience_years}y` : "New Pro"}
-            </p>
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="mt-6 flex flex-wrap gap-2">
-          {contractor.is_labour_group && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400">
-              <FiUsers size={12} className="text-indigo-400" /> Team of {contractor.team_size || 'Expert'}
-            </div>
-          )}
-          {contractor.is_featured && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-400">
-              Top Rated
-            </div>
-          )}
-        </div>
+        )}
+        {contractor.is_available && (
+          <span className="absolute bottom-2.5 left-2.5 flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#1A1A1A]" title="Available Now" />
+        )}
       </div>
 
-      {/* Footer Actions */}
-      <div className="grid grid-cols-11 border-t border-white/5">
-        <button
-          onClick={handleMessageTap}
-          className="col-span-3 flex items-center justify-center gap-2 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 transition-all hover:bg-emerald-500/5"
-        >
-          <FiMessageCircle size={16} />
-          <span className="hidden sm:inline">Chat</span>
-        </button>
-        <Link
-          to={`/contractor/${contractor.id}`}
-          className="col-span-4 flex items-center justify-center gap-2 border-x border-white/5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-white/5"
-        >
-          View Profile
-          <FiArrowRight size={14} className="text-indigo-400" />
-        </Link>
-        <Link
-          to={`/checkout/${contractor.id}`}
-          state={{ contractor }}
-          className="col-span-4 flex items-center justify-center gap-2 bg-indigo-600 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white transition-all hover:bg-indigo-700 shadow-inner"
-        >
-          <FiCreditCard size={14} />
-          Book
-        </Link>
+      {/* 2. Details Section */}
+      <div className="flex-1 flex flex-col justify-between min-w-0">
+        <div>
+          {/* Header row: Name + Verified + Compare */}
+          <div className="flex items-start justify-between gap-4 mb-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="text-base font-bold text-[var(--color-heading)] truncate group-hover:text-[var(--color-primary)] transition-colors">
+                {resolvedName}
+              </h3>
+              {contractor.is_verified && (
+                <FiShield
+                  size={15}
+                  className="text-blue-500 fill-blue-500/20 shrink-0"
+                  title="Verified Professional"
+                />
+              )}
+            </div>
+            {showCompare && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCompare?.(contractor, !isCompared);
+                }}
+                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-colors shrink-0 ${
+                  isCompared
+                    ? "bg-[var(--color-primary)] text-white border-transparent"
+                    : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:border-[var(--color-heading)]"
+                }`}
+              >
+                {isCompared ? "Compared" : "Compare"}
+              </button>
+            )}
+          </div>
+
+          {/* Subheader: Category */}
+          <p className="text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider mb-2.5">
+            {resolvedCategory}
+          </p>
+
+          {/* Rating */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-1">
+              <FiStar className="text-amber-400 fill-amber-400" size={14} />
+              <span className="text-xs font-bold text-[var(--color-heading)]">
+                {rating > 0 ? rating.toFixed(1) : "New"}
+              </span>
+            </div>
+            <span className="text-[var(--color-muted)]">•</span>
+            <span className="text-xs text-[var(--color-muted)] font-medium">
+              {resolvedReviewCount} reviews
+            </span>
+          </div>
+
+          {/* Inline Info Grid */}
+          <div className="grid grid-cols-3 gap-2 border-t border-[var(--color-border)] pt-3 mb-4">
+            <div>
+              <p className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider mb-0.5">Distance</p>
+              <p className="text-xs font-bold text-[var(--color-heading)]">
+                {distanceKm != null ? `${Number(distanceKm).toFixed(1)} km` : "Local"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider mb-0.5">Rate</p>
+              <p className="text-xs font-bold text-[var(--color-heading)] truncate">
+                {dailyRate ? `₹${Number(dailyRate).toLocaleString("en-IN")}` : "Custom"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider mb-0.5">Experience</p>
+              <p className="text-xs font-bold text-[var(--color-heading)]">
+                {contractor.experience_years ? `${contractor.experience_years} years` : "New Pro"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Row */}
+        <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-3.5 gap-2">
+          {/* Chat Link */}
+          <button
+            onClick={handleMessageTap}
+            className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors py-1 px-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/10 rounded-lg"
+          >
+            <FiMessageCircle size={15} />
+            <span>Chat</span>
+          </button>
+
+          <div className="flex gap-2">
+            {/* View Profile */}
+            <Link
+              to={`/contractor/${contractor.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="h-8 px-3 rounded-lg border border-[var(--color-border)] text-xs font-bold text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors flex items-center justify-center gap-1"
+            >
+              <span>Profile</span>
+              <FiArrowRight size={12} />
+            </Link>
+
+            {/* Book Now */}
+            <Link
+              to={`/checkout/${contractor.id}`}
+              state={{ contractor }}
+              onClick={(e) => e.stopPropagation()}
+              className="h-8 px-4 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <FiCreditCard size={13} />
+              <span>Book</span>
+            </Link>
+          </div>
+        </div>
+
       </div>
     </article>
   );

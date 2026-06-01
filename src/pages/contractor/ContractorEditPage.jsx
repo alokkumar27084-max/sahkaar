@@ -215,67 +215,82 @@ export default function ContractorEditPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 md:px-6">
-      <section className="glass-card p-5 md:p-7">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="font-['Space_Grotesk'] text-2xl text-slate-100 font-semibold">Edit Profile</h1>
-          <button onClick={() => navigate("/contractor/dashboard")} className="btn-secondary !py-2 !px-4">
+    <div className="max-w-4xl mx-auto px-4 py-8 md:px-6 text-[var(--color-heading)]">
+      <section className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-card p-6 md:p-8">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[var(--color-border)]">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-[var(--color-heading)]">Edit Profile</h1>
+            <p className="text-xs text-[var(--color-muted)] font-semibold mt-1">Keep your professional identity and catalog up to date.</p>
+          </div>
+          <button onClick={() => navigate("/contractor/dashboard")} className="inline-flex items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2 text-xs font-bold uppercase tracking-wider text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)] transition-all">
             {t("app.back")}
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4 mb-5">
-          <label className="card text-center cursor-pointer">
+        {/* Media Uploads */}
+        <div className="grid md:grid-cols-2 gap-5 mb-6">
+          <label className="flex flex-col items-center justify-center border border-[var(--color-border)] bg-[var(--color-bg-elevated)] rounded-xl p-5 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all">
             <img
               src={getImageUrl(profile?.photo_url || profile?.image_url)}
               alt="profile"
-              className="w-24 h-24 rounded-xl object-cover mx-auto border border-white/20"
+              className="w-20 h-20 rounded-full object-cover mx-auto border-2 border-[var(--color-border)] shadow-sm"
             />
-            <p className="text-xs text-slate-300 mt-3">Change profile photo</p>
+            <p className="text-xs font-bold text-[var(--color-heading)] mt-3">Change Profile Photo</p>
+            <p className="text-[10px] text-[var(--color-muted)] font-semibold mt-0.5">JPG, PNG under 5MB</p>
             <input type="file" className="hidden" accept="image/jpeg,image/png" onChange={uploadSingle} />
           </label>
-          <label className="card text-center cursor-pointer">
-            <span className="inline-flex justify-center text-cyan-100">
-              <Icon name="camera" className="w-8 h-8" />
+
+          <label className="flex flex-col items-center justify-center border border-[var(--color-border)] bg-[var(--color-bg-elevated)] rounded-xl p-5 text-center cursor-pointer hover:border-[var(--color-primary)] transition-all">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] mb-2 shadow-sm">
+              <Icon name="camera" className="w-5 h-5" />
             </span>
-            <p className="text-xs text-slate-300 mt-3">Add portfolio photos (max 5)</p>
+            <p className="text-xs font-bold text-[var(--color-heading)]">Add Portfolio Photos</p>
+            <p className="text-[10px] text-[var(--color-muted)] font-semibold mt-0.5">Showcase your recent projects (max 5)</p>
             <input type="file" className="hidden" accept="image/jpeg,image/png" multiple onChange={uploadPortfolio} />
           </label>
         </div>
 
-        <div className="card mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-100">Current Portfolio</h2>
-            <button type="button" onClick={savePortfolioOrder} disabled={saving} className="btn-secondary !py-1.5 !px-3 text-xs">
+        {/* Portfolio Gallery */}
+        <div className="border border-[var(--color-border)] rounded-xl bg-[var(--color-bg-elevated)] p-5 mb-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--color-heading)]">Current Portfolio</h2>
+              <p className="text-[10px] text-[var(--color-muted)] font-semibold mt-0.5">Drag photos to reorder before saving.</p>
+            </div>
+            <button type="button" onClick={savePortfolioOrder} disabled={saving} className="rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-xs font-bold text-white transition-all hover:bg-[var(--color-primary)]/90 shadow-sm">
               Save Order
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mb-2">Drag photos to reorder before saving.</p>
+
           {portfolio.length === 0 ? (
-            <p className="text-xs text-slate-300">No portfolio photos yet.</p>
+            <p className="text-xs text-[var(--color-muted)] font-semibold">No portfolio photos yet. Upload some above!</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {portfolio.map((url, idx) => (
                 <div
                   key={`${url}-${idx}`}
-                  className="rounded-xl border border-white/15 p-1.5 bg-slate-950/30"
+                  className="rounded-lg border border-[var(--color-border)] p-2 bg-[var(--color-surface)] shadow-sm relative group"
                   draggable
                   onDragStart={() => onDragStart(idx)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => onDropAt(idx)}
                 >
-                  <img src={getImageUrl(url)} alt={`portfolio-${idx + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                  <div className="flex gap-1 mt-1.5">
-                    <button type="button" onClick={() => movePortfolioItem(idx, -1)} className="btn-secondary !py-1 !px-2 text-xs">
-                      Up
-                    </button>
-                    <button type="button" onClick={() => movePortfolioItem(idx, 1)} className="btn-secondary !py-1 !px-2 text-xs">
-                      Down
-                    </button>
+                  <img src={getImageUrl(url)} alt={`portfolio-${idx + 1}`} className="w-full h-24 object-cover rounded-md" />
+                  <div className="flex justify-between items-center gap-1 mt-2">
+                    <div className="flex gap-0.5">
+                      <button type="button" onClick={() => movePortfolioItem(idx, -1)} className="p-1 text-[10px] bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border)] text-[var(--color-heading)] hover:bg-[var(--color-surface)]">
+                        &larr;
+                      </button>
+                      <button type="button" onClick={() => movePortfolioItem(idx, 1)} className="p-1 text-[10px] bg-[var(--color-bg-elevated)] rounded border border-[var(--color-border)] text-[var(--color-heading)] hover:bg-[var(--color-surface)]">
+                        &rarr;
+                      </button>
+                    </div>
                     <button
                       type="button"
                       onClick={() => removePortfolioItem(idx)}
-                      className="btn-secondary !py-1 !px-2 text-xs text-rose-200 border-rose-300/40"
+                      className="p-1 text-[10px] bg-rose-500/10 text-rose-600 rounded border border-rose-500/20 hover:bg-rose-500/20"
                     >
                       Remove
                     </button>
@@ -286,66 +301,102 @@ export default function ContractorEditPage() {
           )}
         </div>
 
-        <form onSubmit={saveProfile} className="space-y-3">
-          <input className="input-field" value={form.category} onChange={update("category")} placeholder="Category" />
-          <textarea className="input-field resize-none" rows={4} value={form.description} onChange={update("description")} placeholder="Description" />
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input-field" type="number" min="0" value={form.daily_rate} onChange={update("daily_rate")} placeholder="Daily rate" />
-            <input className="input-field" type="number" min="0" value={form.experience_years} onChange={update("experience_years")} placeholder="Experience (years)" />
+        {/* Profile Form */}
+        <form onSubmit={saveProfile} className="space-y-4">
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Business Category</label>
+            <input className="input-field" value={form.category} onChange={update("category")} placeholder="e.g. Electrician, Painter, Contractor" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input className="input-field" type="number" min="1" value={form.team_size} onChange={update("team_size")} placeholder="Team size" />
-            <input className="input-field" value={form.location_text} onChange={update("location_text")} placeholder="Location text" />
+
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Professional Bio / Description</label>
+            <textarea className="input-field resize-none" rows={4} value={form.description} onChange={update("description")} placeholder="Describe your experience, skill level, and core specialization..." />
           </div>
-          <div className="rounded-xl border border-cyan-200/30 bg-cyan-200/10 p-3">
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Daily Wage / Base Rate (₹)</label>
+              <input className="input-field" type="number" min="0" value={form.daily_rate} onChange={update("daily_rate")} placeholder="e.g. 500" />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Experience (Years)</label>
+              <input className="input-field" type="number" min="0" value={form.experience_years} onChange={update("experience_years")} placeholder="e.g. 5" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Team size</label>
+              <input className="input-field" type="number" min="1" value={form.team_size} onChange={update("team_size")} placeholder="e.g. 3" />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Operating Base address</label>
+              <input className="input-field" value={form.location_text} onChange={update("location_text")} placeholder="Locality, City, NCR" />
+            </div>
+          </div>
+
+          {/* GPS Coordinates Locker */}
+          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-primary)]">GPS Geolocation</span>
+              {geo.lat !== null && geo.lng !== null ? (
+                <p className="text-xs text-[var(--color-heading)] font-bold mt-0.5">
+                  Locked: {Number(geo.lat).toFixed(6)}, {Number(geo.lng).toFixed(6)}
+                  {geo.accuracy ? ` (accuracy +/-${Math.round(geo.accuracy)}m)` : ""}
+                </p>
+              ) : (
+                <p className="text-xs text-[var(--color-muted)] font-semibold mt-0.5">GPS coordinates are not verified. Lock them for higher discovery rankings.</p>
+              )}
+              {geoError && <p className="text-[10px] text-amber-600 font-bold mt-1">{geoError}</p>}
+            </div>
             <button
               type="button"
               onClick={() => getLocation({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })}
               disabled={geoLoading}
-              className="btn-secondary !py-2 !px-3 text-xs"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-primary)] px-3 py-1.5 text-xs font-bold text-[var(--color-primary)] bg-[var(--color-surface)] hover:bg-[var(--color-primary)]/5 disabled:opacity-60 transition-all shadow-sm"
             >
-              {geoLoading ? "Capturing..." : "Use my precise GPS location"}
+              {geoLoading ? "Capturing..." : "Update Current GPS"}
             </button>
-            {geo.lat !== null && geo.lng !== null && (
-              <p className="text-xs text-cyan-100 mt-2">
-                GPS: {Number(geo.lat).toFixed(6)}, {Number(geo.lng).toFixed(6)}
-                {geo.accuracy ? ` (+/-${Math.round(geo.accuracy)}m)` : ""}
-              </p>
-            )}
-            {geoError && <p className="text-xs text-amber-200 mt-2">{geoError}</p>}
           </div>
-          <input className="input-field" value={form.services} onChange={update("services")} placeholder="Services (comma separated)" />
-          <div className="flex flex-wrap gap-4 text-sm text-slate-200 pt-1">
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={form.is_labour_group} onChange={update("is_labour_group")} className="accent-cyan-200" />
-              Labour Group
+
+          <div className="space-y-1">
+            <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Services List (comma separated)</label>
+            <input className="input-field" value={form.services} onChange={update("services")} placeholder="e.g. Wet Service, Gas Refill, Shuttering, Plastering" />
+          </div>
+
+          {/* Configuration Flags */}
+          <div className="flex flex-wrap gap-6 text-sm text-[var(--color-heading)] pt-2 font-semibold">
+            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked={form.is_labour_group} onChange={update("is_labour_group")} className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer" />
+              <span>Labour Group Leader</span>
             </label>
-            <label className="inline-flex items-center gap-2">
+            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={form.is_responsibility_model}
                 onChange={update("is_responsibility_model")}
-                className="accent-cyan-200"
+                className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-[var(--color-primary)] cursor-pointer"
               />
-              Responsibility Model
+              <span>Responsibility Model</span>
             </label>
           </div>
 
+          {/* Labour Chowk Crew Composer */}
           {form.is_labour_group && (
-            <div className="rounded-xl border border-white/10 bg-slate-950/20 p-4 space-y-4">
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 space-y-4">
               <div>
-                <span className="block text-xs font-bold text-indigo-400 uppercase tracking-widest">Labour Chowk Crew Details</span>
-                <p className="text-[10px] text-slate-400 mt-1">Specify worker counts and category pricing under your team/group leadership.</p>
+                <span className="block text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider">Labour Chowk Crew Details</span>
+                <p className="text-[10px] text-[var(--color-muted)] font-semibold mt-0.5">Specify individual worker counts and category wage structures under your group leadership.</p>
               </div>
 
               <div className="space-y-3">
                 {form.labour_crew.map((crew, idx) => (
-                  <div key={idx} className="flex gap-2 items-center bg-slate-900/30 p-2.5 rounded-xl border border-white/5">
+                  <div key={idx} className="flex gap-2 items-center bg-[var(--color-surface)] p-2 rounded-lg border border-[var(--color-border)]">
                     <input
                       type="text"
                       required
                       placeholder="Role (e.g. Helper, Mason)"
-                      className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-indigo-500"
+                      className="flex-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-md px-3 py-2 text-[var(--color-heading)] text-xs font-semibold outline-none focus:border-[var(--color-primary)]"
                       value={crew.role}
                       onChange={(e) => {
                         const next = [...form.labour_crew];
@@ -358,7 +409,7 @@ export default function ContractorEditPage() {
                       required
                       min="1"
                       placeholder="Qty"
-                      className="w-16 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-indigo-500"
+                      className="w-16 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-md px-3 py-2 text-[var(--color-heading)] text-xs font-semibold outline-none focus:border-[var(--color-primary)]"
                       value={crew.count}
                       onChange={(e) => {
                         const next = [...form.labour_crew];
@@ -371,7 +422,7 @@ export default function ContractorEditPage() {
                       required
                       min="0"
                       placeholder="Rate ₹"
-                      className="w-20 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-indigo-500"
+                      className="w-24 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-md px-3 py-2 text-[var(--color-heading)] text-xs font-semibold outline-none focus:border-[var(--color-primary)]"
                       value={crew.rate}
                       onChange={(e) => {
                         const next = [...form.labour_crew];
@@ -400,7 +451,7 @@ export default function ContractorEditPage() {
                       labour_crew: [...prev.labour_crew, { role: "", count: 1, rate: 400 }]
                     }));
                   }}
-                  className="py-2 px-4 rounded-lg border border-dashed border-indigo-500/30 text-indigo-400 font-bold text-[10px] uppercase tracking-widest hover:bg-indigo-500/5 transition-all"
+                  className="py-2 px-3 rounded-lg border border-dashed border-[var(--color-primary)]/40 text-[var(--color-primary)] font-bold text-[10px] uppercase tracking-wider hover:bg-[var(--color-primary)]/5 transition-all"
                 >
                   + Add Crew Worker
                 </button>
@@ -408,7 +459,7 @@ export default function ContractorEditPage() {
             </div>
           )}
 
-          <button type="submit" disabled={saving || uploading || geoLoading} className="btn-primary w-full !text-slate-900 mt-2">
+          <button type="submit" disabled={saving || uploading || geoLoading} className="w-full bg-[var(--color-primary)] text-white py-3 px-4 rounded-lg font-bold hover:bg-[var(--color-primary)]/90 disabled:opacity-60 transition-all shadow-sm">
             {saving || uploading || geoLoading ? <LoadingSpinner size="sm" /> : t("app.save")}
           </button>
         </form>

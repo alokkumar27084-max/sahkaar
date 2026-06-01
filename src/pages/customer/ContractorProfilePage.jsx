@@ -14,6 +14,8 @@ import {
   FiShare2,
   FiShield,
   FiUsers,
+  FiStar,
+  FiGlobe
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { contractorAPI, reviewAPI } from "../../services/api";
@@ -34,16 +36,6 @@ function formatCategory(value) {
   return String(value || "general service").replace(/_/g, " ");
 }
 
-function Stat({ label, value, sub }) {
-  return (
-    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">{label}</p>
-      <p className="mt-2 text-2xl font-black text-[var(--color-heading)]">{value}</p>
-      {sub && <p className="mt-1 text-xs font-semibold text-[var(--color-primary)]">{sub}</p>}
-    </div>
-  );
-}
-
 export default function ContractorProfilePage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -60,14 +52,14 @@ export default function ContractorProfilePage() {
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
 
-  // Labour Chowk crew selection state
+  // Crew quantity selection for Labour Chowk
   const [selectedWorkers, setSelectedWorkers] = useState({});
 
   useEffect(() => {
     if (contractor?.labour_crew) {
       const init = {};
       contractor.labour_crew.forEach((c) => {
-        init[c.role] = c.count || 0; // Default to maximum size
+        init[c.role] = c.count || 0;
       });
       setSelectedWorkers(init);
     }
@@ -184,7 +176,7 @@ export default function ContractorProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] pb-16 pt-20">
+    <main className="min-h-screen bg-[var(--color-bg)] pb-16 pt-16">
       <SEOHead
         title={`${name} — ${String(category).replace(/_/g, " ")} Contractor in ${contractor.location_text || "India"}`}
         description={contractor.description ? contractor.description.slice(0, 155) : `${name} is a verified ${String(category).replace(/_/g, " ")} contractor on Thekedaar. ★ ${rating.toFixed(1)} · ${reviewCount} reviews.`}
@@ -192,107 +184,114 @@ export default function ContractorProfilePage() {
         canonical={`https://thekedaar.com/contractor/${id}`}
         structuredData={businessSchema}
       />
-      <section className="relative border-b border-[var(--color-border)]">
-        <div className="absolute inset-0 overflow-hidden">
-          {heroImage ? (
-            <img src={getImageUrl(heroImage)} alt="" className="h-full w-full object-cover opacity-25" />
-          ) : (
-            <div className="h-full w-full bg-gradient-to-br from-indigo-950 via-slate-900 to-cyan-950 opacity-95" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg)] via-[var(--color-bg)]/80 to-[var(--color-bg)]/20" />
-        </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-8 md:px-8 md:py-12">
+      {/* 1. Profile Header / Cover Section */}
+      <section className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] py-10">
+        <div className="max-w-[var(--max-width)] mx-auto px-4 md:px-8">
+          
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="mb-8 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-black/20 px-4 py-2 text-sm font-bold text-white backdrop-blur transition-colors hover:bg-black/35"
+            className="mb-8 h-10 px-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-heading)] flex items-center gap-1.5 hover:bg-[var(--color-bg-elevated)] transition-colors shadow-sm"
           >
-            <FiArrowLeft /> Back
+            <FiArrowLeft size={16} /> 
+            <span>Back</span>
           </button>
 
-          <div className="grid gap-8 lg:grid-cols-[1fr_340px] lg:items-end">
-            <div className="flex flex-col gap-6 md:flex-row md:items-end">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+            
+            {/* Left Column: Avatar + Name + Tags */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 text-center sm:text-left">
               <img
                 src={getImageUrl(contractor.photo_url)}
                 alt={name}
-                className="h-32 w-32 rounded-2xl border-4 border-[var(--color-surface)] object-cover shadow-xl"
+                className="h-28 w-28 rounded-2xl border-4 border-[var(--color-surface)] object-cover shadow-md shrink-0 bg-[var(--color-bg-elevated)]"
                 onError={(event) => {
                   event.currentTarget.src = "/default-contractor.png";
                 }}
               />
-              <div>
-                <div className="mb-3 flex flex-wrap gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
                   {contractor.is_verified && <Badge type="verified" />}
                   {contractor.is_featured && <Badge type="featured" />}
                   {contractor.is_labour_group && <Badge type="labour_group" />}
                   {contractor.is_responsibility_model && <Badge type="responsibility" />}
                 </div>
-                <h1 className="font-display text-4xl font-black tracking-tight text-[var(--color-heading)] md:text-6xl">
+
+                <h1 className="text-3xl md:text-4xl font-bold text-[var(--color-heading)] tracking-tight">
                   {name}
                 </h1>
-                <div className="mt-4 flex flex-wrap items-center gap-3 text-sm font-bold text-[var(--color-body)]">
-                  <span className="inline-flex items-center gap-2 text-[var(--color-primary)]">
-                    <FiBriefcase /> {formatCategory(category)}
+
+                <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 text-sm font-semibold text-[var(--color-body)]">
+                  <span className="inline-flex items-center gap-1.5 text-[var(--color-primary)]">
+                    <FiBriefcase size={14} /> 
+                    <span>{formatCategory(category)}</span>
                   </span>
                   {contractor.location_text && (
-                    <span className="inline-flex items-center gap-2">
-                      <FiMapPin /> {contractor.location_text}
+                    <span className="inline-flex items-center gap-1.5 text-[var(--color-muted)]">
+                      <FiMapPin size={14} /> 
+                      <span>{contractor.location_text}</span>
                     </span>
                   )}
-                  <span className={`inline-flex items-center gap-2 ${contractor.is_available ? "text-emerald-600" : "text-amber-600"}`}>
+                  <span className={`inline-flex items-center gap-1.5 ${contractor.is_available ? "text-emerald-600" : "text-amber-600"}`}>
                     <span className={`h-2 w-2 rounded-full ${contractor.is_available ? "bg-emerald-500" : "bg-amber-500"}`} />
-                    {contractor.is_available ? "Available" : "Limited availability"}
+                    <span>{contractor.is_available ? "Available" : "Limited Availability"}</span>
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-xl">
+            {/* Right Column: CTA Quick Box */}
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm max-w-sm w-full lg:w-80 shrink-0 self-center lg:self-auto">
               <button
                 type="button"
                 onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })}
-                className="btn-primary mb-3 h-13 w-full justify-center"
+                className="w-full h-11 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-sm flex items-center justify-center gap-2 mb-2.5 transition-colors"
               >
-                <FiCreditCard /> Book with escrow
+                <FiCreditCard size={15} /> 
+                <span>Book Contractor</span>
               </button>
               <button
                 type="button"
                 onClick={async () => {
-                  try {
-                    await contractorAPI.recordLead(id);
-                  } catch {
-                    // no-op
-                  }
+                  try { await contractorAPI.recordLead(id); } catch { /* ignore */ }
                   trackEvent("in_app_message_tap", { contractor_id: id, source: "profile" });
                   navigate("/chat", { state: { initChatWith: id } });
                 }}
-                className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3.5 font-bold text-white transition-colors hover:bg-emerald-700"
+                className="w-full h-11 border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 mb-3 hover:bg-emerald-100 dark:hover:bg-emerald-950/30 transition-colors"
               >
-                <FiMessageCircle /> Message contractor
+                <FiMessageCircle size={15} /> 
+                <span>Chat Now</span>
               </button>
-              <div className="grid grid-cols-2 gap-3">
+              
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => navigator.share?.({ title: name, url: window.location.href })}
-                  className="btn-secondary justify-center"
+                  className="h-9 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-elevated)] text-xs font-bold text-[var(--color-heading)] flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  <FiShare2 /> Share
+                  <FiShare2 size={13} /> 
+                  <span>Share</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => (user ? setShowReportBox((prev) => !prev) : navigate("/login"))}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-rose-500/25 bg-rose-500/5 px-4 py-3 text-sm font-bold text-rose-600 transition-colors hover:bg-rose-500/10"
+                  className="h-9 rounded-lg border border-rose-200 dark:border-rose-950/40 bg-rose-50 dark:bg-rose-950/15 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
                 >
-                  <FiAlertTriangle /> Report
+                  <FiAlertTriangle size={13} /> 
+                  <span>Report</span>
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      {/* 2. Main Page Grid */}
+      <div className="max-w-[var(--max-width)] mx-auto px-4 md:px-8 py-10">
+        
+        {/* Report form dropdown */}
         <AnimatePresence>
           {showReportBox && (
             <motion.form
@@ -300,42 +299,72 @@ export default function ContractorProfilePage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               onSubmit={submitReport}
-              className="mb-6 rounded-2xl border border-rose-500/25 bg-rose-500/5 p-5"
+              className="mb-8 rounded-2xl border border-rose-200 dark:border-rose-950/40 bg-rose-50 dark:bg-rose-950/10 p-5 flex flex-col sm:flex-row gap-3"
             >
-              <p className="mb-3 font-bold text-rose-700">Report this profile</p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <input
-                  value={reportReason}
-                  onChange={(event) => setReportReason(event.target.value)}
-                  className="input-field flex-1"
-                  placeholder="Reason for report"
-                  maxLength={140}
-                />
-                <button type="submit" disabled={reporting} className="rounded-xl bg-rose-600 px-5 py-3 font-bold text-white">
-                  {reporting ? "Submitting..." : "Submit"}
-                </button>
-              </div>
+              <input
+                value={reportReason}
+                onChange={(event) => setReportReason(event.target.value)}
+                className="w-full h-11 px-4 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] text-sm text-[var(--color-heading)] focus:outline-none focus:border-rose-500 transition-colors flex-1"
+                placeholder="Reason for reporting this contractor profile..."
+                maxLength={140}
+              />
+              <button
+                type="submit"
+                disabled={reporting}
+                className="h-11 px-6 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shrink-0 transition-colors"
+              >
+                {reporting ? "Reporting..." : "Submit Report"}
+              </button>
             </motion.form>
           )}
         </AnimatePresence>
 
-        <section className="grid gap-4 md:grid-cols-4">
-          <Stat label="Rating" value={rating.toFixed(1)} sub={`${reviewCount} reviews`} />
-          <Stat label="Starting rate" value={contractor.daily_rate ? `Rs ${Number(contractor.daily_rate).toLocaleString("en-IN")}` : "Ask"} sub="per day/job" />
-          <Stat label="Experience" value={contractor.experience_years ? `${contractor.experience_years}` : "New"} sub="years" />
-          <Stat label="Team" value={contractor.is_labour_group ? contractor.team_size || 1 : "Solo"} sub={contractor.is_labour_group ? "workers" : "professional"} />
+        {/* Highlight Stats Row */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+            <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Rating</span>
+            <span className="text-2xl font-bold text-[var(--color-heading)] block">{rating.toFixed(1)}</span>
+            <span className="text-xs text-[var(--color-muted)] font-medium mt-0.5 block">{reviewCount} reviews</span>
+          </div>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+            <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Starting Rate</span>
+            <span className="text-2xl font-bold text-[var(--color-heading)] block">
+              {contractor.daily_rate ? `₹${Number(contractor.daily_rate).toLocaleString("en-IN")}` : "Custom"}
+            </span>
+            <span className="text-xs text-[var(--color-muted)] font-medium mt-0.5 block">per day / job</span>
+          </div>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+            <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Experience</span>
+            <span className="text-2xl font-bold text-[var(--color-heading)] block">
+              {contractor.experience_years ? `${contractor.experience_years} yrs` : "New"}
+            </span>
+            <span className="text-xs text-[var(--color-muted)] font-medium mt-0.5 block">field experience</span>
+          </div>
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+            <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Work Crew</span>
+            <span className="text-2xl font-bold text-[var(--color-heading)] block">
+              {contractor.is_labour_group ? `${contractor.team_size || 1} workers` : "Solo"}
+            </span>
+            <span className="text-xs text-[var(--color-muted)] font-medium mt-0.5 block">organization type</span>
+          </div>
         </section>
 
-        <section className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
+        {/* Bottom Split layout */}
+        <section className="grid gap-8 lg:grid-cols-[1fr_360px]">
+          
+          {/* Main content pane */}
           <div>
-            <div className="mb-5 flex gap-2 overflow-x-auto rounded-2xl bg-[var(--color-border)] p-1.5">
+            {/* Tabs */}
+            <div className="mb-6 flex gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-1 w-full max-w-md">
               {tabItems.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 rounded-xl px-5 py-3 text-sm font-black transition-colors ${
-                    activeTab === tab.id ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-muted)] hover:bg-[var(--color-surface)]"
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === tab.id
+                      ? "bg-[var(--color-surface)] text-[var(--color-primary)] shadow-sm border border-[var(--color-border)]"
+                      : "text-[var(--color-muted)] hover:text-[var(--color-heading)]"
                   }`}
                 >
                   {tab.id === "reviews" ? `${tab.label} (${reviewCount})` : tab.label}
@@ -343,19 +372,32 @@ export default function ContractorProfilePage() {
               ))}
             </div>
 
+            {/* Tab content panel */}
             <AnimatePresence mode="wait">
+              
+              {/* ABOUT TAB */}
               {activeTab === "about" && (
-                <motion.div key="about" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 md:p-8">
-                  <h2 className="font-display text-2xl font-black text-[var(--color-heading)]">About this contractor</h2>
-                  <p className="mt-4 whitespace-pre-wrap leading-relaxed text-[var(--color-body)]">
+                <motion.div
+                  key="about"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 md:p-8"
+                >
+                  <h2 className="text-xl font-bold text-[var(--color-heading)] mb-4">About this professional</h2>
+                  <p className="whitespace-pre-wrap leading-relaxed text-sm text-[var(--color-body)] mb-6">
                     {contractor.description || "This contractor has not added a detailed description yet."}
                   </p>
+
                   {services.length > 0 && (
-                    <div className="mt-6">
-                      <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Services offered</p>
+                    <div className="mb-8">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3">Services Offered</h3>
                       <div className="flex flex-wrap gap-2">
                         {services.map((service) => (
-                          <span key={service} className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1.5 text-xs font-bold capitalize text-[var(--color-primary)]">
+                          <span
+                            key={service}
+                            className="rounded-full bg-indigo-50 dark:bg-indigo-950/20 px-3.5 py-1.5 text-xs font-bold capitalize text-[var(--color-primary)] border border-indigo-100 dark:border-indigo-950"
+                          >
                             {service}
                           </span>
                         ))}
@@ -363,22 +405,26 @@ export default function ContractorProfilePage() {
                     </div>
                   )}
 
+                  {/* Daily wage Crew Composer (Labour Chowk) */}
                   {contractor.is_labour_group && contractor.labour_crew && contractor.labour_crew.length > 0 && (
                     <div className="mt-8 pt-8 border-t border-[var(--color-border)] space-y-6">
                       <div>
-                        <span className="block text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Labour Chowk Crew Composer</span>
-                        <p className="mt-1 text-xs text-slate-400">Select the quantity of each worker category you wish to hire from this group.</p>
+                        <span className="block text-sm font-bold text-[var(--color-heading)]">Labour Crew Composer</span>
+                        <p className="mt-1 text-xs text-[var(--color-muted)]">Customize the workforce crew size and categories you wish to hire from this provider group.</p>
                       </div>
 
                       <div className="space-y-4">
                         {contractor.labour_crew.map((crew) => (
-                          <div key={crew.role} className="flex items-center justify-between bg-[var(--color-bg)] p-4 rounded-2xl border border-[var(--color-border)]">
-                            <div>
-                              <span className="block text-sm font-black text-[var(--color-heading)] capitalize">{crew.role}</span>
-                              <span className="block text-[10px] font-semibold text-slate-400 mt-0.5">₹{crew.rate}/day per worker (Max {crew.count} available)</span>
+                          <div
+                            key={crew.role}
+                            className="flex items-center justify-between bg-[var(--color-bg-elevated)] p-4 rounded-xl border border-[var(--color-border)]"
+                          >
+                            <div className="min-w-0">
+                              <span className="block text-sm font-bold text-[var(--color-heading)] capitalize truncate">{crew.role}</span>
+                              <span className="block text-xs text-[var(--color-muted)] mt-0.5">₹{crew.rate}/day per worker (Max {crew.count} available)</span>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 shrink-0">
                               <button
                                 type="button"
                                 onClick={() => {
@@ -387,11 +433,13 @@ export default function ContractorProfilePage() {
                                     [crew.role]: Math.max(0, (prev[crew.role] || 0) - 1)
                                   }));
                                 }}
-                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-all text-lg"
+                                className="w-8 h-8 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-bg-elevated)] text-[var(--color-heading)] font-black flex items-center justify-center transition-all text-base"
                               >
                                 -
                               </button>
-                              <span className="w-12 text-center text-sm font-black text-white">{selectedWorkers[crew.role] ?? 0}</span>
+                              <span className="w-8 text-center text-sm font-bold text-[var(--color-heading)]">
+                                {selectedWorkers[crew.role] ?? 0}
+                              </span>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -400,7 +448,7 @@ export default function ContractorProfilePage() {
                                     [crew.role]: Math.min(crew.count, (prev[crew.role] || 0) + 1)
                                   }));
                                 }}
-                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center transition-all text-lg"
+                                className="w-8 h-8 rounded-lg bg-[var(--color-surface)] border border-[var(--color-border)] hover:bg-[var(--color-bg-elevated)] text-[var(--color-heading)] font-black flex items-center justify-center transition-all text-base"
                               >
                                 +
                               </button>
@@ -409,10 +457,10 @@ export default function ContractorProfilePage() {
                         ))}
                       </div>
 
-                      <div className="p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="p-5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                          <span className="block text-[10px] font-black uppercase tracking-widest text-indigo-400">Estimated Daily Workforce Cost</span>
-                          <span className="block text-2xl font-black text-white mt-1">₹{totalDailyCost.toLocaleString("en-IN")}</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Estimated Daily Crew Rate</span>
+                          <span className="block text-2xl font-bold text-[var(--color-heading)] mt-0.5">₹{totalDailyCost.toLocaleString("en-IN")}</span>
                         </div>
                         
                         <button
@@ -426,92 +474,136 @@ export default function ContractorProfilePage() {
                               state: {
                                 contractor: {
                                   ...contractor,
-                                  daily_rate: totalDailyCost, // dynamically calculated rate!
+                                  daily_rate: totalDailyCost, 
                                   selected_crew: selectedWorkers
                                 }
                               }
                             });
                           }}
-                          className="px-6 py-3.5 bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-500/20"
+                          className="h-11 px-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center justify-center"
                         >
                           Book Selected Crew
                         </button>
                       </div>
                     </div>
                   )}
+
                 </motion.div>
               )}
 
+              {/* PORTFOLIO TAB */}
               {activeTab === "portfolio" && (
-                <motion.div key="portfolio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <motion.div
+                  key="portfolio"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
                   {portfolioItems.length > 0 || portfolioPhotos.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {portfolioItems.map((item) => (
-                        <div key={item.id} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-                          <img src={getImageUrl(item.image_url)} alt={item.title || "Work photo"} className="h-56 w-full object-cover" />
+                        <div
+                          key={item.id}
+                          className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm group hover:shadow-md transition-shadow"
+                        >
+                          <img
+                            src={getImageUrl(item.image_url)}
+                            alt={item.title || "Work snapshot"}
+                            className="h-52 w-full object-cover transition-transform duration-300 group-hover:scale-103"
+                          />
                           {(item.title || item.description) && (
-                            <div className="p-4">
-                              {item.title && <p className="font-bold text-[var(--color-heading)]">{item.title}</p>}
-                              {item.description && <p className="mt-1 text-sm text-[var(--color-muted)]">{item.description}</p>}
+                            <div className="p-4 border-t border-[var(--color-border)]">
+                              {item.title && <p className="font-bold text-sm text-[var(--color-heading)]">{item.title}</p>}
+                              {item.description && <p className="mt-1 text-xs text-[var(--color-muted)] leading-relaxed">{item.description}</p>}
                             </div>
                           )}
                         </div>
                       ))}
                       {portfolioItems.length === 0 &&
                         portfolioPhotos.map((url, index) => (
-                          <img key={url || index} src={getImageUrl(url)} alt={`Work ${index + 1}`} className="h-56 w-full rounded-2xl border border-[var(--color-border)] object-cover" />
+                          <div key={url || index} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+                            <img
+                              src={getImageUrl(url)}
+                              alt={`Portfolio project ${index + 1}`}
+                              className="h-52 w-full object-cover"
+                            />
+                          </div>
                         ))}
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] p-12 text-center">
-                      <FiImage className="mx-auto mb-3 text-3xl text-[var(--color-muted)]" />
-                      <p className="font-bold text-[var(--color-heading)]">No work photos yet</p>
-                      <p className="mt-1 text-sm text-[var(--color-muted)]">Ask the contractor for recent work photos before booking.</p>
+                      <FiImage className="mx-auto mb-4 text-3xl text-[var(--color-muted)]" />
+                      <p className="font-bold text-[var(--color-heading)]">No portfolio uploads yet</p>
+                      <p className="mt-1 text-sm text-[var(--color-muted)] max-w-xs mx-auto">This contractor has not uploaded recent portfolio photos yet.</p>
                     </div>
                   )}
                 </motion.div>
               )}
 
+              {/* REVIEWS TAB */}
               {activeTab === "reviews" && (
-                <motion.div key="reviews" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid gap-6 lg:grid-cols-[320px_1fr]">
-                  <form onSubmit={submitReview} className="h-fit rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-                    <p className="font-display text-xl font-black text-[var(--color-heading)]">Write a review</p>
-                    <div className="mt-4">
-                      <StarRating value={myRating} onChange={setMyRating} readonly={false} size="text-3xl" />
+                <motion.div
+                  key="reviews"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="grid gap-6 lg:grid-cols-[280px_1fr]"
+                >
+                  {/* Write a review box */}
+                  <form onSubmit={submitReview} className="h-fit rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
+                    <p className="font-bold text-base text-[var(--color-heading)]">Write a review</p>
+                    <div className="mt-3.5">
+                      <StarRating value={myRating} onChange={setMyRating} readonly={false} size="text-2xl" />
                     </div>
                     <textarea
                       value={myComment}
                       onChange={(event) => setMyComment(event.target.value)}
-                      className="input-field mt-4 min-h-[110px] resize-y"
-                      placeholder="Share your experience"
+                      className="w-full min-h-[100px] mt-4 p-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors resize-y"
+                      placeholder="Share details of your experience with this contractor..."
                       maxLength={500}
                     />
-                    <button type="submit" disabled={submitting || !myRating} className="btn-primary mt-4 w-full justify-center">
-                      {submitting ? <LoadingSpinner size="sm" /> : "Submit review"}
+                    <button
+                      type="submit"
+                      disabled={submitting || !myRating}
+                      className="w-full h-10 mt-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center transition-colors shadow-sm"
+                    >
+                      {submitting ? <LoadingSpinner size="sm" /> : "Submit Review"}
                     </button>
                   </form>
 
+                  {/* Reviews list */}
                   <div className="space-y-4">
                     {reviews.length ? (
                       reviews.map((review) => (
-                        <div key={review.id} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+                        <div key={review.id} className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
                           <div className="flex items-start justify-between gap-4">
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-bold text-[var(--color-heading)]">{review.reviewer_name || "Customer"}</p>
+                                <p className="font-bold text-sm text-[var(--color-heading)]">
+                                  {review.reviewer_name || "Verified Client"}
+                                </p>
                                 {review.is_verified && (
-                                  <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                                    <FiCheckCircle size={10} /> Verified Project
+                                  <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-950 px-2 py-0.5 rounded-lg shrink-0">
+                                    <FiCheckCircle size={10} /> 
+                                    <span>Verified</span>
                                   </span>
                                 )}
                               </div>
-                              <div className="mt-1">
-                                <StarRating value={Number(review.rating || 0)} readonly size="text-sm" />
+                              <div className="mt-1 flex gap-0.5">
+                                <StarRating value={Number(review.rating || 0)} readonly size="text-xs" />
                               </div>
                             </div>
-                            {review.created_at && <span className="text-xs font-semibold text-[var(--color-muted)]">{new Date(review.created_at).toLocaleDateString("en-IN")}</span>}
+                            {review.created_at && (
+                              <span className="text-[10px] font-semibold text-[var(--color-muted)]">
+                                {new Date(review.created_at).toLocaleDateString("en-IN")}
+                              </span>
+                            )}
                           </div>
-                          {review.comment && <p className="mt-4 text-sm leading-relaxed text-[var(--color-body)]">{review.comment}</p>}
+                          {review.comment && (
+                            <p className="mt-3.5 text-xs md:text-sm leading-relaxed text-[var(--color-body)]">
+                              "{review.comment}"
+                            </p>
+                          )}
                         </div>
                       ))
                     ) : (
@@ -521,37 +613,46 @@ export default function ContractorProfilePage() {
                       </div>
                     )}
                   </div>
+
                 </motion.div>
               )}
+
             </AnimatePresence>
           </div>
 
+          {/* Right sidebar details */}
           <aside className="space-y-4">
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5">
-              <p className="mb-2 flex items-center gap-2 font-bold text-[var(--color-heading)]">
-                <FiShield className="text-emerald-600" /> Booking protection
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 p-5">
+              <p className="mb-2 flex items-center gap-2 font-bold text-sm text-[var(--color-heading)]">
+                <FiShield className="text-emerald-600" /> 
+                <span>Milestone protection</span>
               </p>
-              <p className="text-sm leading-relaxed text-[var(--color-body)]">
-                Book through Thekedaar to use escrow payment, booking history, chat, and dispute support.
+              <p className="text-xs leading-relaxed text-[var(--color-body)]">
+                Payments are held securely in a milestone-based escrow account. Funds are only disbursed once you sign off on completed work segments.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-              <p className="mb-3 font-bold text-[var(--color-heading)]">Profile signals</p>
-              <div className="space-y-3 text-sm text-[var(--color-body)]">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
+              <p className="mb-3 font-bold text-sm text-[var(--color-heading)]">Profile signals</p>
+              <div className="space-y-3.5 text-xs text-[var(--color-body)]">
                 <div className="flex items-center gap-3">
-                  <FiCheckCircle className="text-emerald-600" /> Identity details submitted
+                  <FiCheckCircle className="text-emerald-600 shrink-0" size={15} /> 
+                  <span>Official business KYC verified</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <FiMapPin className="text-cyan-600" /> Location enabled for nearby discovery
+                  <FiMapPin className="text-cyan-600 shrink-0" size={15} /> 
+                  <span>Active coverage area configured</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <FiUsers className="text-indigo-600" /> {contractor.is_labour_group ? "Team contractor" : "Individual or business"}
+                  <FiUsers className="text-indigo-600 shrink-0" size={15} /> 
+                  <span>{contractor.is_labour_group ? "Organized Labor Squad leader" : "Verified Independent Partner"}</span>
                 </div>
               </div>
             </div>
           </aside>
+
         </section>
+
       </div>
     </main>
   );

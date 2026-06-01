@@ -287,65 +287,84 @@ export default function BookingCheckoutPage() {
   const displayName = contractor.business_name || contractor.name || contractor.user_name || "Contractor";
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] px-4 pb-16 pt-24 md:px-6">
-      <div className="mx-auto max-w-6xl">
-        <button type="button" onClick={() => navigate(-1)} className="mb-6 flex items-center text-sm font-bold text-[var(--color-muted)] hover:text-[var(--color-heading)]">
-          <FiChevronLeft className="mr-1" size={18} /> Back
+    <main className="min-h-screen bg-[var(--color-bg-elevated)] px-4 pb-20 pt-24 md:px-6">
+      <div className="mx-auto max-w-5xl">
+        
+        {/* Back Button */}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors"
+        >
+          <FiChevronLeft className="mr-1.5" size={16} /> Back
         </button>
 
-        <section className="mb-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 md:p-8">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--color-primary)]">Secure checkout</p>
-          <h1 className="font-display text-3xl font-black text-[var(--color-heading)] md:text-5xl">Book with escrow protection</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-muted)] md:text-base">
-            Review the job, pin the service location, and continue to Razorpay. Your payment is tracked against this booking before work begins.
+        {/* Page Title Card */}
+        <section className="mb-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 md:p-8 shadow-card">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary)]">Secure Escrow Checkout</span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[var(--color-heading)] mt-2 md:text-4xl">Confirm and pay</h1>
+          <p className="mt-2 text-sm font-semibold text-[var(--color-muted)] leading-relaxed max-w-2xl">
+            Your payment is held safely in escrow and only released to the contractor as they complete verified milestones.
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            {STEPS.map((step) => (
-              <span
-                key={step.id}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold ${
-                  stepProgress >= step.id ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-heading)]" : "border-[var(--color-border)] text-[var(--color-muted)]"
-                }`}
-              >
-                <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${stepProgress > step.id ? "bg-emerald-500 text-white" : stepProgress === step.id ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-border)]"}`}>
-                  {stepProgress > step.id ? "✓" : step.id}
+          
+          {/* Progress Indicator */}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {STEPS.map((step) => {
+              const isCompleted = stepProgress > step.id;
+              const isActive = stepProgress === step.id;
+              return (
+                <span
+                  key={step.id}
+                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${
+                    isActive || isCompleted
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-heading)]"
+                      : "border-[var(--color-border)] text-[var(--color-muted)]"
+                  }`}
+                >
+                  <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${isCompleted ? "bg-emerald-500 text-white" : isActive ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-border)] text-[var(--color-muted)]"}`}>
+                    {isCompleted ? "✓" : step.id}
+                  </span>
+                  {step.label}
                 </span>
-                {step.label}
-              </span>
-            ))}
+              );
+            })}
           </div>
         </section>
 
+        {/* 2-Column Grid */}
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
+          
+          {/* Left Column: Checkout Form Details */}
           <div className="space-y-6">
-            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Professional</p>
-              <div className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 text-xl font-black text-white">
+            
+            {/* Contractor Information Panel */}
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
+              <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3">Booking Professional</span>
+              <div className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)]/15 text-lg font-bold text-[var(--color-primary)]">
                   {initial}
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-[var(--color-heading)]">{displayName}</h2>
-                  <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-[var(--color-primary)]">
-                    <FiBriefcase size={14} /> {contractor.category || contractor.trade || "General Service"}
+                  <h2 className="text-lg font-extrabold text-[var(--color-heading)]">{displayName}</h2>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-[var(--color-primary)]">
+                    <FiBriefcase size={12} /> {contractor.category || contractor.trade || "General Service"}
                   </p>
                 </div>
               </div>
             </section>
 
-
-
+            {/* Quoted Items (If quote exists) */}
             {quote && (
-              <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-                <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Quotation details</p>
-                <div className="space-y-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+              <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
+                <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3">Quotation Details</span>
+                <div className="space-y-2.5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 font-semibold">
                   {quote.items.map((item, i) => (
-                    <div key={i} className="flex justify-between text-sm">
+                    <div key={i} className="flex justify-between text-xs">
                       <span className="text-[var(--color-body)]">{item.title}</span>
-                      <span className="font-bold text-[var(--color-heading)]">{money(item.amount)}</span>
+                      <span className="text-[var(--color-heading)] font-bold">{money(item.amount)}</span>
                     </div>
                   ))}
-                  <div className="flex justify-between border-t border-[var(--color-border)] pt-2 font-black text-[var(--color-heading)]">
+                  <div className="flex justify-between border-t border-[var(--color-border)] pt-2 text-sm font-extrabold text-[var(--color-heading)]">
                     <span>Quoted Total</span>
                     <span>{money(quote.total_amount)}</span>
                   </div>
@@ -353,8 +372,9 @@ export default function BookingCheckoutPage() {
               </section>
             )}
 
-            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-              <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Service location</p>
+            {/* Service Location Pinner */}
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
+              <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3">Service Address</span>
               <LocationSearchInput
                 value={addressInput}
                 onChange={setAddressInput}
@@ -363,84 +383,93 @@ export default function BookingCheckoutPage() {
                   setAddressInput(selection.address);
                   saveLocationSnapshot(selection);
                 }}
-                placeholder="Search address, society, market, or landmark"
+                placeholder="Search address, society, market, or landmark base..."
               />
-              <div className={`mt-4 rounded-xl border p-4 ${selectedLocation?.lat ? "border-emerald-500/30 bg-emerald-500/[0.06]" : "border-[var(--color-border)] bg-[var(--color-bg)]"}`}>
+              
+              <div className={`mt-4 rounded-xl border p-4 font-semibold ${selectedLocation?.lat ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-800" : "border-[var(--color-border)] bg-[var(--color-bg-elevated)]"}`}>
                 {selectedLocation?.lat && selectedLocation?.lng ? (
                   <div className="flex gap-3">
-                    <FiCheckCircle className="mt-0.5 shrink-0 text-emerald-600" size={20} />
-                    <div>
-                      <p className="font-bold text-[var(--color-heading)]">Location pinned</p>
-                      <p className="mt-1 text-sm text-[var(--color-body)]">{addressInput}</p>
-                      <button type="button" onClick={() => requestLocation()} className="mt-2 text-xs font-bold text-[var(--color-primary)] hover:underline">
-                        Use current GPS instead
+                    <FiCheckCircle className="mt-0.5 shrink-0 text-emerald-600" size={18} />
+                    <div className="text-xs">
+                      <p className="font-extrabold text-[var(--color-heading)]">Coordinates Pinned Successfully</p>
+                      <p className="mt-1 text-[var(--color-muted)] leading-relaxed font-semibold">{addressInput}</p>
+                      <button type="button" onClick={() => requestLocation()} className="mt-2 text-[10px] font-bold text-[var(--color-primary)] hover:underline uppercase tracking-wider">
+                        Use precise GPS coordinates
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center">
-                    <p className="mb-3 text-sm text-[var(--color-body)]">Pin your location so the contractor can reach the right place.</p>
-                    <button type="button" onClick={() => requestLocation()} disabled={geoLoading} className="btn-secondary mx-auto">
-                      {geoLoading ? <LoadingSpinner size="sm" /> : <FiMapPin />}
-                      Use current location
+                  <div className="text-center py-2">
+                    <p className="text-xs text-[var(--color-muted)] font-semibold mb-3">Add your service address to connect your contractor correctly.</p>
+                    <button type="button" onClick={() => requestLocation()} disabled={geoLoading} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-4 py-2 text-xs font-bold text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)] transition-all">
+                      {geoLoading ? <LoadingSpinner size="sm" /> : <FiMapPin size={14} />}
+                      Detect Location using GPS
                     </button>
-                    {geoError && <p className="mt-2 text-xs font-semibold text-rose-500">{geoError}</p>}
+                    {geoError && <p className="mt-2 text-xs font-bold text-rose-500">{geoError}</p>}
                   </div>
                 )}
               </div>
             </section>
 
+            {/* Map Preview Panel */}
             {selectedLocation?.lat && selectedLocation?.lng && (
-              <ContractorMapPanel
-                center={{ lat: Number(selectedLocation.lat), lng: Number(selectedLocation.lng) }}
-                currentLocationLabel={addressInput}
-                contractors={[contractor]}
-                heightClass="h-[240px] md:h-[280px]"
-              />
+              <div className="rounded-2xl overflow-hidden border border-[var(--color-border)] shadow-sm">
+                <ContractorMapPanel
+                  center={{ lat: Number(selectedLocation.lat), lng: Number(selectedLocation.lng) }}
+                  currentLocationLabel={addressInput}
+                  contractors={[contractor]}
+                  heightClass="h-[200px]"
+                />
+              </div>
             )}
 
-            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            {/* Scheduling and Service Budget Section */}
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <label className={quote ? "opacity-50 pointer-events-none" : ""}>
-                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">
-                    {serviceTier === "macro" ? "Estimated project value" : "Service budget"}
-                  </span>
-                  <input className="input-field" type="number" min={149} step="50" value={projectValue} onChange={(event) => setProjectValue(Number(event.target.value) || 0)} placeholder="Rs Amount" readOnly={!!quote} />
-                </label>
-                <label>
-                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Schedule</span>
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">
+                    {serviceTier === "macro" ? "Estimated Project Value (₹)" : "Service Budget (₹)"}
+                  </label>
+                  <input className="w-full px-4 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" type="number" min={149} step="50" value={projectValue} onChange={(event) => setProjectValue(Number(event.target.value) || 0)} placeholder="Amount in Rs" readOnly={!!quote} />
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Appointment Time</label>
                   <div className="relative">
-                    <FiCalendar className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" />
-                    <input className="input-field !pl-10" type="datetime-local" value={scheduledFor} onChange={(event) => setScheduledFor(event.target.value)} />
+                    <FiCalendar className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" size={14} />
+                    <input className="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all" type="datetime-local" value={scheduledFor} onChange={(event) => setScheduledFor(event.target.value)} />
                   </div>
-                </label>
+                </div>
               </div>
-              <label className="mt-4 block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">Notes</span>
-                <textarea className="input-field min-h-[96px] resize-y" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Access instructions, parking, materials..." />
-              </label>
+              
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Job Details & Notes (Optional)</label>
+                <textarea className="w-full px-4 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)] transition-all min-h-[90px] resize-none" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Access instructions, building landmarks, parking, material choices..." />
+              </div>
             </section>
           </div>
 
-          <aside className="lg:sticky lg:top-28">
-            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-xl">
+          {/* Right Column: Airbnb Sticky Payment Summary Box */}
+          <aside className="lg:sticky lg:top-24">
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
               <div className="mb-4 flex items-center gap-2 text-[var(--color-heading)]">
-                <FiCreditCard className="text-[var(--color-primary)]" />
-                <h2 className="font-display text-xl font-black">Payment summary</h2>
+                <FiCreditCard className="text-[var(--color-primary)]" size={18} />
+                <h2 className="text-lg font-extrabold tracking-tight">Price details</h2>
               </div>
 
-              <div className="mb-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
-                <div className="flex justify-between gap-4 text-sm">
-                  <span className="text-[var(--color-muted)]">{serviceTier === "macro" ? "Project estimate" : "Protected total"}</span>
-                  <span className="font-black text-[var(--color-heading)]">{money(pricing?.estimatedProjectValue || projectValue)}</span>
+              {/* Fee Breakdown */}
+              <div className="mb-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 font-semibold text-xs text-[var(--color-muted)] space-y-3">
+                <div className="flex justify-between gap-4">
+                  <span>{serviceTier === "macro" ? "Total project value" : "Base service cost"}</span>
+                  <span className="font-extrabold text-[var(--color-heading)]">{money(pricing?.estimatedProjectValue || projectValue)}</span>
                 </div>
                 {pricingLoading ? (
-                  <p className="mt-3 text-xs text-[var(--color-muted)]">Calculating escrow...</p>
+                  <p className="text-[10px] text-[var(--color-muted)] italic">Computing escrow breakdown...</p>
                 ) : pricing?.milestoneDetails?.length ? (
-                  <div className="mt-4 space-y-2 border-t border-[var(--color-border)] pt-4">
+                  <div className="mt-3 space-y-2 border-t border-[var(--color-border)] pt-3">
                     {pricing.milestoneDetails.map((item) => (
-                      <div key={item.title} className="flex justify-between gap-4 text-xs">
-                        <span className="text-[var(--color-body)]">{item.title}</span>
+                      <div key={item.title} className="flex justify-between gap-4">
+                        <span>{item.title}</span>
                         <span className="font-bold text-[var(--color-heading)]">{money(item.amount)}</span>
                       </div>
                     ))}
@@ -448,40 +477,44 @@ export default function BookingCheckoutPage() {
                 ) : null}
               </div>
 
-              <div className="mb-2 flex items-baseline justify-between gap-4">
-                <span className="font-bold text-[var(--color-heading)]">Pay now</span>
-                <span className="text-3xl font-black text-[var(--color-heading)]">{money(payableNow)}</span>
+              {/* Total Payable Box */}
+              <div className="mb-3 flex items-baseline justify-between gap-4 border-b border-[var(--color-border)] pb-3">
+                <span className="font-extrabold text-[var(--color-heading)] text-sm">Payable now</span>
+                <span className="text-2xl font-black text-[var(--color-heading)]">{money(payableNow)}</span>
               </div>
-              <p className="mb-6 text-xs leading-relaxed text-[var(--color-muted)]">
-                This amount is collected for the booking and tracked against Razorpay payment verification.
+              <p className="mb-5 text-[10px] leading-relaxed text-[var(--color-muted)] font-semibold">
+                Your funds are held securely in a multi-stage escrow account. The contractor only gets paid upon your project milestone approval.
               </p>
 
-              <div className="mb-6 space-y-3">
-                <div className="flex gap-3 rounded-xl border border-indigo-500/15 bg-indigo-500/[0.06] p-3">
-                  <FiLock className="mt-0.5 shrink-0 text-indigo-500" size={18} />
-                  <p className="text-xs leading-relaxed text-[var(--color-body)]">
-                    <strong className="text-[var(--color-heading)]">Escrow protection.</strong>{" "}
-                    {pricing?.customerCopy || "Funds are recorded safely and released as work is completed."}
+              {/* Escrow Lock Details */}
+              <div className="mb-5 space-y-2.5">
+                <div className="flex gap-3 rounded-xl border border-indigo-500/15 bg-indigo-500/[0.04] p-3 text-xs leading-relaxed">
+                  <FiLock className="shrink-0 text-[var(--color-primary)] mt-0.5" size={16} />
+                  <p className="text-[var(--color-muted)] font-semibold">
+                    <strong className="text-[var(--color-heading)]">100% Secure Escrow.</strong>{" "}
+                    {pricing?.customerCopy || "Your payment is guarded by milestone-linked verification."}
                   </p>
                 </div>
-                <div className="flex gap-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.06] p-3">
-                  <FiShield className="mt-0.5 shrink-0 text-emerald-600" size={18} />
-                  <p className="text-xs leading-relaxed text-[var(--color-body)]">
-                    Payments are processed by Razorpay. Card details are never stored on Thekedaar servers.
+                <div className="flex gap-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-3 text-xs leading-relaxed">
+                  <FiShield className="shrink-0 text-emerald-600 mt-0.5" size={16} />
+                  <p className="text-[var(--color-muted)] font-semibold">
+                    Escrow payouts processed securely via Razorpay. Zero hidden registration or bid commissions.
                   </p>
                 </div>
               </div>
 
+              {/* Checkout CTA Button */}
               <button
                 type="button"
                 onClick={handleBookAndPay}
                 disabled={loading || !selectedLocation?.lat || pricingLoading || !pricing}
-                className={`btn-primary h-14 w-full justify-center text-base font-black ${loading || !selectedLocation?.lat || pricingLoading || !pricing ? "cursor-not-allowed opacity-60" : ""}`}
+                className="w-full bg-[var(--color-primary)] text-white py-3.5 rounded-lg text-sm font-extrabold hover:bg-[var(--color-primary)]/90 disabled:opacity-50 transition-all shadow-sm flex items-center justify-center gap-2"
               >
-                {loading ? <LoadingSpinner /> : `Continue to Razorpay - ${money(payableNow)}`}
+                {loading ? <LoadingSpinner size="sm" /> : `Pay with Razorpay · ${money(payableNow)}`}
               </button>
-              <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-wider text-[var(--color-muted)]">
-                Secure checkout | Powered by Razorpay
+              
+              <p className="mt-3 text-center text-[9px] font-extrabold uppercase tracking-widest text-[var(--color-muted)]">
+                Secure transaction powered by Razorpay
               </p>
             </section>
           </aside>
