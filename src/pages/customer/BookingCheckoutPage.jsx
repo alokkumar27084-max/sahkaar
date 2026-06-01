@@ -353,6 +353,56 @@ export default function BookingCheckoutPage() {
               </div>
             </section>
 
+            {/* Service Clarity Cards (What to Expect) */}
+            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
+              <span className="block text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary)] mb-1">Service Assurance</span>
+              <h3 className="text-base font-extrabold text-[var(--color-heading)] mb-4">What to expect & service clarity</h3>
+              
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Included Column */}
+                <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] p-4">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">
+                    <FiCheckCircle size={14} className="text-emerald-500" /> Included
+                  </span>
+                  <ul className="space-y-2.5 text-xs font-semibold text-[var(--color-body)]">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                      <span>Background-verified & reviewed professional</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                      <span>Escrow payment lock (release on milestone completion)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                      <span>Post-service standard cleanup of the immediate work area</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Excluded Column */}
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-500 mb-3">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-extrabold shrink-0">✕</span> Excluded
+                  </span>
+                  <ul className="space-y-2.5 text-xs font-semibold text-[var(--color-body)]">
+                    <li className="flex items-start gap-2">
+                      <span className="text-rose-500 font-bold shrink-0">✕</span>
+                      <span>Raw building materials & spare parts procurement costs</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-rose-500 font-bold shrink-0">✕</span>
+                      <span>Heavy machinery, complex scaffoldings or ladder rentals</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-rose-500 font-bold shrink-0">✕</span>
+                      <span>Transporting massive project debris or trash hauling</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
             {/* Quoted Items (If quote exists) */}
             {quote && (
               <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">

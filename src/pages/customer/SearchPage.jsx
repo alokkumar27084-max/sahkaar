@@ -653,16 +653,46 @@ export default function SearchPage() {
                   {/* Price Range */}
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3 block">Budget Range (Daily Rate)</label>
+                    
+                    {/* Visual Price Distribution Histogram */}
+                    <div className="flex items-end gap-[3px] h-12 mb-3 px-1">
+                      {[10, 16, 28, 42, 58, 70, 85, 92, 75, 52, 38, 26, 18, 10, 6, 3].map((count, i) => {
+                        const bucketPrice = (i * 120) + 150; // starts at 150, goes up by 120 each bar
+                        const minP = Number(searchParams.get("min_price") || "0");
+                        const maxP = Number(searchParams.get("max_price") || "2000");
+                        const isActive = bucketPrice >= minP && bucketPrice <= maxP;
+                        return (
+                          <div 
+                            key={i} 
+                            onClick={() => updateParam("max_price", bucketPrice)}
+                            className="flex-1 group relative cursor-pointer"
+                          >
+                            <div 
+                              className={`w-full rounded-t-sm transition-all duration-300 ${
+                                isActive ? "bg-primary" : "bg-muted/30"
+                              }`}
+                              style={{ height: `${(count / 92) * 100}%` }}
+                            />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block bg-surface border border-border text-[9px] font-bold px-1.5 py-0.5 rounded shadow z-10 whitespace-nowrap text-heading">
+                              ₹{bucketPrice} ({count} pros)
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
                     <div className="flex gap-2.5">
                       <input 
                         type="number" 
                         placeholder="Min ₹"
+                        value={searchParams.get("min_price") || ""}
                         className="w-1/2 h-11 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl px-3.5 text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                         onChange={(e) => updateParam("min_price", e.target.value)}
                       />
                       <input 
                         type="number" 
                         placeholder="Max ₹"
+                        value={searchParams.get("max_price") || ""}
                         className="w-1/2 h-11 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl px-3.5 text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                         onChange={(e) => updateParam("max_price", e.target.value)}
                       />

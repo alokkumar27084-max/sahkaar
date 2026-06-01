@@ -6,6 +6,7 @@ import {
   FiClock,
   FiMapPin,
   FiCheck,
+  FiCheckCircle,
   FiPhone,
   FiChevronLeft,
   FiChevronRight,
@@ -551,6 +552,58 @@ export default function QuickBookingPage() {
                   <SummaryRow icon={<FiCalendar size={14} />} label="Date" value={new Date(preferredDate).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })} />
                   <SummaryRow icon={<FiClock size={14} />} label="Time Slot" value={TIME_SLOTS.find((s) => s.id === timeSlot)?.label + " (" + TIME_SLOTS.find((s) => s.id === timeSlot)?.time + ")"} />
                   <SummaryRow icon={<FiMapPin size={14} />} label="Address" value={address} />
+                </div>
+              </div>
+
+              {/* Service Clarity Cards (What to Expect) */}
+              <div className="card rounded-[var(--radius-lg)] bg-[var(--color-surface)] border border-[var(--color-border)] p-5 shadow-sm space-y-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary)]">
+                  Service Clarity
+                </p>
+                <h3 className="text-sm font-extrabold text-[var(--color-heading)]">What to expect & service clarity</h3>
+                
+                <div className="grid gap-3.5 sm:grid-cols-2">
+                  {/* Included Column */}
+                  <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] p-3.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2">
+                      <FiCheckCircle size={12} className="text-emerald-500" /> Included
+                    </span>
+                    <ul className="space-y-2 text-[11px] font-semibold text-[var(--color-body)]">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <span>Background-checked contractor</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <span>Post-service standard area cleanup</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <span>Verified booking reservation lock</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Excluded Column */}
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3.5">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-rose-500 mb-2">
+                      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-bold shrink-0">✕</span> Excluded
+                    </span>
+                    <ul className="space-y-2 text-[11px] font-semibold text-[var(--color-body)]">
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <span>Raw materials / parts replacement costs</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <span>Heavy machine / scaffoldings rental</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <span>Debris loading & transport offsite</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import toast from "react-hot-toast";
@@ -51,6 +51,7 @@ export default function ContractorProfilePage() {
   const [showReportBox, setShowReportBox] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(null);
 
   // Crew quantity selection for Labour Chowk
   const [selectedWorkers, setSelectedWorkers] = useState({});
@@ -69,6 +70,24 @@ export default function ContractorProfilePage() {
     const crewItem = contractor?.labour_crew?.find((c) => c.role === role);
     return acc + (qty * (crewItem?.rate || 0));
   }, 0);
+
+  const portfolioItems = contractor?.portfolio_items || [];
+  const portfolioPhotos = contractor?.portfolio_photos || contractor?.portfolio_urls || [];
+  
+  const allPhotos = useMemo(() => {
+    if (portfolioItems.length > 0) {
+      return portfolioItems.map(item => ({
+        url: getImageUrl(item.image_url),
+        title: item.title || "Work Snapshot",
+        description: item.description || ""
+      }));
+    }
+    return portfolioPhotos.map((url, i) => ({
+      url: getImageUrl(url),
+      title: `Project Photo ${i + 1}`,
+      description: ""
+    }));
+  }, [portfolioItems, portfolioPhotos]);
 
   useEffect(() => {
     let active = true;
@@ -158,8 +177,6 @@ export default function ContractorProfilePage() {
 
   const name = contractor.name || contractor.business_name || contractor.user_name || "Contractor";
   const category = contractor.category || contractor.categories?.[0] || "general";
-  const portfolioItems = contractor.portfolio_items || [];
-  const portfolioPhotos = contractor.portfolio_photos || contractor.portfolio_urls || [];
   const heroImage = portfolioItems[0]?.image_url || portfolioPhotos[0] || contractor.photo_url;
   const rating = Number(contractor.rating || 0);
   const reviewCount = contractor.review_count ?? contractor.reviews_count ?? reviews.length;
@@ -176,7 +193,7 @@ export default function ContractorProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg)] pb-16 pt-16">
+    <main className="min-h-screen bg-[var(--color-bg)] pb-28 lg:pb-16 pt-16">
       <SEOHead
         title={`${name} — ${String(category).replace(/_/g, " ")} Contractor in ${contractor.location_text || "India"}`}
         description={contractor.description ? contractor.description.slice(0, 155) : `${name} is a verified ${String(category).replace(/_/g, " ")} contractor on Thekedaar. ★ ${rating.toFixed(1)} · ${reviewCount} reviews.`}
@@ -501,10 +518,11 @@ export default function ContractorProfilePage() {
                 >
                   {portfolioItems.length > 0 || portfolioPhotos.length > 0 ? (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {portfolioItems.map((item) => (
+                      {portfolioItems.map((item, index) => (
                         <div
                           key={item.id}
-                          className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm group hover:shadow-md transition-shadow"
+                          onClick={() => setActivePhotoIndex(index)}
+                          className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm group hover:shadow-md cursor-pointer transition-shadow"
                         >
                           <img
                             src={getImageUrl(item.image_url)}
@@ -521,7 +539,11 @@ export default function ContractorProfilePage() {
                       ))}
                       {portfolioItems.length === 0 &&
                         portfolioPhotos.map((url, index) => (
-                          <div key={url || index} className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+                          <div
+                            key={url || index}
+                            onClick={() => setActivePhotoIndex(index)}
+                            className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                          >
                             <img
                               src={getImageUrl(url)}
                               alt={`Portfolio project ${index + 1}`}
@@ -654,6 +676,101 @@ export default function ContractorProfilePage() {
         </section>
 
       </div>
+
+      {/* Mobile Sticky Booking CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3.5 shadow-lg lg:hidden flex items-center justify-between">
+        <div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-black text-[var(--color-heading)]">
+              {contractor.daily_rate ? `₹${Number(contractor.daily_rate).toLocaleString("en-IN")}` : "Custom Price"}
+            </span>
+            {contractor.daily_rate && <span className="text-[10px] text-[var(--color-muted)] font-bold">/ day</span>}
+          </div>
+          <div className="flex items-center gap-1 mt-0.5">
+            <FiStar className="text-amber-500 fill-amber-500" size={11} />
+            <span className="text-xs font-bold text-[var(--color-heading)]">{rating.toFixed(1)}</span>
+            <span className="text-[10px] text-[var(--color-muted)] font-semibold">({reviewCount})</span>
+          </div>
+        </div>
+        
+        <button
+          type="button"
+          onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })}
+          className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl transition-all shadow-sm flex items-center gap-2"
+        >
+          <FiCreditCard size={14} />
+          <span>Book Now</span>
+        </button>
+      </div>
+
+      {/* Lightbox Carousel Popup */}
+      <AnimatePresence>
+        {activePhotoIndex !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-4 backdrop-blur-md"
+            onClick={() => setActivePhotoIndex(null)}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setActivePhotoIndex(null)}
+              className="absolute right-6 top-6 text-white hover:text-gray-300 transition-colors p-2 text-3xl font-light z-50"
+            >
+              ✕
+            </button>
+
+            {/* Carousel Wrapper */}
+            <div className="relative max-w-4xl w-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+              {/* Prev Button */}
+              {allPhotos.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setActivePhotoIndex(prev => (prev > 0 ? prev - 1 : allPhotos.length - 1))}
+                  className="absolute left-2 md:left-4 z-10 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all text-xl font-bold"
+                >
+                  ‹
+                </button>
+              )}
+
+              {/* Active Image */}
+              <div className="flex flex-col items-center max-h-[85vh] px-12">
+                <motion.img
+                  key={activePhotoIndex}
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  src={allPhotos[activePhotoIndex]?.url}
+                  alt={allPhotos[activePhotoIndex]?.title || "Work"}
+                  className="max-h-[65vh] object-contain rounded-lg shadow-2xl border border-white/10"
+                />
+                
+                {/* Caption */}
+                <div className="mt-4 text-center text-white max-w-lg">
+                  <h4 className="text-lg font-bold">{allPhotos[activePhotoIndex]?.title}</h4>
+                  {allPhotos[activePhotoIndex]?.description && (
+                    <p className="mt-1.5 text-xs text-gray-300 font-medium leading-relaxed">{allPhotos[activePhotoIndex]?.description}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Next Button */}
+              {allPhotos.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setActivePhotoIndex(prev => (prev < allPhotos.length - 1 ? prev + 1 : 0))}
+                  className="absolute right-2 md:right-4 z-10 h-12 w-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all text-xl font-bold"
+                >
+                  ›
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </main>
   );
 }

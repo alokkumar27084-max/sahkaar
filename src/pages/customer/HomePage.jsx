@@ -108,6 +108,35 @@ export default function HomePage() {
     other: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600&h=400&fit=crop",
   };
 
+  const BACKDROPS = [
+    {
+      id: "sweeping_drone",
+      src: "/Cinematic_sweeping_drone_shot.mp4",
+      label: "🚁 Sweeping Drone",
+      poster: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&h=1080&fit=crop"
+    },
+    {
+      id: "installing_switch",
+      src: "/Technician_installing_light_switch_202606011423.mp4",
+      label: "🔌 Electrical Work",
+      poster: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=1920&h=1080&fit=crop"
+    },
+    {
+      id: "renovation_moti",
+      src: "/cinematic_wide_shot_slow_moti.mp4",
+      label: "🔨 Site Renovation",
+      poster: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=1920&h=1080&fit=crop"
+    },
+    {
+      id: "wide_smooth",
+      src: "/Cinematic_wide_shot_smooth_sl.mp4",
+      label: "✨ Premium Space",
+      poster: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1920&h=1080&fit=crop"
+    }
+  ];
+
+  const [activeBackdrop, setActiveBackdrop] = useState(BACKDROPS[0]);
+
   return (
     <main className="bg-[var(--color-bg)]">
       <SEOHead
@@ -120,55 +149,68 @@ export default function HomePage() {
         {/* Video / Image Background */}
         <div className="absolute inset-0">
           <video
+            key={activeBackdrop.id}
             autoPlay
             loop
             muted
             playsInline
-            poster="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&h=1080&fit=crop"
-            className="w-full h-full object-cover"
+            poster={activeBackdrop.poster}
+            className="w-full h-full object-cover transition-opacity duration-500"
           >
-            {/* User can add: <source src="/hero-bg.mp4" type="video/mp4" /> */}
+            <source src={activeBackdrop.src} type="video/mp4" />
           </video>
-          <img
-            src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1920&h=1080&fit=crop"
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
           {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/45 to-black/75" />
+        </div>
+
+        {/* Dynamic Backdrop Pill Switchers */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-wrap justify-center gap-2 max-w-full px-4">
+          {BACKDROPS.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setActiveBackdrop(b)}
+              className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-md transition-all duration-300 border uppercase tracking-wider ${
+                activeBackdrop.id === b.id
+                  ? "bg-white text-black border-white shadow-lg shadow-black/20"
+                  : "bg-black/40 text-white/80 border-white/10 hover:bg-black/60 hover:text-white"
+              }`}
+            >
+              {b.label}
+            </button>
+          ))}
         </div>
 
         {/* Hero Content */}
         <div className="relative z-10 w-full max-w-[var(--max-width)] mx-auto px-5 md:px-8 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.5 }}
           >
             {/* Trust badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 mb-8">
               <FiCheckCircle className="text-green-400" size={14} />
-              <span className="text-white/80 text-xs font-medium">
+              <span className="text-white/80 text-xs font-semibold uppercase tracking-wider">
                 Trusted by {realStats?.customers || "10,000"}+ homeowners
               </span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight mb-6">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-6">
               Home services,<br />
               <span className="text-indigo-400">delivered.</span>
             </h1>
 
-            <p className="text-white/60 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed">
+            <p className="text-white/60 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-medium">
               Connect with verified contractors and home service professionals in your area.
             </p>
           </motion.div>
 
           {/* Search Bar */}
           <motion.form
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
             onSubmit={handleSearch}
             className="relative max-w-2xl mx-auto"
           >
@@ -181,11 +223,11 @@ export default function HomePage() {
                 onFocus={() => setShowTrending(true)}
                 onBlur={() => setTimeout(() => setShowTrending(false), 200)}
                 placeholder="Search for plumbers, electricians, painters..."
-                className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-4 text-gray-900 text-sm md:text-base placeholder:text-gray-400"
+                className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-4 text-gray-900 text-sm md:text-base placeholder:text-gray-400 font-medium"
               />
               <button
                 type="submit"
-                className="h-10 md:h-12 px-6 md:px-8 mr-2 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white text-sm font-semibold transition-colors shrink-0"
+                className="h-10 md:h-12 px-6 md:px-8 mr-2 rounded-xl bg-[#6366F1] hover:bg-[#4F46E5] text-white text-sm font-bold transition-colors shrink-0"
               >
                 Search
               </button>
@@ -194,13 +236,13 @@ export default function HomePage() {
             {/* Trending dropdown */}
             {showTrending && !query && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
-                <p className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">Trending</p>
+                <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wide">Trending Searches</p>
                 {trendingSearches.map((term) => (
                   <button
                     key={term}
                     type="button"
                     onMouseDown={() => { setQuery(term); }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors font-semibold"
                   >
                     <FiSearch size={14} className="text-gray-400" />
                     {term}
@@ -214,10 +256,10 @@ export default function HomePage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
             className="flex flex-wrap items-center justify-center gap-2 mt-6"
           >
-            <span className="text-white/40 text-xs mr-1">Popular:</span>
+            <span className="text-white/40 text-xs mr-1 font-bold uppercase tracking-wider">Popular:</span>
             {trendingSearches.map((term) => (
               <button
                 key={term}
@@ -226,7 +268,7 @@ export default function HomePage() {
                   const params = new URLSearchParams({ q: term, mode: "project" });
                   navigate(`/search?${params}`);
                 }}
-                className="px-3 py-1.5 rounded-full border border-white/15 text-white/60 text-xs font-medium hover:bg-white/10 hover:text-white transition-colors"
+                className="px-3 py-1.5 rounded-full border border-white/15 text-white/70 text-xs font-semibold hover:bg-white/10 hover:text-white transition-colors uppercase tracking-wider"
               >
                 {term}
               </button>
