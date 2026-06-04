@@ -265,10 +265,10 @@ export default function HomePage() {
       <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
-            {lang === "hi" ? "अपना ठेकेदार चुनें..." : "Choose Your Thekedaar..."}
+            Choose Your Thekedaar...
           </h2>
           <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
-            Choose from our 40+ professional categories
+            Browse our trust-based informal contractor sectors
           </p>
         </div>
 
@@ -313,7 +313,7 @@ export default function HomePage() {
         <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
-              Kaam Kaise Hota Hai?
+              How do we work?
             </h2>
             <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
               Secure verbal and trust-based contracting in 3 easy steps
