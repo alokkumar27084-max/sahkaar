@@ -33,6 +33,28 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  const [visible, setVisible] = useState(true);
+  const [prevScrollPos, setPrevScrollPos] = useState(0);
+
+  // Show/Hide Navbar on Scroll with smooth direction tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollPos = window.scrollY;
+      const isScrollingUp = prevScrollPos > currentScrollPos;
+
+      if (currentScrollPos < 10) {
+        setVisible(true);
+      } else {
+        setVisible(isScrollingUp);
+      }
+
+      setPrevScrollPos(currentScrollPos);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [prevScrollPos]);
+
   // Close mobile drawer and dropdown on path change
   useEffect(() => {
     setMobileOpen(false);
@@ -83,7 +105,11 @@ export default function Navbar() {
         Skip to main content
       </a>
 
-      <header className="fixed top-0 left-0 right-0 h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] z-[1000] flex items-center px-4 md:px-8">
+      <motion.header
+        animate={{ y: visible ? 0 : -64 }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+        className="fixed top-0 left-0 right-0 h-16 bg-[var(--color-surface-glass)] backdrop-blur-md border-b border-[var(--color-border)] z-[1000] flex items-center px-4 md:px-8"
+      >
         <div className="w-full max-w-[var(--max-width)] mx-auto flex items-center justify-between h-full">
           
           {/* Logo — Left */}
@@ -248,7 +274,7 @@ export default function Navbar() {
 
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Mobile Drawer */}
       <AnimatePresence>

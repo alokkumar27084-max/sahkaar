@@ -181,7 +181,7 @@ export default function HomePage() {
             {/* Headline - taglined */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-6 font-display">
               Har Kaam Ka Ek<br />
-              <span className="text-indigo-400">Thekedaar.</span>
+              <span className="text-indigo-400">Thekedaar</span>
             </h1>
 
             <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-medium">
@@ -264,7 +264,7 @@ export default function HomePage() {
       <section className="max-w-[var(--max-width)] mx-auto px-5 md:px-8 py-16 md:py-24">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-5xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
-            Kaunsa Theka Dena Hai?
+            {lang === "hi" ? "अपना ठेकेदार चुनें..." : "Choose Your Thekedaar..."}
           </h2>
           <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
             Choose from our 40+ professional categories

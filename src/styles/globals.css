@@ -26,6 +26,7 @@
     --color-bg-elevated: #F8FAFC;
     --color-surface: #FFFFFF;
     --color-surface-hover: #F8FAFC;
+    --color-surface-glass: rgba(255, 255, 255, 0.85);
 
     /* Text - Balanced High Contrast */
     --color-heading: #0F172A;
@@ -90,6 +91,7 @@
     --color-bg-elevated: #111827;
     --color-surface: #0B0F19;
     --color-surface-hover: #172237;
+    --color-surface-glass: rgba(11, 15, 25, 0.85);
 
     /* Text */
     --color-heading: #F8FAFC;
