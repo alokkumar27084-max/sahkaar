@@ -353,55 +353,6 @@ export default function BookingCheckoutPage() {
               </div>
             </section>
 
-            {/* Service Clarity Cards (What to Expect) */}
-            <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary)] mb-1">Service Assurance</span>
-              <h3 className="text-base font-extrabold text-[var(--color-heading)] mb-4">What to expect & service clarity</h3>
-              
-              <div className="grid gap-4 sm:grid-cols-2">
-                {/* Included Column */}
-                <div className="rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] p-4">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-3">
-                    <FiCheckCircle size={14} className="text-emerald-500" /> Included
-                  </span>
-                  <ul className="space-y-2.5 text-xs font-semibold text-[var(--color-body)]">
-                    <li className="flex items-start gap-2">
-                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
-                      <span>Background-verified & reviewed professional</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
-                      <span>Escrow payment lock (release on milestone completion)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
-                      <span>Post-service standard cleanup of the immediate work area</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Excluded Column */}
-                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-500 mb-3">
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 text-[10px] font-extrabold shrink-0">✕</span> Excluded
-                  </span>
-                  <ul className="space-y-2.5 text-xs font-semibold text-[var(--color-body)]">
-                    <li className="flex items-start gap-2">
-                      <span className="text-rose-500 font-bold shrink-0">✕</span>
-                      <span>Raw building materials & spare parts procurement costs</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-rose-500 font-bold shrink-0">✕</span>
-                      <span>Heavy machinery, complex scaffoldings or ladder rentals</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-rose-500 font-bold shrink-0">✕</span>
-                      <span>Transporting massive project debris or trash hauling</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </section>
 
             {/* Quoted Items (If quote exists) */}
             {quote && (
@@ -537,18 +488,12 @@ export default function BookingCheckoutPage() {
               </p>
 
               {/* Escrow Lock Details */}
-              <div className="mb-5 space-y-2.5">
-                <div className="flex gap-3 rounded-xl border border-indigo-500/15 bg-indigo-500/[0.04] p-3 text-xs leading-relaxed">
-                  <FiLock className="shrink-0 text-[var(--color-primary)] mt-0.5" size={16} />
-                  <p className="text-[var(--color-muted)] font-semibold">
+              <div className="mb-5 space-y-2">
+                <div className="flex gap-2.5 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-3 text-xs leading-relaxed">
+                  <FiShield className="shrink-0 text-emerald-600 mt-0.5" size={15} />
+                  <p className="text-[var(--color-muted)] font-semibold text-[10px]">
                     <strong className="text-[var(--color-heading)]">100% Secure Escrow.</strong>{" "}
-                    {pricing?.customerCopy || "Your payment is guarded by milestone-linked verification."}
-                  </p>
-                </div>
-                <div className="flex gap-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-3 text-xs leading-relaxed">
-                  <FiShield className="shrink-0 text-emerald-600 mt-0.5" size={16} />
-                  <p className="text-[var(--color-muted)] font-semibold">
-                    Escrow payouts processed securely via Razorpay. Zero hidden registration or bid commissions.
+                    Funds are guarded securely and only released upon milestone completion via Razorpay. Zero hidden commissions.
                   </p>
                 </div>
               </div>
@@ -558,7 +503,11 @@ export default function BookingCheckoutPage() {
                 type="button"
                 onClick={handleBookAndPay}
                 disabled={loading || !selectedLocation?.lat || pricingLoading || !pricing}
-                className="w-full bg-[var(--color-primary)] text-white py-3.5 rounded-lg text-sm font-extrabold hover:bg-[var(--color-primary)]/90 disabled:opacity-50 transition-all shadow-sm flex items-center justify-center gap-2"
+                className="w-full text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{
+                  background: "linear-gradient(135deg, var(--color-primary), var(--color-accent))",
+                  boxShadow: "0 4px 14px rgba(79,70,229,0.3)",
+                }}
               >
                 {loading ? <LoadingSpinner size="sm" /> : `Pay with Razorpay · ${money(payableNow)}`}
               </button>

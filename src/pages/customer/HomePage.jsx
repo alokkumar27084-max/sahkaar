@@ -145,7 +145,7 @@ export default function HomePage() {
       />
 
       {/* ═══════ SECTION 1: HERO ═══════ */}
-      <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden bg-[var(--color-bg)] pt-24 px-1 md:px-2 pb-4">
+      <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center bg-[var(--color-bg)] pt-24 px-1 md:px-2 pb-4">
         {/* Video / Image Background - Zoomed to crop watermarks & framed nicely */}
         <div className="absolute inset-x-1 md:inset-x-2 top-24 bottom-4 rounded-3xl overflow-hidden bg-[#0A0A0A]">
           <video
@@ -206,6 +206,7 @@ export default function HomePage() {
                 onFocus={() => setShowTrending(true)}
                 onBlur={() => setTimeout(() => setShowTrending(false), 200)}
                 placeholder="Search for builders, wiring, plumbers, material logistics..."
+                autoComplete="off"
                 className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-3 text-gray-900 text-sm md:text-base placeholder:text-gray-400 font-semibold"
               />
               <button

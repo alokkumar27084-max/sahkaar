@@ -180,6 +180,7 @@ export default function LabourSearchPage() {
                   placeholder="Search crew leaders by role, masonry, painter, helpers..."
                   className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl pl-11 pr-4 py-3 text-[var(--color-heading)] font-semibold text-sm focus:border-[var(--color-primary)] transition-all outline-none shadow-sm placeholder:text-[var(--color-muted)]"
                   value={filters.q}
+                  autoComplete="off"
                   onChange={(e) => setFilters(p => ({ ...p, q: e.target.value }))}
                 />
               </div>

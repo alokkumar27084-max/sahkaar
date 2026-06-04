@@ -1,16 +1,39 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiArrowRight, FiCreditCard, FiMapPin, FiMessageCircle, FiShield, FiUsers, FiStar } from "react-icons/fi";
+import {
+  FiArrowRight,
+  FiCreditCard,
+  FiMessageCircle,
+  FiShield,
+  FiStar,
+  FiMapPin,
+  FiClock,
+  FiDollarSign,
+} from "react-icons/fi";
 import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
 import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
 
-export default function ContractorCard({ contractor, showCompare = false, isCompared = false, onCompare }) {
+export default function ContractorCard({
+  contractor,
+  showCompare = false,
+  isCompared = false,
+  onCompare,
+}) {
   const navigate = useNavigate();
 
-  const resolvedName = contractor?.name || contractor?.business_name || contractor?.user_name || "Contractor";
-  const resolvedCategory = (contractor?.category || contractor?.categories?.[0] || "general").replace(/_/g, " ");
-  const resolvedReviewCount = contractor?.review_count ?? contractor?.reviews_count ?? 0;
+  const resolvedName =
+    contractor?.name ||
+    contractor?.business_name ||
+    contractor?.user_name ||
+    "Contractor";
+  const resolvedCategory = (
+    contractor?.category ||
+    contractor?.categories?.[0] ||
+    "general"
+  ).replace(/_/g, " ");
+  const resolvedReviewCount =
+    contractor?.review_count ?? contractor?.reviews_count ?? 0;
   const rating = Number(contractor?.rating || 0);
   const distanceKm = contractor?.distance_km;
   const dailyRate = contractor?.daily_rate;
@@ -20,8 +43,14 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
     e.stopPropagation();
     try {
       await contractorAPI.recordLead(contractor.id);
-    } catch { /* ignore */ }
-    trackEvent("in_app_message_tap", { contractor_id: contractor.id, category: resolvedCategory, source: "card" });
+    } catch {
+      /* ignore */
+    }
+    trackEvent("in_app_message_tap", {
+      contractor_id: contractor.id,
+      category: resolvedCategory,
+      source: "card",
+    });
     navigate("/chat", { state: { initChatWith: contractor.id } });
   }
 
@@ -32,47 +61,97 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
   return (
     <article
       onClick={handleCardClick}
-      className={`group bg-[var(--color-surface)] border rounded-2xl p-5 transition-all duration-300 hover:shadow-lg hover:border-[var(--color-primary)]/30 flex flex-col sm:flex-row gap-5 relative cursor-pointer ${
+      className={`group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-300 ${
         isCompared
-          ? "border-[var(--color-primary)] ring-1 ring-[var(--color-primary)]/20"
-          : "border-[var(--color-border)]"
+          ? "ring-2 ring-[var(--color-primary)] ring-offset-2"
+          : ""
       }`}
+      style={{
+        background: "var(--color-surface)",
+        boxShadow: "var(--shadow-card)",
+      }}
     >
-      
-      {/* 1. Photo Section (Airbnb style) */}
-      <div className="relative w-full sm:w-36 h-40 sm:h-36 shrink-0 rounded-xl overflow-hidden bg-[var(--color-bg-elevated)]">
-        <img
-          src={getAvatarUrl(contractor.photo_url)}
-          alt={resolvedName}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = getAvatarUrl("");
-          }}
-        />
-        {contractor.is_available && (
-          <span className="absolute bottom-2.5 left-2.5 flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#1A1A1A]" title="Available Now" />
-        )}
-      </div>
+      {/* Subtle top gradient accent line */}
+      <div
+        className="absolute top-0 left-0 right-0 h-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background:
+            "linear-gradient(90deg, var(--color-primary), var(--color-accent))",
+        }}
+      />
 
-      {/* 2. Details Section */}
-      <div className="flex-1 flex flex-col justify-between min-w-0">
-        <div>
-          {/* Header row: Name + Verified + Compare */}
-          <div className="flex items-start justify-between gap-4 mb-1">
+      <div className="flex flex-col sm:flex-row gap-0">
+        {/* ── Photo Section ── */}
+        <div className="relative w-full sm:w-32 shrink-0">
+          <div className="relative h-44 sm:h-full min-h-[10rem] overflow-hidden rounded-t-2xl sm:rounded-l-2xl sm:rounded-tr-none">
+            <img
+              src={getAvatarUrl(contractor.photo_url)}
+              alt={resolvedName}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = getAvatarUrl("");
+              }}
+            />
+            {/* Gradient overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+            {/* Category pill overlaid on photo */}
+            <div className="absolute top-3 left-3">
+              <span
+                className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-white"
+                style={{
+                  background: "rgba(79,70,229,0.85)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                }}
+              >
+                {resolvedCategory}
+              </span>
+            </div>
+
+            {/* Available dot */}
+            {contractor.is_available && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-1.5">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                </span>
+                <span
+                  className="text-[10px] font-bold text-white"
+                  style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}
+                >
+                  Available
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Details Section ── */}
+        <div className="flex-1 flex flex-col justify-between p-3.5 min-w-0">
+          {/* Header: Name + Compare */}
+          <div className="flex items-start justify-between gap-2.5 mb-2">
             <div className="flex items-center gap-1.5 min-w-0">
-              <h3 className="text-base font-bold text-[var(--color-heading)] truncate group-hover:text-[var(--color-primary)] transition-colors">
+              <h3 className="text-sm font-bold text-[var(--color-heading)] truncate group-hover:text-[var(--color-primary)] transition-colors duration-200">
                 {resolvedName}
               </h3>
               {contractor.is_verified && (
-                <FiShield
-                  size={15}
-                  className="text-blue-500 fill-blue-500/20 shrink-0"
+                <span
+                  className="shrink-0 flex items-center justify-center w-5 h-5 rounded-full"
+                  style={{
+                    background: "rgba(59,130,246,0.1)",
+                    border: "1px solid rgba(59,130,246,0.3)",
+                  }}
                   title="Verified Professional"
-                />
+                >
+                  <FiShield size={11} className="text-blue-500" />
+                </span>
               )}
             </div>
+
             {showCompare && (
               <button
                 type="button"
@@ -80,95 +159,162 @@ export default function ContractorCard({ contractor, showCompare = false, isComp
                   e.stopPropagation();
                   onCompare?.(contractor, !isCompared);
                 }}
-                className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-colors shrink-0 ${
+                className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
                   isCompared
-                    ? "bg-[var(--color-primary)] text-white border-transparent"
-                    : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:border-[var(--color-heading)]"
+                    ? "text-white"
+                    : "text-[var(--color-muted)] hover:text-[var(--color-heading)]"
                 }`}
+                style={
+                  isCompared
+                    ? {
+                        background:
+                          "linear-gradient(135deg, var(--color-primary), var(--color-accent))",
+                        border: "none",
+                      }
+                    : {
+                        background: "var(--color-bg-elevated)",
+                        border: "1px solid var(--color-border)",
+                        boxShadow: "var(--shadow-xs)",
+                      }
+                }
               >
-                {isCompared ? "Compared" : "Compare"}
+                {isCompared ? "✓ Added" : "Compare"}
               </button>
             )}
           </div>
 
-          {/* Subheader: Category */}
-          <p className="text-xs font-bold text-[var(--color-primary)] uppercase tracking-wider mb-2.5">
-            {resolvedCategory}
-          </p>
-
-          {/* Rating */}
-          <div className="flex items-center gap-2 mb-4">
+          {/* Rating row */}
+          <div className="flex items-center gap-2 mb-3">
             <div className="flex items-center gap-1">
-              <FiStar className="text-amber-400 fill-amber-400" size={14} />
+              <FiStar className="text-amber-400 fill-amber-400" size={13} />
               <span className="text-xs font-bold text-[var(--color-heading)]">
                 {rating > 0 ? rating.toFixed(1) : "New"}
               </span>
             </div>
-            <span className="text-[var(--color-muted)]">•</span>
-            <span className="text-xs text-[var(--color-muted)] font-medium">
-              {resolvedReviewCount} reviews
-            </span>
+            {resolvedReviewCount > 0 && (
+              <>
+                <span className="text-[var(--color-subtle)]">·</span>
+                <span className="text-xs text-[var(--color-muted)]">
+                  {resolvedReviewCount}{" "}
+                  {resolvedReviewCount === 1 ? "review" : "reviews"}
+                </span>
+              </>
+            )}
           </div>
 
-          {/* Inline Info Grid */}
-          <div className="grid grid-cols-3 gap-2 border-t border-[var(--color-border)] pt-3 mb-4">
-            <div>
-              <p className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider mb-0.5">Distance</p>
-              <p className="text-xs font-bold text-[var(--color-heading)]">
-                {distanceKm != null ? `${Number(distanceKm).toFixed(1)} km` : "Local"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider mb-0.5">Rate</p>
-              <p className="text-xs font-bold text-[var(--color-heading)] truncate">
-                {dailyRate ? `₹${Number(dailyRate).toLocaleString("en-IN")}` : "Custom"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider mb-0.5">Experience</p>
-              <p className="text-xs font-bold text-[var(--color-heading)]">
-                {contractor.experience_years ? `${contractor.experience_years} years` : "New Pro"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Row */}
-        <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-3.5 gap-2">
-          {/* Chat Link */}
-          <button
-            onClick={handleMessageTap}
-            className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors py-1 px-2 hover:bg-emerald-50 dark:hover:bg-emerald-950/10 rounded-lg"
+          {/* Stats grid */}
+          <div
+            className="grid grid-cols-3 gap-1 rounded-xl p-2.5 mb-3"
+            style={{
+              background: "var(--color-bg-elevated)",
+              border: "1px solid var(--color-border)",
+              boxShadow: "var(--shadow-neumorphic-pressed)",
+            }}
           >
-            <FiMessageCircle size={15} />
-            <span>Chat</span>
-          </button>
+            {/* Distance */}
+            <div className="flex flex-col items-center gap-0.5">
+              <FiMapPin size={11} className="text-[var(--color-primary)] mb-0.5" />
+              <p className="text-[9px] font-semibold text-[var(--color-muted)] uppercase tracking-wide">
+                Distance
+              </p>
+              <p className="text-xs font-bold text-[var(--color-heading)]">
+                {distanceKm != null
+                  ? `${Number(distanceKm).toFixed(1)} km`
+                  : "Local"}
+              </p>
+            </div>
 
-          <div className="flex gap-2">
-            {/* View Profile */}
-            <Link
-              to={`/contractor/${contractor.id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="h-8 px-3 rounded-lg border border-[var(--color-border)] text-xs font-bold text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors flex items-center justify-center gap-1"
+            {/* Rate */}
+            <div
+              className="flex flex-col items-center gap-0.5"
+              style={{
+                borderLeft: "1px solid var(--color-border)",
+                borderRight: "1px solid var(--color-border)",
+              }}
             >
-              <span>Profile</span>
-              <FiArrowRight size={12} />
-            </Link>
+              <FiDollarSign size={11} className="text-[var(--color-accent)] mb-0.5" />
+              <p className="text-[9px] font-semibold text-[var(--color-muted)] uppercase tracking-wide">
+                Rate
+              </p>
+              <p className="text-xs font-bold text-[var(--color-heading)] truncate">
+                {dailyRate
+                  ? `₹${Number(dailyRate).toLocaleString("en-IN")}`
+                  : "Custom"}
+              </p>
+            </div>
 
-            {/* Book Now */}
-            <Link
-              to={`/checkout/${contractor.id}`}
-              state={{ contractor }}
-              onClick={(e) => e.stopPropagation()}
-              className="h-8 px-4 rounded-lg bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+            {/* Experience */}
+            <div className="flex flex-col items-center gap-0.5">
+              <FiClock size={11} className="text-emerald-500 mb-0.5" />
+              <p className="text-[9px] font-semibold text-[var(--color-muted)] uppercase tracking-wide">
+                Exp.
+              </p>
+              <p className="text-xs font-bold text-[var(--color-heading)]">
+                {contractor.experience_years
+                  ? `${contractor.experience_years} yr`
+                  : "New"}
+              </p>
+            </div>
+          </div>
+
+          {/* Action row */}
+          <div className="flex items-center justify-between gap-1.5">
+            {/* Chat */}
+            <button
+              onClick={handleMessageTap}
+              className="flex items-center gap-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors py-1.5 px-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 shrink-0"
             >
-              <FiCreditCard size={13} />
-              <span>Book</span>
-            </Link>
+              <FiMessageCircle size={14} />
+              <span>Chat</span>
+            </button>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Profile */}
+              <Link
+                to={`/contractor/${contractor.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="h-8 px-2.5 rounded-xl text-xs font-bold text-[var(--color-heading)] flex items-center gap-1 transition-all duration-200 hover:-translate-y-0.5 shrink-0"
+                style={{
+                  background: "var(--color-bg-elevated)",
+                  border: "1px solid var(--color-border)",
+                  boxShadow: "var(--shadow-xs)",
+                }}
+              >
+                <span>Profile</span>
+                <FiArrowRight size={11} />
+              </Link>
+
+              {/* Book Now — gradient CTA */}
+              <Link
+                to={`/checkout/${contractor.id}`}
+                state={{ contractor }}
+                onClick={(e) => e.stopPropagation()}
+                className="h-8 px-3 rounded-xl text-xs font-bold text-white flex items-center gap-1 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg shrink-0 whitespace-nowrap"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary), var(--color-accent))",
+                  boxShadow:
+                    "0 4px 14px rgba(79,70,229,0.3)",
+                }}
+              >
+                <FiCreditCard size={12} />
+                <span>Book</span>
+              </Link>
+            </div>
           </div>
         </div>
-
       </div>
+
+      {/* Hover lift shadow */}
+      <style>{`
+        article:hover {
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-card-hover);
+        }
+        article {
+          transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s cubic-bezier(0.16,1,0.3,1);
+        }
+      `}</style>
     </article>
   );
 }
