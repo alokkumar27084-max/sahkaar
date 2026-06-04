@@ -21,39 +21,39 @@
     --color-accent-hover: #0E7490;
     --color-accent-muted: rgba(8, 145, 178, 0.08);
 
-    /* Neumorphic Soft UI Canvas - Monochromatic Soft Gray-Blue */
-    --color-bg: #E5E9F0;
-    --color-bg-elevated: #ECEFF4;
-    --color-surface: #E5E9F0;
-    --color-surface-hover: #ECEFF4;
+    /* Premium Solid White Canvas */
+    --color-bg: #FFFFFF;
+    --color-bg-elevated: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-hover: #F8FAFC;
 
     /* Text - Balanced High Contrast */
-    --color-heading: #1E293B;
+    --color-heading: #0F172A;
     --color-body: #334155;
     --color-muted: #64748B;
     --color-subtle: #94A3B8;
 
     /* Borders & Dividers - Extremely subtle and soft */
-    --color-border: rgba(163, 177, 198, 0.35);
-    --color-border-hover: rgba(163, 177, 198, 0.6);
-    --color-divider: rgba(163, 177, 198, 0.2);
+    --color-border: #E2E8F0;
+    --color-border-hover: #CBD5E1;
+    --color-divider: #F1F5F9;
 
     /* Status */
     --color-success: #16A34A;
     --color-error: #DC2626;
     --color-warning: #D97706;
 
-    /* Neumorphic Dual-Tone Elevation Shadows */
-    --shadow-neumorphic-raised: 8px 8px 16px #bec2ca, -8px -8px 16px #ffffff;
-    --shadow-neumorphic-pressed: inset 6px 6px 12px #bec2ca, inset -6px -6px 12px #ffffff;
+    /* Soft Luxurious Premium Shadows (replacing harsh neumorphism) */
+    --shadow-neumorphic-raised: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.03);
+    --shadow-neumorphic-pressed: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
     
-    --shadow-xs: 2px 2px 5px #bec2ca, -2px -2px 5px #ffffff;
-    --shadow-sm: 4px 4px 8px #bec2ca, -4px -4px 8px #ffffff;
-    --shadow-card: var(--shadow-neumorphic-raised);
-    --shadow-card-hover: 12px 12px 24px #bec2ca, -12px -12px 24px #ffffff;
-    --shadow-md: var(--shadow-neumorphic-raised);
-    --shadow-lg: 12px 12px 24px #bec2ca, -12px -12px 24px #ffffff;
-    --shadow-xl: 16px 16px 32px #bec2ca, -16px -16px 32px #ffffff;
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
+    --shadow-card-hover: 0 20px 40px -15px rgba(0, 0, 0, 0.1), 0 1px 5px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
 
     /* Radius — Generous Rounded Corners for Soft UI */
     --radius-xs: 6px;
@@ -240,18 +240,19 @@ select {
    ═══════════════════════════════════════════ */
 
 .font-display {
-  font-family: 'Outfit', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .section-title {
   margin: 0;
   color: var(--color-heading);
-  font-family: 'Outfit', system-ui, sans-serif;
-  font-weight: 700;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 800;
   font-size: clamp(1.5rem, 4vw, 2.25rem);
   line-height: 1.2;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
 }
 
 .section-subtitle {
@@ -312,7 +313,7 @@ select {
   gap: 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 600;
   line-height: 1;
