@@ -208,17 +208,23 @@ function CategoryCard({ cat, t, onClick, delay = 0 }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay }}
       onClick={() => onClick(cat.id)}
-      className="group flex flex-col items-center text-center p-5 md:p-6 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+      className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-[var(--color-border)]"
     >
-      <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform duration-300 border border-[var(--color-border)]">
-        {cat.emoji}
+      <img
+        src={cat.image}
+        alt={t(cat.key)}
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        loading="lazy"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
+        <h3 className="text-white font-bold text-sm md:text-base font-display line-clamp-2 leading-snug">
+          {t(cat.key)}
+        </h3>
+        <p className="text-white/60 text-[9px] uppercase font-bold mt-1 tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          Browse →
+        </p>
       </div>
-      <h3 className="text-sm font-bold text-[var(--color-heading)] line-clamp-2 leading-snug min-h-[2.5rem] font-display">
-        {t(cat.key)}
-      </h3>
-      <p className="text-[10px] text-[var(--color-primary)] font-bold mt-2 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-        Browse →
-      </p>
     </motion.button>
   );
 }
@@ -233,9 +239,12 @@ function CategoryListItem({ cat, t, onClick, delay = 0 }) {
       onClick={() => onClick(cat.id)}
       className="group w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 cursor-pointer text-left"
     >
-      <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-2xl shrink-0 border border-[var(--color-border)] group-hover:scale-105 transition-transform">
-        {cat.emoji}
-      </div>
+      <img
+        src={cat.image}
+        alt={t(cat.key)}
+        className="w-12 h-12 rounded-xl object-cover shrink-0 border border-[var(--color-border)] group-hover:scale-105 transition-transform"
+        loading="lazy"
+      />
       <div className="flex-1 min-w-0">
         <h3 className="text-sm font-bold text-[var(--color-heading)] truncate font-display">
           {t(cat.key)}

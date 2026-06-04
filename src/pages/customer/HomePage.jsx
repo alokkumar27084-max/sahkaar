@@ -97,21 +97,7 @@ export default function HomePage() {
     }
   ], [lang]);
 
-  // Curated premium Indian stock images for local informal categories
-  const categoryImages = {
-    construction: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&h=400&fit=crop",
-    interior_finishing: "https://images.unsplash.com/photo-1534224039826-c7a0eda0e6b3?w=600&h=400&fit=crop",
-    electrical: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&h=400&fit=crop",
-    plumbing: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&h=400&fit=crop",
-    appliance_repair: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600&h=400&fit=crop",
-    cleaning: "https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=600&h=400&fit=crop",
-    painting: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=400&fit=crop",
-    events_wedding: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&h=400&fit=crop",
-    labour_group: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
-    transport: "https://images.unsplash.com/photo-1597404294360-feeefa0443eb?w=600&h=400&fit=crop",
-    farming: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600&h=400&fit=crop",
-    other: "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=400&fit=crop",
-  };
+
 
   const BACKDROPS = [
     {
@@ -293,7 +279,7 @@ export default function HomePage() {
               className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-[var(--color-border)]"
             >
               <img
-                src={categoryImages[cat.id] || categoryImages.other}
+                src={cat.image}
                 alt={t(cat.key)}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
