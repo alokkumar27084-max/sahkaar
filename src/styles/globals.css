@@ -21,8 +21,8 @@
     --color-accent-hover: #0E7490;
     --color-accent-muted: rgba(8, 145, 178, 0.08);
 
-    /* Premium Solid White Canvas */
-    --color-bg: #FFFFFF;
+    /* Premium Soft UI Canvas — Soft Off-white for neomorphic contrast */
+    --color-bg: #F1F5F9;
     --color-bg-elevated: #F8FAFC;
     --color-surface: #FFFFFF;
     --color-surface-hover: #F8FAFC;
@@ -35,26 +35,26 @@
     --color-subtle: #94A3B8;
 
     /* Borders & Dividers - Extremely subtle and soft */
-    --color-border: #E2E8F0;
-    --color-border-hover: #CBD5E1;
-    --color-divider: #F1F5F9;
+    --color-border: rgba(15, 23, 42, 0.04);
+    --color-border-hover: rgba(15, 23, 42, 0.08);
+    --color-divider: rgba(15, 23, 42, 0.03);
 
     /* Status */
     --color-success: #16A34A;
     --color-error: #DC2626;
     --color-warning: #D97706;
 
-    /* Soft Luxurious Premium Shadows (replacing harsh neumorphism) */
-    --shadow-neumorphic-raised: 0 10px 30px -10px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.03);
-    --shadow-neumorphic-pressed: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    /* Strong Premium Neumorphic Raised & Pressed Elevation Shadows */
+    --shadow-neumorphic-raised: 8px 8px 20px #e2e8f0, -8px -8px 20px #ffffff;
+    --shadow-neumorphic-pressed: inset 6px 6px 12px #e2e8f0, inset -6px -6px 12px #ffffff;
     
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-    --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.04);
-    --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.02);
-    --shadow-card-hover: 0 20px 40px -15px rgba(0, 0, 0, 0.1), 0 1px 5px rgba(0, 0, 0, 0.03);
-    --shadow-md: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
+    --shadow-xs: 2px 2px 5px #e2e8f0, -2px -2px 5px #ffffff;
+    --shadow-sm: 4px 4px 10px #e2e8f0, -4px -4px 10px #ffffff;
+    --shadow-card: var(--shadow-neumorphic-raised);
+    --shadow-card-hover: 12px 12px 28px #cbd5e1, -12px -12px 28px #ffffff;
+    --shadow-md: var(--shadow-neumorphic-raised);
+    --shadow-lg: 16px 16px 36px #cbd5e1, -16px -16px 36px #ffffff;
+    --shadow-xl: 20px 20px 40px #cbd5e1, -20px -20px 40px #ffffff;
 
     /* Radius — Generous Rounded Corners for Soft UI */
     --radius-xs: 6px;
