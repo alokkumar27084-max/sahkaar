@@ -106,47 +106,48 @@ export default function Navbar() {
       </a>
 
       <motion.header
-        animate={{ y: visible ? 0 : -64 }}
-        transition={{ duration: 0.25, ease: "easeInOut" }}
-        className="fixed top-0 left-0 right-0 h-16 bg-[var(--color-surface-glass)] backdrop-blur-md border-b border-[var(--color-border)] z-[1000] flex items-center px-4 md:px-8"
+        animate={{ y: visible ? 0 : -90, scale: visible ? 1 : 0.95 }}
+        style={{ x: "-50%" }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl h-16 bg-[var(--color-surface-glass)] backdrop-blur-md border border-[var(--color-border)] rounded-2xl z-[1000] flex items-center px-4 md:px-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
       >
-        <div className="w-full max-w-[var(--max-width)] mx-auto flex items-center justify-between h-full">
+        <div className="w-full mx-auto flex items-center justify-between h-full">
           
           {/* Logo — Left */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2.5 group">
               <ThekedaarLogo className="h-8 w-8 transition-transform duration-300 group-hover:scale-105" />
-              <span className="font-bold text-base tracking-wider text-[var(--color-heading)] uppercase font-display leading-none">
+              <span className="font-bold text-sm md:text-base tracking-wider text-[var(--color-heading)] uppercase font-display leading-none">
                 THEKEDAAR
               </span>
             </Link>
           </div>
 
           {/* Links — Center (Hidden on Mobile) */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] p-1 rounded-xl">
             <Link
               to="/"
-              className={`text-sm font-semibold tracking-wide transition-colors ${
+              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
                 location.pathname === "/"
-                  ? "text-[var(--color-primary)]"
-                  : "text-[var(--color-body)] hover:text-[var(--color-heading)]"
+                  ? "text-[var(--color-primary)] bg-[var(--color-surface)] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[var(--color-border)]"
+                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
               }`}
             >
               Home
             </Link>
             <Link
               to="/select-service"
-              className={`text-sm font-semibold tracking-wide transition-colors ${
+              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
                 location.pathname === "/select-service"
-                  ? "text-[var(--color-primary)]"
-                  : "text-[var(--color-body)] hover:text-[var(--color-heading)]"
+                  ? "text-[var(--color-primary)] bg-[var(--color-surface)] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[var(--color-border)]"
+                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
               }`}
             >
               Services
             </Link>
             <a
               href="/#about"
-              className="text-sm font-semibold tracking-wide text-[var(--color-body)] hover:text-[var(--color-heading)] transition-colors"
+              className="text-xs font-bold tracking-wide text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50 transition-all px-3 py-1.5 rounded-lg"
             >
               About
             </a>
@@ -156,14 +157,14 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-3">
               {/* Language Toggle */}
               <button
                 onClick={() => setLang(lang === "en" ? "hi" : "en")}
-                className="text-xs font-bold px-2.5 py-1.5 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-all flex items-center gap-1.5"
+                className="text-[10px] font-bold px-2 py-1 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-all flex items-center gap-1"
                 aria-label="Toggle language"
               >
-                <FiGlobe size={14} />
+                <FiGlobe size={12} />
                 <span>{lang === "en" ? "EN" : "HI"}</span>
               </button>
 
@@ -173,7 +174,7 @@ export default function Navbar() {
                 className="p-2 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
                 aria-label="Toggle theme"
               >
-                {isDark ? <FiSun size={16} /> : <FiMoon size={16} />}
+                {isDark ? <FiSun size={15} /> : <FiMoon size={15} />}
               </button>
 
               {/* Auth button or Dropdown */}
@@ -181,13 +182,13 @@ export default function Navbar() {
                 <>
                   <Link
                     to="/login"
-                    className="text-sm font-semibold text-[var(--color-body)] hover:text-[var(--color-heading)] transition-colors px-1"
+                    className="text-xs font-bold text-[var(--color-body)] hover:text-[var(--color-heading)] transition-colors px-1"
                   >
                     Log in
                   </Link>
                   <Link
                     to="/register/contractor"
-                    className="border border-[var(--color-heading)] text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
+                    className="border border-[var(--color-border)] hover:border-[var(--color-heading)] text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)] rounded-xl px-3.5 py-2 text-xs font-bold transition-all shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
                   >
                     List your business
                   </Link>
