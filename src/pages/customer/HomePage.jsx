@@ -145,9 +145,9 @@ export default function HomePage() {
       />
 
       {/* ═══════ SECTION 1: HERO ═══════ */}
-      <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden bg-[var(--color-bg)] pt-24 px-4 md:px-8 pb-4">
+      <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden bg-[var(--color-bg)] pt-24 px-2 md:px-4 pb-4">
         {/* Video / Image Background - Zoomed to crop watermarks & framed nicely */}
-        <div className="absolute inset-x-4 md:inset-x-8 top-24 bottom-4 rounded-3xl overflow-hidden bg-[#0A0A0A]">
+        <div className="absolute inset-x-2 md:inset-x-4 top-24 bottom-4 rounded-3xl overflow-hidden bg-[#0A0A0A]">
           <video
             key={activeBackdrop.id}
             autoPlay
