@@ -44,6 +44,7 @@ const LabourProfilePage = lazy(() => import("./pages/customer/LabourProfilePage"
 const ServiceSelectPage = lazy(() => import("./pages/customer/ServiceSelectPage"));
 const ProjectDashboard = lazy(() => import("./pages/project/ProjectDashboard"));
 const ProjectListPage = lazy(() => import("./pages/project/ProjectListPage"));
+const AllCategoriesPage = lazy(() => import("./pages/customer/AllCategoriesPage"));
 
 function PageFallback() {
   return (
@@ -155,6 +156,7 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+        <Route path="/categories" element={<PageWrapper><AllCategoriesPage /></PageWrapper>} />
         <Route
           path="/select-service"
           element={

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
-import { CATEGORIES, QUICK_SERVICE_CATEGORIES } from "../../utils/constants";
+import { CATEGORIES, QUICK_SERVICE_CATEGORIES, CATEGORIES_HOME_LIMIT } from "../../utils/constants";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
@@ -100,16 +100,16 @@ export default function HomePage() {
   // Curated premium Indian stock images for local informal categories
   const categoryImages = {
     construction: "https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?w=600&h=400&fit=crop",
+    interior_finishing: "https://images.unsplash.com/photo-1534224039826-c7a0eda0e6b3?w=600&h=400&fit=crop",
     electrical: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&h=400&fit=crop",
     plumbing: "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=600&h=400&fit=crop",
-    painting: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=400&fit=crop",
-    events: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&h=400&fit=crop",
-    carpentry: "https://images.unsplash.com/photo-1534224039826-c7a0eda0e6b3?w=600&h=400&fit=crop",
-    farming: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600&h=400&fit=crop",
-    transport: "https://images.unsplash.com/photo-1597404294360-feeefa0443eb?w=600&h=400&fit=crop",
+    appliance_repair: "https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600&h=400&fit=crop",
     cleaning: "https://images.unsplash.com/photo-1584467541268-b040f83be3fd?w=600&h=400&fit=crop",
+    painting: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=400&fit=crop",
+    events_wedding: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&h=400&fit=crop",
     labour_group: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
-    property: "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=600&h=400&fit=crop",
+    transport: "https://images.unsplash.com/photo-1597404294360-feeefa0443eb?w=600&h=400&fit=crop",
+    farming: "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600&h=400&fit=crop",
     other: "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=600&h=400&fit=crop",
   };
 
@@ -281,19 +281,19 @@ export default function HomePage() {
             Kaunsa Theka Dena Hai?
           </h2>
           <p className="mt-3 text-[var(--color-muted)] text-base font-semibold">
-            Browse our 12 trust-based informal contractor sectors
+            Choose from our 40+ professional categories
           </p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {CATEGORIES.map((cat) => (
+          {CATEGORIES.slice(0, CATEGORIES_HOME_LIMIT).map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
               className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-[var(--color-border)]"
             >
               <img
-                src={categoryImages[cat.id]}
+                src={categoryImages[cat.id] || categoryImages.other}
                 alt={t(cat.key)}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
@@ -309,6 +309,15 @@ export default function HomePage() {
               </div>
             </button>
           ))}
+        </div>
+
+        <div className="text-center mt-12">
+          <button
+            onClick={() => navigate("/categories")}
+            className="inline-flex items-center gap-2 h-12 px-8 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white text-sm font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+          >
+            View All Categories <FiArrowRight size={16} />
+          </button>
         </div>
       </section>
 

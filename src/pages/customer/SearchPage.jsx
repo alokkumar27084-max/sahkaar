@@ -270,7 +270,8 @@ export default function SearchPage() {
     };
   }, [showFilters]);
 
-  const seoTitle = category ? `${CATEGORIES.find(c => c.id === category)?.label || category} Near You` : "Search Top Contractors";
+  const catObj = CATEGORIES.find(c => c.id === category);
+  const seoTitle = category ? `${catObj ? t(catObj.key) : category} Near You` : "Search Top Contractors";
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-heading)]">
