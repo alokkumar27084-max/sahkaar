@@ -28,39 +28,39 @@ export default function AllCategoriesPage() {
   // Group categories for better visual organization
   const categoryGroups = [
     {
-      title: "Construction & Home",
+      title: "Construction & Home Services",
       emoji: "🏠",
       ids: ["construction", "interior_finishing", "electrical", "plumbing", "painting", "real_estate", "renewable_energy"],
     },
     {
-      title: "Maintenance & Repair",
+      title: "Daily Hires & Maintenance",
       emoji: "🔧",
-      ids: ["appliance_repair", "cleaning", "automobile"],
+      ids: ["appliance_repair", "cleaning", "automobile", "labour_group", "waste_management"],
     },
     {
-      title: "Labour & Logistics",
-      emoji: "👷",
-      ids: ["labour_group", "transport", "agriculture", "industrial", "hr_staffing"],
+      title: "Logistics & Agriculture",
+      emoji: "🚜",
+      ids: ["transport", "agriculture", "industrial", "food_processing"],
     },
     {
       title: "Events & Hospitality",
       emoji: "🎉",
-      ids: ["events_wedding", "event_management", "institutional_food", "food_processing", "tourism_hospitality", "seasonal_specialty"],
+      ids: ["events_wedding", "event_management", "institutional_food", "tourism_hospitality", "seasonal_specialty"],
     },
     {
-      title: "Personal Services",
+      title: "Personal & Home Care",
       emoji: "💆",
       ids: ["healthcare", "personal_care", "education_tutoring", "tailoring_textile", "animal_veterinary", "spiritual_religious"],
     },
     {
-      title: "Business & Professional",
+      title: "Business & Technology",
       emoji: "💼",
-      ids: ["it_tech", "software_dev", "digital_marketing", "design_creative", "legal_compliance", "accounting_finance", "media_content", "research_data"],
+      ids: ["it_tech", "software_dev", "digital_marketing", "design_creative", "legal_compliance", "accounting_finance", "hr_staffing", "media_content", "printing_publishing", "retail_shop", "research_data"],
     },
     {
-      title: "Government & Others",
+      title: "Government & Security",
       emoji: "🏛️",
-      ids: ["govt_municipal", "security_services", "printing_publishing", "retail_shop", "waste_management"],
+      ids: ["govt_municipal", "security_services"],
     },
   ];
 
