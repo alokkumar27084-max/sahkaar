@@ -270,27 +270,29 @@ export default function SearchPage() {
     };
   }, [showFilters]);
 
-  const seoTitle = category ? `${CATEGORIES.find(c => c.id === category)?.label || category} Near You` : "Search Top Contractors";
+  const catObj = CATEGORIES.find(c => c.id === category);
+  const seoTitle = category ? `${catObj ? t(catObj.key) : category} Near You` : "Search Top Contractors";
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-heading)]">
       <SEOHead title={seoTitle} description="Find the best verified contractors in your area." />
       
       {/* ═══════ SEARCH HEADER — Sticky ═══════ */}
-      <header className="fixed top-16 left-0 right-0 z-[100] h-16 bg-[var(--color-surface)] border-b border-[var(--color-border)] flex items-center px-4 md:px-6">
+      <header className="fixed top-[80px] left-0 right-0 z-[100] h-16 bg-[var(--color-surface-glass)] backdrop-blur-md border-b border-[var(--color-border)] flex items-center px-4 md:px-6 shadow-sm">
         <div className="flex-1 flex items-center gap-3.5 max-w-[1600px] mx-auto w-full h-full">
           
           {/* Back button */}
           <button 
             onClick={() => navigate("/")} 
-            className="w-10 h-10 shrink-0 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-heading)] hover:bg-[var(--color-border)] transition-all"
+            className="w-10 h-10 shrink-0 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] flex items-center justify-center text-[var(--color-heading)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/30 transition-all active:scale-95"
             title="Go Back"
+            style={{ boxShadow: "var(--shadow-xs)" }}
           >
             <FiChevronLeft size={20} />
           </button>
 
           {/* Search Query Input */}
-          <div className="flex-1 flex items-center gap-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl h-11 px-4 min-w-0">
+          <div className="flex-1 flex items-center gap-3 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl h-11 px-4 min-w-0 transition-all focus-within:border-[var(--color-primary)]/40 focus-within:ring-2 focus-within:ring-[var(--color-primary-muted)] shadow-[inset_1px_1px_3px_rgba(0,0,0,0.02)]">
             <FiSearch className="text-[var(--color-muted)] shrink-0" size={16} />
             <input 
               type="text" 
@@ -298,6 +300,7 @@ export default function SearchPage() {
               onChange={(e) => setQInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && updateParam("q", qInput)}
               placeholder="What services do you need?" 
+              autoComplete="off"
               className="bg-transparent border-none outline-none text-sm w-full min-w-0 text-[var(--color-heading)] placeholder:text-[var(--color-muted)] focus:ring-0"
             />
             {qInput && (
@@ -311,13 +314,13 @@ export default function SearchPage() {
           </div>
 
           {/* Location Autocomplete */}
-          <div className="hidden md:flex flex-1 max-w-xs items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl h-11 px-4 relative">
+          <div className="hidden md:flex flex-1 max-w-xs items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl h-11 px-4 relative transition-all focus-within:border-[var(--color-primary)]/40 focus-within:ring-2 focus-within:ring-[var(--color-primary-muted)] shadow-[inset_1px_1px_3px_rgba(0,0,0,0.02)]">
             <LocationSearchInput 
               value={manualLocationInput} 
               onChange={setManualLocationInput} 
               onSelect={(sel) => persistSearchLocation(sel, "manual")}
               placeholder="Delhi NCR, India..."
-              className="!bg-transparent !border-none !h-full !text-sm text-[var(--color-heading)] placeholder:text-[var(--color-muted)] w-full focus:outline-none focus:ring-0 !pl-0"
+              className="!bg-transparent !border-none !h-full !text-sm text-[var(--color-heading)] placeholder:text-[var(--color-muted)] w-full focus:outline-none focus:ring-0"
             />
           </div>
 
@@ -326,11 +329,12 @@ export default function SearchPage() {
             onClick={handleDetectLocation}
             disabled={geoLoading}
             title="Detect location"
-            className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center border transition-all ${
+            className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center border transition-all active:scale-95 ${
               geoLoading 
                 ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-850 text-indigo-600 dark:text-indigo-400 animate-pulse" 
-                : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-body)] hover:bg-[var(--color-bg-elevated)] active:scale-95"
+                : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-body)] hover:text-[var(--color-primary)] hover:border-[var(--color-primary)]/30"
             }`}
+            style={{ boxShadow: "var(--shadow-xs)" }}
           >
             <FiNavigation 
               size={15} 
@@ -339,7 +343,7 @@ export default function SearchPage() {
           </button>
 
           {/* View Toggles */}
-          <div className="hidden lg:flex items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-1 gap-1 h-11">
+          <div className="hidden lg:flex items-center bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-xl p-1 gap-1 h-11 shadow-[inset_1px_1px_3px_rgba(0,0,0,0.02)]">
             <button 
               onClick={() => setViewMode("split")}
               className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold transition-all ${viewMode === "split" ? "bg-[var(--color-primary)] text-white shadow-sm" : "text-[var(--color-muted)] hover:text-[var(--color-heading)]"}`}
@@ -355,7 +359,14 @@ export default function SearchPage() {
           </div>
 
           {/* Filters Toggle Button */}
-          <button onClick={() => setShowFilters(true)} className="h-11 px-4 rounded-xl bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all">
+          <button 
+            onClick={() => setShowFilters(true)} 
+            className="h-11 px-4 rounded-xl text-white flex items-center justify-center gap-2 active:scale-95 transition-all hover:shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, var(--color-primary), var(--color-accent))",
+              boxShadow: "0 4px 12px rgba(79,70,229,0.2)",
+            }}
+          >
             <FiSliders size={15} />
             <span className="text-xs font-bold uppercase tracking-wider">Filters</span>
           </button>
@@ -365,7 +376,7 @@ export default function SearchPage() {
 
       {/* ═══════ MODE INDICATOR BANNER ═══════ */}
       {modeConfig && (
-        <div className={`fixed top-32 left-0 right-0 z-[99] h-9 bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] flex items-center px-4 md:px-6`}>
+        <div className={`fixed top-[144px] left-0 right-0 z-[99] h-9 bg-[var(--color-surface-glass)] backdrop-blur-md border-b border-[var(--color-border)] flex items-center px-4 md:px-6`}>
           <div className="max-w-[1600px] mx-auto w-full flex items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
               <span className={modeConfig.bannerAccent}>{modeConfig.icon}</span>
@@ -385,7 +396,7 @@ export default function SearchPage() {
       )}
 
       {/* ═══════ MAIN CONTENT ═══════ */}
-      <main className={`${modeConfig ? "pt-[164px]" : "pt-[128px]"} flex h-[100dvh] overflow-hidden bg-[var(--color-bg)]`}>
+      <main className={`${modeConfig ? "pt-[180px]" : "pt-[144px]"} flex h-[100dvh] overflow-hidden bg-[var(--color-bg)]`}>
         
         {/* LEFT PANEL — LISTING */}
         <section 

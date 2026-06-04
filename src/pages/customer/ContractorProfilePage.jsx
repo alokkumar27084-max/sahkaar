@@ -203,13 +203,13 @@ export default function ContractorProfilePage() {
       />
 
       {/* 1. Profile Header / Cover Section */}
-      <section className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] py-10">
+      <section className="bg-gradient-to-b from-[var(--color-bg-elevated)] to-[var(--color-bg)] border-b border-[var(--color-border)] py-10">
         <div className="max-w-[var(--max-width)] mx-auto px-4 md:px-8">
           
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="mb-8 h-10 px-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-heading)] flex items-center gap-1.5 hover:bg-[var(--color-bg-elevated)] transition-colors shadow-sm"
+            className="mb-8 h-10 px-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-sm font-bold text-[var(--color-heading)] flex items-center gap-1.5 hover:bg-[var(--color-bg-elevated)] transition-colors shadow-sm active:scale-95"
           >
             <FiArrowLeft size={16} /> 
             <span>Back</span>
@@ -219,15 +219,23 @@ export default function ContractorProfilePage() {
             
             {/* Left Column: Avatar + Name + Tags */}
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 text-center sm:text-left">
-              <img
-                src={getAvatarUrl(contractor.photo_url)}
-                alt={name}
-                className="h-28 w-28 rounded-2xl border-4 border-[var(--color-surface)] object-cover shadow-md shrink-0 bg-[var(--color-bg-elevated)]"
-                onError={(event) => {
-                  event.target.onerror = null;
-                  event.target.src = getAvatarUrl("");
-                }}
-              />
+              <div className="relative shrink-0">
+                <img
+                  src={getAvatarUrl(contractor.photo_url)}
+                  alt={name}
+                  className="h-28 w-28 rounded-2xl border-4 border-[var(--color-surface)] object-cover shadow-md bg-[var(--color-bg-elevated)]"
+                  onError={(event) => {
+                    event.target.onerror = null;
+                    event.target.src = getAvatarUrl("");
+                  }}
+                />
+                {contractor.is_available && (
+                  <span className="absolute -bottom-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-500 ring-4 ring-[var(--color-surface)]">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                  </span>
+                )}
+              </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
                   {contractor.is_verified && <Badge type="verified" />}
@@ -241,30 +249,40 @@ export default function ContractorProfilePage() {
                 </h1>
 
                 <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 text-sm font-semibold text-[var(--color-body)]">
-                  <span className="inline-flex items-center gap-1.5 text-[var(--color-primary)]">
-                    <FiBriefcase size={14} /> 
+                  <span className="inline-flex items-center gap-1.5 text-[var(--color-primary)] bg-[var(--color-primary-muted)] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                    <FiBriefcase size={12} /> 
                     <span>{formatCategory(category)}</span>
                   </span>
                   {contractor.location_text && (
                     <span className="inline-flex items-center gap-1.5 text-[var(--color-muted)]">
-                      <FiMapPin size={14} /> 
+                      <FiMapPin size={14} className="text-[var(--color-primary)]" /> 
                       <span>{contractor.location_text}</span>
                     </span>
                   )}
-                  <span className={`inline-flex items-center gap-1.5 ${contractor.is_available ? "text-emerald-600" : "text-amber-600"}`}>
+                  <span className={`inline-flex items-center gap-1.5 font-bold ${contractor.is_available ? "text-emerald-600" : "text-amber-600"}`}>
                     <span className={`h-2 w-2 rounded-full ${contractor.is_available ? "bg-emerald-500" : "bg-amber-500"}`} />
-                    <span>{contractor.is_available ? "Available" : "Limited Availability"}</span>
+                    <span>{contractor.is_available ? "Available Now" : "Limited Availability"}</span>
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Right Column: CTA Quick Box */}
-            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm max-w-sm w-full lg:w-80 shrink-0 self-center lg:self-auto">
+            <div 
+              className="border border-[var(--color-border)] rounded-2xl p-5 shadow-lg max-w-sm w-full lg:w-80 shrink-0 self-center lg:self-auto backdrop-blur-md"
+              style={{
+                background: "var(--color-surface-glass)",
+                boxShadow: "var(--shadow-card)",
+              }}
+            >
               <button
                 type="button"
                 onClick={() => navigate(`/checkout/${id}`, { state: { contractor } })}
-                className="w-full h-11 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-sm flex items-center justify-center gap-2 mb-2.5 transition-colors"
+                className="w-full h-11 text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 mb-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-95"
+                style={{
+                  background: "linear-gradient(135deg, var(--color-primary), var(--color-accent))",
+                  boxShadow: "0 4px 14px rgba(79,70,229,0.3)",
+                }}
               >
                 <FiCreditCard size={15} /> 
                 <span>Book Contractor</span>
@@ -276,7 +294,7 @@ export default function ContractorProfilePage() {
                   trackEvent("in_app_message_tap", { contractor_id: id, source: "profile" });
                   navigate("/chat", { state: { initChatWith: id } });
                 }}
-                className="w-full h-11 border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 mb-3 hover:bg-emerald-100 dark:hover:bg-emerald-950/30 transition-colors"
+                className="w-full h-11 border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 mb-3 hover:bg-emerald-100 dark:hover:bg-emerald-950/30 transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
               >
                 <FiMessageCircle size={15} /> 
                 <span>Chat Now</span>
@@ -286,7 +304,8 @@ export default function ContractorProfilePage() {
                 <button
                   type="button"
                   onClick={() => navigator.share?.({ title: name, url: window.location.href })}
-                  className="h-9 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-elevated)] text-xs font-bold text-[var(--color-heading)] flex items-center justify-center gap-1.5 transition-colors"
+                  className="h-9 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-elevated)] text-xs font-bold text-[var(--color-heading)] flex items-center justify-center gap-1.5 transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+                  style={{ boxShadow: "var(--shadow-xs)" }}
                 >
                   <FiShare2 size={13} /> 
                   <span>Share</span>
@@ -294,7 +313,8 @@ export default function ContractorProfilePage() {
                 <button
                   type="button"
                   onClick={() => (user ? setShowReportBox((prev) => !prev) : navigate("/login"))}
-                  className="h-9 rounded-lg border border-rose-200 dark:border-rose-950/40 bg-rose-50 dark:bg-rose-950/15 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                  className="h-9 rounded-lg border border-rose-200 dark:border-rose-950/40 bg-rose-50 dark:bg-rose-950/15 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 hover:-translate-y-0.5 active:scale-95"
+                  style={{ boxShadow: "var(--shadow-xs)" }}
                 >
                   <FiAlertTriangle size={13} /> 
                   <span>Report</span>
@@ -339,26 +359,30 @@ export default function ContractorProfilePage() {
 
         {/* Highlight Stats Row */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center flex flex-col items-center justify-center transition-all hover:shadow-md">
+            <FiStar className="text-amber-500 mb-2" size={20} />
             <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Rating</span>
             <span className="text-2xl font-bold text-[var(--color-heading)] block">{rating.toFixed(1)}</span>
             <span className="text-xs text-[var(--color-muted)] font-medium mt-0.5 block">{reviewCount} reviews</span>
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center flex flex-col items-center justify-center transition-all hover:shadow-md">
+            <FiCreditCard className="text-[var(--color-accent)] mb-2" size={20} />
             <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Starting Rate</span>
             <span className="text-2xl font-bold text-[var(--color-heading)] block">
               {contractor.daily_rate ? `₹${Number(contractor.daily_rate).toLocaleString("en-IN")}` : "Custom"}
             </span>
             <span className="text-xs text-[var(--color-muted)] font-medium mt-0.5 block">per day / job</span>
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center flex flex-col items-center justify-center transition-all hover:shadow-md">
+            <FiBriefcase className="text-emerald-500 mb-2" size={20} />
             <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Experience</span>
             <span className="text-2xl font-bold text-[var(--color-heading)] block">
               {contractor.experience_years ? `${contractor.experience_years} yrs` : "New"}
             </span>
             <span className="text-xs text-[var(--color-muted)] font-medium mt-0.5 block">field experience</span>
           </div>
-          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 shadow-sm text-center flex flex-col items-center justify-center transition-all hover:shadow-md">
+            <FiUsers className="text-[var(--color-primary)] mb-2" size={20} />
             <span className="text-[10px] font-bold text-[var(--color-muted)] uppercase tracking-wider block mb-1">Work Crew</span>
             <span className="text-2xl font-bold text-[var(--color-heading)] block">
               {contractor.is_labour_group ? `${contractor.team_size || 1} workers` : "Solo"}
@@ -653,30 +677,34 @@ export default function ContractorProfilePage() {
 
           {/* Right sidebar details */}
           <aside className="space-y-4">
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50 dark:bg-emerald-950/20 p-5">
-              <p className="mb-2 flex items-center gap-2 font-bold text-sm text-[var(--color-heading)]">
-                <FiShield className="text-emerald-600" /> 
-                <span>Milestone protection</span>
-              </p>
-              <p className="text-xs leading-relaxed text-[var(--color-body)]">
-                Payments are held securely in a milestone-based escrow account. Funds are only disbursed once you sign off on completed work segments.
-              </p>
-            </div>
-
             <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
-              <p className="mb-3 font-bold text-sm text-[var(--color-heading)]">Profile signals</p>
-              <div className="space-y-3.5 text-xs text-[var(--color-body)]">
-                <div className="flex items-center gap-3">
-                  <FiCheckCircle className="text-emerald-600 shrink-0" size={15} /> 
-                  <span>Official business KYC verified</span>
+              <p className="mb-3.5 font-bold text-sm text-[var(--color-heading)] flex items-center gap-1.5">
+                <FiShield className="text-[var(--color-primary)]" size={16} />
+                <span>Trust & Verification</span>
+              </p>
+              <div className="space-y-4 text-xs text-[var(--color-body)]">
+                <div className="flex items-start gap-3">
+                  <FiCheckCircle className="text-emerald-600 shrink-0 mt-0.5" size={15} /> 
+                  <div>
+                    <span className="font-bold text-[var(--color-heading)] block">KYC Verified Profile</span>
+                    <span className="text-[10px] text-[var(--color-muted)] leading-relaxed">Official business background checks completed.</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <FiMapPin className="text-cyan-600 shrink-0" size={15} /> 
-                  <span>Active coverage area configured</span>
+                <div className="flex items-start gap-3">
+                  <FiMapPin className="text-cyan-600 shrink-0 mt-0.5" size={15} /> 
+                  <div>
+                    <span className="font-bold text-[var(--color-heading)] block">Active Service Area</span>
+                    <span className="text-[10px] text-[var(--color-muted)] leading-relaxed">Location and distance coverage verified.</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <FiUsers className="text-indigo-600 shrink-0" size={15} /> 
-                  <span>{contractor.is_labour_group ? "Organized Labor Squad leader" : "Verified Independent Partner"}</span>
+                <div className="flex items-start gap-3">
+                  <FiUsers className="text-indigo-600 shrink-0 mt-0.5" size={15} /> 
+                  <div>
+                    <span className="font-bold text-[var(--color-heading)] block">Contractor Status</span>
+                    <span className="text-[10px] text-[var(--color-muted)] leading-relaxed">
+                      {contractor.is_labour_group ? "Organized Labor Squad leader" : "Verified Independent Professional"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

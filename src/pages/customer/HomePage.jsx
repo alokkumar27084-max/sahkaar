@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
-import { CATEGORIES, QUICK_SERVICE_CATEGORIES } from "../../utils/constants";
+import { CATEGORIES, QUICK_SERVICE_CATEGORIES, CATEGORIES_HOME_LIMIT } from "../../utils/constants";
 import { useGeolocation } from "../../hooks/useGeolocation";
 import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
@@ -97,22 +97,7 @@ export default function HomePage() {
     }
   ], [lang]);
 
-  // Curated premium Indian stock images for local informal categories
-  
-  const categoryImages = {
-    construction: "https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=600&h=400&fit=crop",
-    electrical: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=400&fit=crop",
-    plumbing: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop",
-    painting: "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&h=400&fit=crop",
-    events: "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=600&h=400&fit=crop",
-    carpentry: "https://images.unsplash.com/photo-1601058268499-e52658b8bb88?w=600&h=400&fit=crop",
-    farming: "https://images.unsplash.com/photo-1595508064774-5ff825520bb0?w=600&h=400&fit=crop",
-    transport: "https://images.unsplash.com/photo-1601628828688-632f38a5a7d0?w=600&h=400&fit=crop",
-    cleaning: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop",
-    labour_group: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
-    property: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=600&h=400&fit=crop",
-    other: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=600&h=400&fit=crop",
-};
+
 
   const BACKDROPS = [
     {
@@ -160,9 +145,9 @@ export default function HomePage() {
       />
 
       {/* ═══════ SECTION 1: HERO ═══════ */}
-      <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center overflow-hidden bg-[#0A0A0A]">
-        {/* Video / Image Background - Zoomed to crop watermarks */}
-        <div className="absolute inset-0">
+      <section className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center bg-[var(--color-bg)] pt-24 px-1 md:px-2 pb-4">
+        {/* Video / Image Background - Zoomed to crop watermarks & framed nicely */}
+        <div className="absolute inset-x-1 md:inset-x-2 top-24 bottom-4 rounded-3xl overflow-hidden bg-[#0A0A0A]">
           <video
             key={activeBackdrop.id}
             autoPlay
@@ -179,7 +164,7 @@ export default function HomePage() {
         </div>
 
         {/* Hero Content - No manual backdrop selector pills */}
-        <div className="relative z-10 w-full max-w-[var(--max-width)] mx-auto px-5 md:px-8 text-center">
+        <div className="relative z-10 w-full max-w-[var(--max-width)] mx-auto px-5 md:px-8 text-center py-12 md:py-20">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -221,6 +206,7 @@ export default function HomePage() {
                 onFocus={() => setShowTrending(true)}
                 onBlur={() => setTimeout(() => setShowTrending(false), 200)}
                 placeholder="Search for builders, wiring, plumbers, material logistics..."
+                autoComplete="off"
                 className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-3 text-gray-900 text-sm md:text-base placeholder:text-gray-400 font-semibold"
               />
               <button
@@ -287,14 +273,14 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {CATEGORIES.map((cat) => (
+          {CATEGORIES.slice(0, CATEGORIES_HOME_LIMIT).map((cat) => (
             <button
               key={cat.id}
               onClick={() => handleCategoryClick(cat.id)}
               className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 border border-[var(--color-border)]"
             >
               <img
-                src={categoryImages[cat.id]}
+                src={cat.image}
                 alt={t(cat.key)}
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
@@ -310,6 +296,15 @@ export default function HomePage() {
               </div>
             </button>
           ))}
+        </div>
+
+        <div className="text-center mt-12">
+          <button
+            onClick={() => navigate("/categories")}
+            className="inline-flex items-center gap-2 h-12 px-8 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white text-sm font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+          >
+            View All Categories <FiArrowRight size={16} />
+          </button>
         </div>
       </section>
 

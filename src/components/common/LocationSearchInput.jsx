@@ -233,6 +233,7 @@ export default function LocationSearchInput({
         onBlur={() => setTimeout(() => setIsFocused(false), 200)}
         placeholder={placeholder}
         disabled={disabled}
+        autoComplete="off"
         className={`input-field !pl-10 ${className}`}
       />
 
