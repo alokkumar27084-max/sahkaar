@@ -110,6 +110,8 @@ export const adminAPI = {
   deleteReview: (id) => api.delete(`/admin/reviews/${id}`),
   getSettings: () => api.get("/admin/settings"),
   updateSettings: (data) => api.put("/admin/settings", data),
+  addManualSubscription: (id, plan_type) => api.post(`/admin/contractors/${id}/subscription`, { plan_type }),
+  cancelSubscription: (id) => api.delete(`/admin/contractors/${id}/subscription`),
 };
 
 export const chatAPI = {

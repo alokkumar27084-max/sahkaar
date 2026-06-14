@@ -151,6 +151,21 @@ export default function AdminDashboardPage() {
   async function handleToggleContractorFlag(c, patch) { await withBusy(async () => { await adminAPI.updateContractor(c.id, patch); toast.success("Updated"); await Promise.all([loadContractors(), loadOverview()]); }); }
   async function handleVerifyRequest(c, status) { await withBusy(async () => { await adminAPI.verifyContractor(c.id, { status }); toast.success(`Request ${status}`); await Promise.all([loadContractors(), loadOverview()]); }); }
   async function handleResolveReport(id, status) { await withBusy(async () => { await adminAPI.resolveReport(id, status); toast.success(`Report ${status}`); await Promise.all([loadOverview(), loadActivity()]); }); }
+  async function handleAddSubscription(contractorId, planType) {
+    await withBusy(async () => {
+      await adminAPI.addManualSubscription(contractorId, planType);
+      toast.success("Manual subscription granted");
+      await loadContractors();
+    });
+  }
+  async function handleCancelSubscription(contractorId) {
+    if (!window.confirm("Cancel this contractor's subscription?")) return;
+    await withBusy(async () => {
+      await adminAPI.cancelSubscription(contractorId);
+      toast.success("Subscription cancelled");
+      await loadContractors();
+    });
+  }
   async function handleDeleteReview(id) { if (!window.confirm("Delete this review?")) return; await withBusy(async () => { await adminAPI.deleteReview(id); toast.success("Review deleted"); await Promise.all([loadReviews(), loadOverview()]); }); }
   async function handleSaveSettings() { await withBusy(async () => { const res = await adminAPI.updateSettings(settings); setSettings(res.data.settings); toast.success("Settings saved"); }); }
 
@@ -247,6 +262,8 @@ export default function AdminDashboardPage() {
                   onView={showContractorDetail}
                   contractorQuery={contractorQuery} setContractorQuery={setContractorQuery}
                   verifiedFilter={verifiedFilter} setVerifiedFilter={setVerifiedFilter}
+                  onAddSubscription={handleAddSubscription}
+                  onCancelSubscription={handleCancelSubscription}
                 />
               )}
 

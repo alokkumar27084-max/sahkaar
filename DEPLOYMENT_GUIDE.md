@@ -15,7 +15,7 @@ This runbook matches `scripts/release-check.sh` and production hardening in the 
    - Frontend: `.env.production` from [`.env.production.example`](.env.production.example)
    - Backend: `backend/.env` from [`backend/.env.production.example`](backend/.env.production.example)
 2. Required backend variables (see also [`backend/src/config/validateEnv.js`](backend/src/config/validateEnv.js) for production):
-   - `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
+   - `DATABASE_URL`, `JWT_SECRET`, `FRONTEND_URL`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`
 3. Align `REACT_APP_API_URL` with your public API URL (e.g. `https://api.example.com/api`).
 
 ## Database
@@ -52,6 +52,13 @@ Ensure the process restarts on failure and logs to journald or a file with rotat
 ## Health checks
 
 - `GET /health` — returns `200` when app is up; includes `db: ok` when `DATABASE_URL` is set and PostgreSQL is reachable
+
+## Backups
+
+## Razorpay webhook
+
+- Configure Razorpay to send `order.paid` and `payment.captured` events to `https://api.example.com/api/payments/webhook`.
+- Set the same signing secret in `RAZORPAY_WEBHOOK_SECRET` before starting the production backend.
 
 ## Backups
 

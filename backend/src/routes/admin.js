@@ -22,6 +22,8 @@ router.post('/contractors', controller.createContractor);
 router.patch('/contractors/:id', controller.updateContractor);
 router.patch('/contractors/:id/verify', controller.verifyContractor);
 router.delete('/contractors/:id', controller.deleteContractor);
+router.post('/contractors/:id/subscription', controller.createManualSubscription);
+router.delete('/contractors/:id/subscription', controller.cancelSubscription);
 
 router.get('/reports', controller.reports);
 router.patch('/reports/:id', controller.resolveReport);

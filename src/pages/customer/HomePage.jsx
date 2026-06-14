@@ -15,7 +15,6 @@ import {
   FiShield,
   FiStar,
   FiChevronRight,
-  FiPlay,
 } from "react-icons/fi";
 import SEOHead from "../../components/common/SEOHead";
 
@@ -29,7 +28,7 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [realStats, setRealStats] = useState(null);
-  const { request: getLocation, lat, lng } = useGeolocation();
+  const { lat, lng } = useGeolocation();
 
   const trendingSearches = ["Plumber", "Electrician", "Civil Contractor", "Carpenter", "Painter"];
 

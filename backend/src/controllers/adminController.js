@@ -578,7 +578,22 @@ exports.listContractors = async (req, res, next) => {
     const offsetIdx = values.length;
 
     const result = await db.query(
-      `SELECT c.*, u.name AS user_name, u.phone, u.email
+      `SELECT c.*, u.name AS user_name, u.phone, u.email,
+              (
+                SELECT json_build_object(
+                  'id', s.id,
+                  'plan_type', s.plan_type,
+                  'status', s.status,
+                  'expires_at', s.expires_at,
+                  'created_at', s.created_at
+                )
+                FROM subscriptions s
+                WHERE s.contractor_id = c.id
+                  AND s.status = 'ACTIVE'
+                  AND s.expires_at > NOW()
+                ORDER BY s.expires_at DESC
+                LIMIT 1
+              ) AS active_subscription
        FROM contractors c
        JOIN users u ON u.id = c.user_id
        ${whereSql}
@@ -654,8 +669,9 @@ exports.createContractor = async (req, res, next) => {
       `INSERT INTO contractors (
         user_id, business_name, category, categories, description, services,
         daily_rate, experience_years, team_size, is_labour_group,
-        is_responsibility_model, location_text, is_verified, is_featured, is_available
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+        is_responsibility_model, location_text, is_verified, is_featured, is_available,
+        service_type, quick_services, tier
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
       RETURNING *`,
       [
         user.id,
@@ -673,6 +689,9 @@ exports.createContractor = async (req, res, next) => {
         !!payload.is_verified,
         !!payload.is_featured,
         payload.is_available === undefined ? true : !!payload.is_available,
+        payload.service_type || 'project',
+        payload.quick_services ? JSON.stringify(payload.quick_services) : '[]',
+        payload.tier || 'standard',
       ]
     );
 
@@ -718,6 +737,9 @@ exports.updateContractor = async (req, res, next) => {
            is_verified = COALESCE($13, is_verified),
            is_featured = COALESCE($14, is_featured),
            is_available = COALESCE($15, is_available),
+           service_type = COALESCE($16, service_type),
+           quick_services = COALESCE($17, quick_services),
+           tier = COALESCE($18, tier),
            updated_at = now()
        WHERE id = $1
        RETURNING *`,
@@ -737,6 +759,9 @@ exports.updateContractor = async (req, res, next) => {
         toBool(payload.is_verified),
         toBool(payload.is_featured),
         toBool(payload.is_available),
+        payload.service_type,
+        payload.quick_services ? JSON.stringify(payload.quick_services) : undefined,
+        payload.tier,
       ]
     );
 
@@ -1133,4 +1158,100 @@ exports.updateServiceRequest = async (req, res, next) => {
     }
     res.json({ ok: true, request: result.rows[0] });
   } catch (err) { next(err); }
+};
+
+exports.createManualSubscription = async (req, res, next) => {
+  const client = await db.pool.connect();
+  try {
+    const contractor_id = parseIdParam(req.params.id);
+    if (!contractor_id) return res.status(400).json({ ok: false, message: 'invalid contractor id' });
+    
+    const { plan_type } = req.body || {};
+    if (!['verified_badge', 'priority_listing', 'premium'].includes(plan_type)) {
+      return res.status(400).json({ ok: false, message: 'invalid plan type' });
+    }
+
+    await client.query('BEGIN');
+
+    // Check if contractor exists
+    const contRes = await client.query('SELECT id, user_id FROM contractors WHERE id = $1', [contractor_id]);
+    if (!contRes.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ ok: false, message: 'Contractor not found' });
+    }
+
+    // Set other active subscriptions for this contractor to expired
+    await client.query(
+      `UPDATE subscriptions 
+       SET status = 'EXPIRED' 
+       WHERE contractor_id = $1 AND status = 'ACTIVE'`,
+      [contractor_id]
+    );
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days manual subscription
+
+    const subRes = await client.query(
+      `INSERT INTO subscriptions (contractor_id, plan_type, status, amount_paid, razorpay_order_id, razorpay_payment_id, expires_at)
+       VALUES ($1, $2, 'ACTIVE', 0.00, 'manual', 'manual_pay_' || gen_random_uuid(), $3)
+       RETURNING *`,
+      [contractor_id, plan_type, expiresAt]
+    );
+
+    // Sync contractor flags
+    if (plan_type === 'verified_badge' || plan_type === 'premium') {
+      await client.query(`UPDATE contractors SET is_verified = true WHERE id = $1`, [contractor_id]);
+    }
+    if (plan_type === 'priority_listing' || plan_type === 'premium') {
+      await client.query(`UPDATE contractors SET is_featured = true WHERE id = $1`, [contractor_id]);
+    }
+
+    await client.query('COMMIT');
+    return res.json({ ok: true, subscription: subRes.rows[0] });
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    return next(err);
+  } finally {
+    client.release();
+  }
+};
+
+exports.cancelSubscription = async (req, res, next) => {
+  const client = await db.pool.connect();
+  try {
+    const contractor_id = parseIdParam(req.params.id);
+    if (!contractor_id) return res.status(400).json({ ok: false, message: 'invalid contractor id' });
+
+    await client.query('BEGIN');
+
+    // Check contractor
+    const contRes = await client.query('SELECT id, user_id FROM contractors WHERE id = $1', [contractor_id]);
+    if (!contRes.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ ok: false, message: 'Contractor not found' });
+    }
+
+    // Set active subscriptions to cancelled
+    await client.query(
+      `UPDATE subscriptions
+       SET status = 'CANCELLED'
+       WHERE contractor_id = $1 AND status = 'ACTIVE'`,
+      [contractor_id]
+    );
+
+    await client.query(
+      `UPDATE contractors 
+       SET is_verified = false, is_featured = false 
+       WHERE id = $1`,
+      [contractor_id]
+    );
+
+    await client.query('COMMIT');
+    return res.json({ ok: true, message: 'Subscription cancelled successfully' });
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    return next(err);
+  } finally {
+    client.release();
+  }
 };

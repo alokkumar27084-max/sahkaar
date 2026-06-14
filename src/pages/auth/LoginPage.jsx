@@ -8,7 +8,7 @@ import { authAPI } from "../../services/api";
 import { isValidPhone, isValidEmail, isValidPassword, sanitize } from "../../utils/validators";
 import { OTP_RESEND_SECONDS } from "../../utils/constants";
 import toast from "react-hot-toast";
-import { FiPhone, FiMail, FiLock, FiArrowRight, FiShield, FiChevronLeft } from "react-icons/fi";
+import { FiMail, FiLock, FiArrowRight, FiChevronLeft } from "react-icons/fi";
 import { ThekedaarLogo } from "../../components/common/ThekedaarLogo";
 import {
   auth as firebaseAuth,

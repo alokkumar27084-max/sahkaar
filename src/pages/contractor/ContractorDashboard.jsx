@@ -14,19 +14,15 @@ import {
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Badge from "../../components/common/Badge";
 import StarRating from "../../components/common/StarRating";
-import Icon from "../../components/common/Icon";
-import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
+import { getAvatarUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
 import {
   FiBell,
   FiSettings,
-  FiCheckCircle,
   FiBriefcase,
   FiLink,
   FiZap,
   FiCalendar,
-  FiDollarSign,
-  FiUsers,
   FiArrowRight,
   FiShield,
   FiCheckSquare,
@@ -152,24 +148,6 @@ export default function ContractorDashboard() {
     try {
       const res = await subscriptionAPI.purchase(planType);
       const orderData = res.data;
-
-      if (orderData.razorpayKey === "mock_key_only_for_dev") {
-        // Dev Mock Verification
-        setTimeout(async () => {
-          try {
-            await subscriptionAPI.verify({
-              razorpay_order_id: orderData.razorpayOrderId,
-              razorpay_payment_id: `sub_mock_${Date.now()}`,
-              razorpay_signature: "mock_sig"
-            });
-            toast.success("Subscription purchased successfully (Mock)!", { id: "sub_pay" });
-            loadContractorHQ();
-          } catch {
-            toast.error("Mock verification failed", { id: "sub_pay" });
-          }
-        }, 1000);
-        return;
-      }
 
       // Real Razorpay
       const rzp = new window.Razorpay({
@@ -388,7 +366,40 @@ export default function ContractorDashboard() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-2 mt-5 pt-5 border-t border-[var(--color-border)]">
+                 {/* Subscription Status Card in Sidebar */}
+                 <div className="mt-4 pt-4 border-t border-[var(--color-border)] flex flex-col gap-2">
+                   <h4 className="font-display font-bold text-[9px] uppercase tracking-wider text-[var(--color-muted)]">Subscription Status</h4>
+                   {subStatus?.plan_active ? (
+                     <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                       <div className="flex items-center gap-1 text-emerald-500 text-[10px] font-bold uppercase tracking-wider">
+                         <FiCheckSquare className="w-3.5 h-3.5" /> Subscribed
+                       </div>
+                       <p className="text-[9px] text-[var(--color-body)] mt-1 font-semibold">
+                         Plan: {subStatus.plan_type === 'priority_listing' ? 'Priority Search' : subStatus.plan_type === 'verified_badge' ? 'Verified Badge' : 'Premium'}
+                       </p>
+                       {subStatus.expires_at && (
+                         <p className="text-[8px] text-[var(--color-muted)] font-medium mt-0.5">
+                           Expires: {new Date(subStatus.expires_at).toLocaleDateString()}
+                         </p>
+                       )}
+                     </div>
+                   ) : (
+                     <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 flex flex-col gap-2">
+                       <p className="text-[9px] text-[var(--color-muted)] font-medium leading-relaxed">
+                         Appear at the top of local searches & get unlimited leads for ₹399/month.
+                       </p>
+                       <button
+                         type="button"
+                         onClick={() => setActiveTab("subscriptions")}
+                         className="w-full py-2 border border-amber-500/20 text-amber-500 font-extrabold text-[9px] uppercase tracking-wider rounded-lg hover:bg-amber-500/5 transition-all shadow-sm"
+                       >
+                         Subscribe Now
+                       </button>
+                     </div>
+                   )}
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-2 mt-5 pt-5 border-t border-[var(--color-border)]">
                   <Link
                     to={`/contractor/edit`}
                     className="flex flex-col items-center justify-center p-3 rounded-xl bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-elevated)]/80 text-[var(--color-body)] hover:text-[var(--color-heading)] border border-[var(--color-border)] transition-all text-[9px] font-bold uppercase tracking-wider"
@@ -557,6 +568,7 @@ export default function ContractorDashboard() {
                                     <a
                                       href={`https://wa.me/91${job.customer_phone.replace(/\D/g, "")}`}
                                       target="_blank"
+                                      rel="noreferrer"
                                       className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 transition-colors"
                                     >
                                       <FiMessageCircle size={12} /> Chat
@@ -847,7 +859,7 @@ export default function ContractorDashboard() {
                           <p className="text-xs text-[var(--color-muted)] font-semibold leading-relaxed">
                             Appear at the top of spatial searches in your city code. Includes unlimited leads and prioritized matching.
                           </p>
-                          <p className="text-2xl font-black text-[var(--color-heading)] pt-2">₹999 <span className="text-xs font-bold text-[var(--color-muted)]">/ 30 Days</span></p>
+                          <p className="text-2xl font-black text-[var(--color-heading)] pt-2">₹399 <span className="text-xs font-bold text-[var(--color-muted)]">/ 30 Days</span></p>
                         </div>
                         
                         <button

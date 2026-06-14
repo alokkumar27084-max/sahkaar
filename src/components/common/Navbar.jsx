@@ -5,9 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
-  FiChevronRight,
   FiHome,
-  FiLogIn,
   FiLogOut,
   FiMenu,
   FiUser,
@@ -23,7 +21,7 @@ import { ThekedaarLogo } from "./ThekedaarLogo";
 import toast from "react-hot-toast";
 
 export default function Navbar() {
-  const { t, lang, setLang } = useLanguage();
+  const { lang, setLang } = useLanguage();
   const { user, logout, isContractor, isAdmin } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();

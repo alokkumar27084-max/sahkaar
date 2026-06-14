@@ -14,6 +14,9 @@ function validateProductionEnv() {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     errors.push('RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are required for production payments');
   }
+  if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+    errors.push('RAZORPAY_WEBHOOK_SECRET is required for production payment reconciliation');
+  }
   if (!process.env.FRONTEND_URL) {
     errors.push('FRONTEND_URL is required for CORS and cookies');
   }

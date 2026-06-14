@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -34,11 +34,24 @@ export default function LabourProfilePage() {
   });
   const [pricing, setPricing] = useState({ totalDailyCost: 0, totalContractCost: 0 });
 
-  useEffect(() => {
-    fetchProfile();
-  }, [id]);
+  const calculatePricing = useCallback((contractorObj, days) => {
+    let dailyCost = 0;
+    if (contractorObj.labour_crew && Array.isArray(contractorObj.labour_crew)) {
+      contractorObj.labour_crew.forEach(item => {
+        dailyCost += (item.count * item.rate);
+      });
+    }
+    if (dailyCost === 0) {
+      dailyCost = (contractorObj.daily_rate || 400) * (contractorObj.team_size || 1);
+    }
 
-  const fetchProfile = async () => {
+    setPricing({
+      totalDailyCost: dailyCost,
+      totalContractCost: dailyCost * days
+    });
+  }, []);
+
+  const fetchProfile = useCallback(async () => {
     try {
       const res = await labourAPI.getDetails(id);
       if (res.data?.ok) {
@@ -55,24 +68,11 @@ export default function LabourProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [calculatePricing, id, navigate]);
 
-  const calculatePricing = (contractorObj, days) => {
-    let dailyCost = 0;
-    if (contractorObj.labour_crew && Array.isArray(contractorObj.labour_crew)) {
-      contractorObj.labour_crew.forEach(item => {
-        dailyCost += (item.count * item.rate);
-      });
-    }
-    if (dailyCost === 0) {
-      dailyCost = (contractorObj.daily_rate || 400) * (contractorObj.team_size || 1);
-    }
-
-    setPricing({
-      totalDailyCost: dailyCost,
-      totalContractCost: dailyCost * days
-    });
-  };
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleDurationChange = (e) => {
     const days = Math.max(1, parseInt(e.target.value) || 1);
@@ -405,4 +405,3 @@ export default function LabourProfilePage() {
     </main>
   );
 }
-

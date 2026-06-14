@@ -4,6 +4,7 @@
 const quickBookingModel = require('../models/quickBookingModel');
 const subscriptionModel = require('../models/subscriptionModel');
 const notificationService = require('../services/notificationService');
+const { isMockPaymentMode, verifyPaymentSignature } = require('../utils/razorpay');
 
 const BOOKING_FEE = 3000; // ₹30 in paise
 
@@ -77,17 +78,28 @@ exports.verifyBookingFee = async (req, res) => {
 
     const booking = await quickBookingModel.findById(booking_id);
     if (!booking) return res.status(404).json({ ok: false, message: 'Booking not found' });
-
-    if (process.env.RAZORPAY_KEY_SECRET && razorpay_signature) {
-      const crypto = require('crypto');
-      const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
-      if (expected !== razorpay_signature) {
-        return res.status(400).json({ ok: false, message: 'Payment verification failed' });
-      }
+    if (String(booking.customer_id) !== String(req.user.id)) {
+      return res.status(403).json({ ok: false, message: 'Access denied' });
+    }
+    if (!razorpay_order_id || razorpay_order_id !== booking.booking_fee_order_id) {
+      return res.status(400).json({ ok: false, message: 'Payment order does not match booking' });
+    }
+    if (booking.booking_fee_status === 'PAID') {
+      return res.json({ ok: true, booking });
     }
 
-    const updated = await quickBookingModel.setBookingFeePaid(booking_id, razorpay_payment_id || `mock_pay_${Date.now()}`);
+    const mockMode = isMockPaymentMode();
+    if (!mockMode && !verifyPaymentSignature({
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      signature: razorpay_signature,
+    })) {
+      return res.status(400).json({ ok: false, message: 'Payment verification failed' });
+    }
+
+    const paymentId = mockMode ? (razorpay_payment_id || `mock_pay_${Date.now()}`) : razorpay_payment_id;
+    const updated = await quickBookingModel.setBookingFeePaid(booking_id, paymentId);
+    if (!updated) return res.status(409).json({ ok: false, message: 'Payment state changed; refresh and retry' });
 
     try {
       await notificationService.notify(booking.contractor_id, {

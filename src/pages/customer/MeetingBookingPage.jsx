@@ -19,7 +19,7 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { contractorAPI } from "../../services/api";
-import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
+import { getAvatarUrl } from "../../utils/imageUtils";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 /* ── Constants ── */

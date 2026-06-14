@@ -13,7 +13,7 @@ const TIER_COLORS = {
 
 const emptyForm = { name: "", phone: "", email: "", password: "", business_name: "", category: "", description: "", location_text: "" };
 
-export default function ContractorsPanel({ contractors, busy, onCreateContractor, onDeleteContractor, onToggleFlag, onVerify, onView, contractorQuery, setContractorQuery, verifiedFilter, setVerifiedFilter }) {
+export default function ContractorsPanel({ contractors, busy, onCreateContractor, onDeleteContractor, onToggleFlag, onVerify, onView, contractorQuery, setContractorQuery, verifiedFilter, setVerifiedFilter, onAddSubscription, onCancelSubscription }) {
   const [form, setForm] = React.useState(emptyForm);
   const up = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -75,6 +75,52 @@ export default function ContractorsPanel({ contractors, busy, onCreateContractor
                 </span>
                 {c.tier && c.tier !== "standard" && (
                   <span className={`text-[10px] px-2.5 py-0.5 rounded-full capitalize font-bold border ${TIER_COLORS[c.tier] || TIER_COLORS.standard}`}>{c.tier}</span>
+                )}
+              </div>
+            </div>
+
+            {/* Active Subscription status */}
+            <div className="mt-3 text-xs bg-bg-elevated/40 border border-border/60 rounded-xl p-3 flex justify-between items-center">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-muted tracking-wider">Subscription Status</p>
+                {c.active_subscription ? (
+                  <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 capitalize">
+                    {c.active_subscription.plan_type.replace("_", " ")} Active
+                  </p>
+                ) : (
+                  <p className="font-semibold text-muted mt-0.5">Free tier active</p>
+                )}
+                {c.active_subscription?.expires_at && (
+                  <p className="text-[9px] text-muted mt-0.5">Expires: {new Date(c.active_subscription.expires_at).toLocaleDateString()}</p>
+                )}
+              </div>
+
+              <div>
+                {c.active_subscription ? (
+                  <button
+                    disabled={busy}
+                    onClick={() => onCancelSubscription(c.id)}
+                    className="px-2.5 py-1 text-[10px] font-bold text-rose-500 hover:text-white border border-rose-500/20 hover:bg-rose-500 rounded-lg transition disabled:opacity-40"
+                  >
+                    Cancel Sub
+                  </button>
+                ) : (
+                  <select
+                    disabled={busy}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        onAddSubscription(c.id, e.target.value);
+                        e.target.value = ""; // Reset value
+                      }
+                    }}
+                    className="px-2 py-1 bg-bg border border-border text-[10px] text-heading font-semibold rounded-lg outline-none focus:border-primary cursor-pointer"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Grant Manual Plan</option>
+                    <option value="verified_badge">Verified Badge (₹499)</option>
+                    <option value="priority_listing">Priority Listing (₹399)</option>
+                    <option value="premium">Premium Suite (₹2499)</option>
+                  </select>
                 )}
               </div>
             </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FiLinkedin, FiInstagram, FiTwitter, FiGlobe } from "react-icons/fi";
+import { FiLinkedin, FiInstagram, FiTwitter } from "react-icons/fi";
 import { ThekedaarLogo } from "./ThekedaarLogo";
 
 export default function Footer() {

@@ -76,8 +76,8 @@ exports.list = async (req, res, next) => {
 // Search contractors by q/category/geo filters
 exports.search = async (req, res, next) => {
   try {
-    const { q, category, verified, featured, labour_group, lat, lng, radius_km, min_radius_km, sort, page, limit } = req.query;
-    const contractors = await Contractor.search({ q, category, verified, featured, labour_group, lat, lng, radius_km, min_radius_km, sort, page, limit });
+    const { q, category, verified, featured, labour_group, lat, lng, radius_km, min_radius_km, sort, page, limit, mode } = req.query;
+    const contractors = await Contractor.search({ q, category, verified, featured, labour_group, lat, lng, radius_km, min_radius_km, sort, page, limit, mode });
     return res.json({ ok: true, contractors });
   } catch (err) {
     return next(err);

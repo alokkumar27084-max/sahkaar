@@ -14,8 +14,7 @@ import {
   FiShare2,
   FiShield,
   FiUsers,
-  FiStar,
-  FiGlobe
+  FiStar
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { contractorAPI, reviewAPI } from "../../services/api";
@@ -71,8 +70,11 @@ export default function ContractorProfilePage() {
     return acc + (qty * (crewItem?.rate || 0));
   }, 0);
 
-  const portfolioItems = contractor?.portfolio_items || [];
-  const portfolioPhotos = contractor?.portfolio_photos || contractor?.portfolio_urls || [];
+  const portfolioItems = useMemo(() => contractor?.portfolio_items || [], [contractor?.portfolio_items]);
+  const portfolioPhotos = useMemo(
+    () => contractor?.portfolio_photos || contractor?.portfolio_urls || [],
+    [contractor?.portfolio_photos, contractor?.portfolio_urls]
+  );
   
   const allPhotos = useMemo(() => {
     if (portfolioItems.length > 0) {
@@ -177,7 +179,6 @@ export default function ContractorProfilePage() {
 
   const name = contractor.name || contractor.business_name || contractor.user_name || "Contractor";
   const category = contractor.category || contractor.categories?.[0] || "general";
-  const heroImage = portfolioItems[0]?.image_url || portfolioPhotos[0] || contractor.photo_url;
   const rating = Number(contractor.rating || 0);
   const reviewCount = contractor.review_count ?? contractor.reviews_count ?? reviews.length;
   const services = contractor.services || [];

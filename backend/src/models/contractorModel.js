@@ -34,9 +34,9 @@ exports.create = async (data) => {
       user_id, business_name, category, categories, description, services,
       daily_rate, experience_years, team_size, is_labour_group,
       is_responsibility_model, location_text, lat, lng, latitude, longitude,
-      onboarding_data, labour_crew
+      onboarding_data, labour_crew, service_type, quick_services, tier
     )
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
      RETURNING *`,
     [
       data.user_id,
@@ -57,6 +57,9 @@ exports.create = async (data) => {
       lng,
       data.onboarding_data ? JSON.stringify(data.onboarding_data) : '{}',
       data.labour_crew ? JSON.stringify(data.labour_crew) : '[]',
+      data.service_type || 'project',
+      data.quick_services ? JSON.stringify(data.quick_services) : '[]',
+      data.tier || 'standard',
     ]
   );
   return res.rows[0];
@@ -153,6 +156,9 @@ exports.update = async (id, data) => {
          longitude = COALESCE($14, longitude),
          onboarding_data = COALESCE($15, onboarding_data),
          labour_crew = COALESCE($16, labour_crew),
+         service_type = COALESCE($17, service_type),
+         quick_services = COALESCE($18, quick_services),
+         tier = COALESCE($19, tier),
          updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -173,6 +179,9 @@ exports.update = async (id, data) => {
       lng,
       data.onboarding_data ? JSON.stringify(data.onboarding_data) : undefined,
       data.labour_crew ? JSON.stringify(data.labour_crew) : undefined,
+      data.service_type,
+      data.quick_services ? JSON.stringify(data.quick_services) : undefined,
+      data.tier,
     ]
   );
   return res.rows[0];
@@ -196,6 +205,7 @@ exports.search = async ({
   sort,
   page = 1,
   limit = 20,
+  mode,
 }) => {
   const safeLimit = Math.max(1, Math.min(parseInt(limit, 10) || 20, 100));
   const safePage = Math.max(1, parseInt(page, 10) || 1);
@@ -211,6 +221,12 @@ exports.search = async ({
 
   const params = [];
   const where = ['COALESCE(array_length(c.categories, 1), 0) > 0'];
+
+  if (mode === 'quick') {
+    where.push("c.service_type IN ('quick', 'both')");
+  } else if (mode === 'project') {
+    where.push("c.service_type IN ('project', 'both')");
+  }
 
   if (q) {
     params.push(`%${q}%`);
@@ -237,7 +253,7 @@ exports.search = async ({
   if (labour_group === true || labour_group === 'true') where.push('c.is_labour_group = true');
 
   let distanceSql = 'NULL::float8 AS distance_km';
-  let orderBy = sort === 'distance' ? 'c.created_at DESC' : 'c.rating DESC NULLS LAST, c.created_at DESC';
+  let orderBy = 'has_priority DESC, c.rating DESC NULLS LAST, c.created_at DESC';
 
   if (hasCoordinates) {
     params.push(latValue, lngValue, maxRadiusMeters, minRadiusMeters);
@@ -269,10 +285,12 @@ exports.search = async ({
       ) BETWEEN $${minRadiusIdx} AND $${maxRadiusIdx}
     `);
     orderBy = sort === 'price'
-      ? 'c.daily_rate ASC NULLS LAST, distance_km ASC, c.rating DESC NULLS LAST, c.created_at DESC'
-      : 'distance_km ASC, c.rating DESC NULLS LAST, c.created_at DESC';
+      ? 'has_priority DESC, c.rating DESC NULLS LAST, c.daily_rate ASC NULLS LAST, distance_km ASC, c.created_at DESC'
+      : sort === 'distance'
+        ? 'has_priority DESC, c.rating DESC NULLS LAST, distance_km ASC, c.created_at DESC'
+        : 'has_priority DESC, c.rating DESC NULLS LAST, distance_km ASC, c.created_at DESC';
   } else if (sort === 'price') {
-    orderBy = 'c.daily_rate ASC NULLS LAST, c.rating DESC NULLS LAST, c.created_at DESC';
+    orderBy = 'has_priority DESC, c.rating DESC NULLS LAST, c.daily_rate ASC NULLS LAST, c.created_at DESC';
   }
 
   params.push(safeLimit, offset);
@@ -285,6 +303,13 @@ exports.search = async ({
       COALESCE(c.category, c.categories[1], NULL) AS category,
       COALESCE(c.review_count, c.reviews_count, 0) AS review_count,
       COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos,
+      EXISTS (
+        SELECT 1 FROM subscriptions s
+        WHERE s.contractor_id = c.id
+          AND s.status = 'ACTIVE'
+          AND s.expires_at > NOW()
+          AND s.plan_type IN ('priority_listing', 'premium')
+      ) AS has_priority,
       ${distanceSql}
     FROM contractors c
     JOIN users u ON u.id = c.user_id

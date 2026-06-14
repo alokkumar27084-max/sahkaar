@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { FiBriefcase, FiCalendar, FiCheckCircle, FiChevronLeft, FiCreditCard, FiLock, FiMapPin, FiShield } from "react-icons/fi";
+import { FiBriefcase, FiCalendar, FiCheckCircle, FiChevronLeft, FiCreditCard, FiMapPin, FiShield } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { bookingAPI, contractorAPI, quoteAPI } from "../../services/api";
@@ -137,7 +137,7 @@ export default function BookingCheckoutPage() {
         const res = await bookingAPI.quote({
           contractorId: contractor.id,
           quoteId: state?.quoteId,
-          serviceTier: quote ? "custom" : serviceTier,
+          serviceTier,
           estimatedProjectValue: projectValue,
         });
         if (active) setPricing(res.data.data);
@@ -151,7 +151,7 @@ export default function BookingCheckoutPage() {
     return () => {
       active = false;
     };
-  }, [contractor, projectValue, serviceTier, state?.quoteId]);
+  }, [contractor, projectValue, quote, serviceTier, state?.quoteId]);
 
   const stepProgress = useMemo(() => {
     if (pricing && !pricingLoading) return 3;

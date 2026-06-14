@@ -1,5 +1,12 @@
 const subscriptionModel = require('../models/subscriptionModel');
 const db = require('../config/db');
+const { isMockPaymentMode, verifyPaymentSignature } = require('../utils/razorpay');
+
+const PLAN_PRICES = {
+  verified_badge: 49900,
+  priority_listing: 39900,
+  premium: 249900,
+};
 
 // Helper: create Razorpay order
 async function createRazorpayOrder(amount, receipt) {
@@ -15,7 +22,7 @@ async function createRazorpayOrder(amount, receipt) {
 exports.purchaseSubscription = async (req, res, next) => {
   try {
     const { plan_type } = req.body;
-    if (!['verified_badge', 'priority_listing', 'premium'].includes(plan_type)) {
+    if (!PLAN_PRICES[plan_type]) {
       return res.status(400).json({ ok: false, message: 'Invalid plan type' });
     }
 
@@ -26,21 +33,22 @@ exports.purchaseSubscription = async (req, res, next) => {
     }
     const contractor_id = rows[0].id;
 
-    let price = 0;
-    if (plan_type === 'verified_badge') price = 99900;     // ₹999
-    if (plan_type === 'priority_listing') price = 199900;  // ₹1999
-    if (plan_type === 'premium') price = 249900;           // ₹2499
+    let price = PLAN_PRICES[plan_type];
 
     const order = await createRazorpayOrder(price, `sub_${contractor_id}_${Date.now()}`);
+    await subscriptionModel.recordPaymentOrder({
+      contractor_id,
+      plan_type,
+      amount_paise: price,
+      razorpay_order_id: order.id,
+    });
 
     res.json({
       ok: true,
-      razorpay_order: {
-        id: order.id,
-        amount: price,
-        currency: 'INR',
-        key: process.env.RAZORPAY_KEY_ID || 'mock_key',
-      }
+      razorpayOrderId: order.id,
+      razorpayKey: process.env.RAZORPAY_KEY_ID || 'mock_key_only_for_dev',
+      amount: price,
+      currency: 'INR'
     });
   } catch (err) {
     return next(err);
@@ -51,33 +59,29 @@ exports.purchaseSubscription = async (req, res, next) => {
 exports.verifyPurchase = async (req, res, next) => {
   try {
     const { plan_type, razorpay_payment_id, razorpay_signature, razorpay_order_id } = req.body;
+    if (!PLAN_PRICES[plan_type] || !razorpay_order_id) {
+      return res.status(400).json({ ok: false, message: 'Invalid subscription payment data' });
+    }
 
     const { rows } = await db.query(`SELECT id FROM contractors WHERE user_id = $1`, [req.user.id]);
     if (!rows[0]) return res.status(400).json({ ok: false, message: 'Contractor profile required' });
     const contractor_id = rows[0].id;
 
-    // Verify signature (skip in mock mode)
-    if (process.env.RAZORPAY_KEY_SECRET && razorpay_signature) {
-      const crypto = require('crypto');
-      const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`).digest('hex');
-      if (expected !== razorpay_signature) {
-        return res.status(400).json({ ok: false, message: 'Payment verification failed' });
-      }
+    const mockMode = isMockPaymentMode();
+    if (!mockMode && !verifyPaymentSignature({
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      signature: razorpay_signature,
+    })) {
+      return res.status(400).json({ ok: false, message: 'Payment verification failed' });
     }
 
-    let price = 0.0;
-    if (plan_type === 'verified_badge') price = 999.00;
-    if (plan_type === 'priority_listing') price = 1999.00;
-    if (plan_type === 'premium') price = 2499.00;
-
-    const sub = await subscriptionModel.createSubscription({
+    const paymentId = mockMode ? (razorpay_payment_id || `mock_sub_pay_${Date.now()}`) : razorpay_payment_id;
+    const sub = await subscriptionModel.activateFromPaymentOrder({
       contractor_id,
       plan_type,
-      amount_paid: price,
       razorpay_order_id,
-      razorpay_payment_id: razorpay_payment_id || `mock_sub_pay_${Date.now()}`,
-      duration_days: 30
+      razorpay_payment_id: paymentId,
     });
 
     // Update contractor profile flags
@@ -101,17 +105,26 @@ exports.getStatus = async (req, res, next) => {
     if (!rows[0]) return res.status(400).json({ ok: false, message: 'Contractor profile required' });
     const contractor_id = rows[0].id;
 
-    const [activeSub, verified, priority, leadStatus, leadHistory] = await Promise.all([
+    const [activeSub, verified, priority, leadStatus, leadHistory, leadCount] = await Promise.all([
       subscriptionModel.getActiveSubscription(contractor_id),
       subscriptionModel.hasVerifiedBadge(contractor_id),
       subscriptionModel.hasPriorityListing(contractor_id),
       subscriptionModel.canReceiveLead(contractor_id),
       subscriptionModel.getLeadHistory(contractor_id, 10),
+      subscriptionModel.getLeadCount(contractor_id),
     ]);
 
     res.json({
       ok: true,
       contractor_id,
+      subscription: {
+        plan_active: !!activeSub,
+        plan_type: activeSub ? activeSub.plan_type : null,
+        expires_at: activeSub ? activeSub.expires_at : null,
+        leads_used: leadCount || 0,
+        has_verified_badge: verified,
+        has_priority_listing: priority,
+      },
       active_subscription: activeSub,
       has_verified_badge: verified,
       has_priority_listing: priority,
