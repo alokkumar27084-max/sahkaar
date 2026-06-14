@@ -28,24 +28,37 @@ const PORT = process.env.PORT || 5000;
   if (ADMIN_EMAIL && ADMIN_PASSWORD) {
     try {
       const bcrypt = require('bcrypt');
-      const User = require('./models/userModel');
       const db = require('./config/db');
-      const existing = await User.findByEmail(ADMIN_EMAIL);
-      if (!existing) {
-        const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
-        // provide a placeholder phone to satisfy non-null constraint
-        await User.create({ name: 'Administrator', phone: '0000000000', email: ADMIN_EMAIL, password_hash: hash, role: 'admin' });
-        console.log('✅ Default admin user created:', ADMIN_EMAIL);
-      } else if (existing.role !== 'admin') {
+
+      // Derive a unique placeholder phone for admin to avoid collisions
+      const crypto = require('crypto');
+      const adminPhonePlaceholder = 'admin' + crypto.createHash('md5').update(ADMIN_EMAIL).digest('hex').slice(0, 5);
+
+      const existing = await db.query(
+        'SELECT id, role FROM users WHERE LOWER(email) = $1',
+        [ADMIN_EMAIL.toLowerCase()]
+      );
+
+      if (!existing.rows.length) {
+        // Admin does not exist — create via upsert to handle any phone conflicts
         const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
         await db.query(
-          `UPDATE users
-           SET role = 'admin',
-               password_hash = $2
-           WHERE id = $1`,
-          [existing.id, hash]
+          `INSERT INTO users (name, phone, email, password_hash, role)
+           VALUES ('Administrator', $1, $2, $3, 'admin')
+           ON CONFLICT (email) DO UPDATE
+             SET role = 'admin', password_hash = EXCLUDED.password_hash`,
+          [adminPhonePlaceholder, ADMIN_EMAIL, hash]
+        );
+        console.log('✅ Default admin user created:', ADMIN_EMAIL);
+      } else if (existing.rows[0].role !== 'admin') {
+        const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+        await db.query(
+          `UPDATE users SET role = 'admin', password_hash = $2 WHERE id = $1`,
+          [existing.rows[0].id, hash]
         );
         console.log('✅ Existing user promoted to admin:', ADMIN_EMAIL);
+      } else {
+        console.log('ℹ️  Admin user already exists:', ADMIN_EMAIL);
       }
     } catch (err) {
       console.error('Error seeding admin user:', err);

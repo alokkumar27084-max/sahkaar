@@ -31,7 +31,7 @@ export default function ChatLayout() {
     const [isSendingQuote, setIsSendingQuote] = useState(false);
     const [quotes, setQuotes] = useState({}); // Map of quoteId -> quoteData
     const [showProjectInfo, setShowProjectInfo] = useState(true);
-    const [isTyping, setIsTyping] = useState(false);
+    const [isTyping] = useState(false);
     const [showVisitModal, setShowVisitModal] = useState(false);
     const [visitDate, setVisitDate] = useState("");
     const [visitTime, setVisitTime] = useState("");

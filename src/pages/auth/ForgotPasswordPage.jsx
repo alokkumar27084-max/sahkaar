@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiMail, FiArrowRight, FiCheckCircle, FiChevronLeft } from "react-icons/fi";
+import { FiMail, FiCheckCircle, FiChevronLeft } from "react-icons/fi";
 import { auth } from "../../config/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
 import toast from "react-hot-toast";

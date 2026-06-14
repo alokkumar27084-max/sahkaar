@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -7,10 +7,8 @@ import {
   FiSearch,
   FiSliders,
   FiUsers,
-  FiDollarSign,
   FiAward,
   FiNavigation,
-  FiPhone,
   FiChevronRight,
   FiStar,
   FiCheckCircle
@@ -30,23 +28,11 @@ export default function LabourSearchPage() {
     radius_km: 10,
     sort: "distance"
   });
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-
   // Default coordinate is New Delhi (if GPS not permitted/enabled)
   const [coords, setCoords] = useState({ lat: 28.6139, lng: 77.2090 });
   const [locationName, setLocationName] = useState("New Delhi, India");
 
-  useEffect(() => {
-    if (gpsLat && gpsLng) {
-      setCoords({ lat: gpsLat, lng: gpsLng });
-      if (gpsAddress) setLocationName(gpsAddress);
-      fetchLabour({ lat: gpsLat, lng: gpsLng });
-    } else {
-      fetchLabour();
-    }
-  }, [gpsLat, gpsLng, gpsAddress]);
-
-  const fetchLabour = async (customCoords = null) => {
+  const fetchLabour = useCallback(async (customCoords = null) => {
     setLoading(true);
     try {
       const activeCoords = customCoords || coords;
@@ -67,7 +53,19 @@ export default function LabourSearchPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [coords, filters]);
+
+  useEffect(() => {
+    if (gpsLat && gpsLng) {
+      setCoords((current) => (
+        current.lat === gpsLat && current.lng === gpsLng ? current : { lat: gpsLat, lng: gpsLng }
+      ));
+      if (gpsAddress) setLocationName(gpsAddress);
+      fetchLabour({ lat: gpsLat, lng: gpsLng });
+    } else {
+      fetchLabour();
+    }
+  }, [fetchLabour, gpsAddress, gpsLat, gpsLng]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();

@@ -84,7 +84,7 @@ exports.setBookingFeePaid = async (id, payment_id) => {
   const { rows } = await db.query(
     `UPDATE ${TABLE}
      SET booking_fee_status = 'PAID', booking_fee_payment_id = $2, updated_at = NOW()
-     WHERE id = $1 RETURNING *`,
+     WHERE id = $1 AND booking_fee_status = 'UNPAID' RETURNING *`,
     [id, payment_id]
   );
   return rows[0];

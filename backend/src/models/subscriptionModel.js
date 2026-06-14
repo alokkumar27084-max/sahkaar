@@ -20,6 +20,68 @@ exports.createSubscription = async ({ contractor_id, plan_type, amount_paid, raz
   return rows[0];
 };
 
+exports.recordPaymentOrder = async ({ contractor_id, plan_type, amount_paise, razorpay_order_id }) => {
+  const { rows } = await db.query(
+    `INSERT INTO subscription_payment_orders
+       (contractor_id, plan_type, amount_paise, razorpay_order_id)
+     VALUES ($1,$2,$3,$4)
+     RETURNING *`,
+    [contractor_id, plan_type, amount_paise, razorpay_order_id]
+  );
+  return rows[0];
+};
+
+exports.activateFromPaymentOrder = async ({ contractor_id, plan_type, razorpay_order_id, razorpay_payment_id }) => {
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const orderResult = await client.query(
+      `SELECT * FROM subscription_payment_orders
+       WHERE contractor_id = $1 AND plan_type = $2 AND razorpay_order_id = $3
+       FOR UPDATE`,
+      [contractor_id, plan_type, razorpay_order_id]
+    );
+    const order = orderResult.rows[0];
+    if (!order) {
+      const error = new Error('Subscription payment order not found');
+      error.status = 400;
+      throw error;
+    }
+
+    if (order.consumed_at) {
+      const existing = await client.query(
+        `SELECT * FROM subscriptions
+         WHERE contractor_id = $1 AND razorpay_order_id = $2
+         ORDER BY created_at DESC LIMIT 1`,
+        [contractor_id, razorpay_order_id]
+      );
+      await client.query('COMMIT');
+      return existing.rows[0] || null;
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+    const subscription = await client.query(
+      `INSERT INTO subscriptions
+         (contractor_id, plan_type, amount_paid, razorpay_order_id, razorpay_payment_id, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6)
+       RETURNING *`,
+      [contractor_id, plan_type, Number(order.amount_paise) / 100, razorpay_order_id, razorpay_payment_id, expiresAt]
+    );
+    await client.query(
+      `UPDATE subscription_payment_orders SET consumed_at = NOW() WHERE id = $1`,
+      [order.id]
+    );
+    await client.query('COMMIT');
+    return subscription.rows[0];
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 exports.getActiveSubscription = async (contractor_id) => {
   const { rows } = await db.query(
     `SELECT * FROM subscriptions

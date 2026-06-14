@@ -10,7 +10,8 @@
     "migrate:images": "psql \"$DATABASE_URL\" -f ./migrations/002_add_contractor_image.sql",
     "migrate:all": "node ./scripts/runMigrations.js",
     "test-flow": "bash ./test/run_flow.sh",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "check:modules": "node -e \"require('./src/routes/index'); require('./src/controllers/adminController'); require('./src/controllers/contractorController'); console.log('backend load checks passed')\""
   },
   "dependencies": {
     "axios": "^1.13.5",

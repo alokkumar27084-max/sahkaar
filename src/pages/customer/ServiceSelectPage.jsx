@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -6,10 +6,7 @@ import {
   FiBriefcase,
   FiUsers,
   FiArrowRight,
-  FiClock,
-  FiShield,
   FiCheckCircle,
-  FiStar,
 } from "react-icons/fi";
 import SEOHead from "../../components/common/SEOHead";
 

@@ -12,7 +12,7 @@ import {
 } from "react-icons/fi";
 import { contractorAPI } from "../../services/api";
 import { trackEvent } from "../../utils/analytics";
-import { getImageUrl, getAvatarUrl } from "../../utils/imageUtils";
+import { getAvatarUrl } from "../../utils/imageUtils";
 
 export default function ContractorCard({
   contractor,

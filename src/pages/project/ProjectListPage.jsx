@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -17,7 +17,6 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 export default function ProjectListPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
@@ -37,11 +36,7 @@ export default function ProjectListPage() {
 
   const isContractor = user?.role === "contractor";
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
       const res = await projectAPI.getMyProjects(user.role);
@@ -54,7 +49,11 @@ export default function ProjectListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.role]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleCreateProjectSubmit = async (e) => {
     e.preventDefault();
@@ -248,4 +247,3 @@ export default function ProjectListPage() {
     </main>
   );
 }
-

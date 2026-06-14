@@ -285,21 +285,6 @@ function getCategoryLabel(category) {
   return titleFromId(category.id);
 }
 
-function getAccentClasses(accent, selected = false) {
-  const map = {
-    cyan: selected
-      ? "border-cyan-400 bg-cyan-500/10 text-cyan-700 shadow-cyan-500/10 dark:border-cyan-300 dark:bg-cyan-400/10 dark:text-cyan-200"
-      : "hover:border-cyan-400/70 hover:bg-cyan-500/5",
-    indigo: selected
-      ? "border-indigo-400 bg-indigo-500/10 text-indigo-700 shadow-indigo-500/10 dark:border-indigo-300 dark:bg-indigo-400/10 dark:text-indigo-200"
-      : "hover:border-indigo-400/70 hover:bg-indigo-500/5",
-    amber: selected
-      ? "border-amber-400 bg-amber-500/10 text-amber-700 shadow-amber-500/10 dark:border-amber-300 dark:bg-amber-400/10 dark:text-amber-200"
-      : "hover:border-amber-400/70 hover:bg-amber-500/5",
-  };
-  return map[accent] || map.indigo;
-}
-
 function buildQuickQuestions(categoryId) {
   return QUICK_PROVIDER_QUESTIONS[categoryId] || [
     q(`${categoryId}_scope`, `Which ${titleFromId(categoryId)} services do you offer?`, ["Basic service", "Advanced service", "Inspection visit", "Scheduled maintenance"]),
@@ -313,73 +298,6 @@ function visibleProjectQuestions(categoryId, answers) {
     ...item,
     question: item.question,
   }));
-}
-
-function ProviderCard({ provider, selected, onClick }) {
-  const Icon = provider.icon;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`group relative min-h-[176px] overflow-hidden rounded-2xl border bg-[var(--color-surface)] p-5 text-left shadow-xl shadow-black/10 transition-all duration-300 ${getAccentClasses(provider.accent, selected)}`}
-    >
-      <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[var(--color-border)] dark:bg-white/20" />
-      <div className="flex items-start justify-between gap-4">
-        <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${selected ? "bg-[var(--color-heading)] text-[var(--color-bg)]" : "bg-[var(--color-bg)] text-[var(--color-muted)]"} transition-colors`}>
-          <Icon size={22} />
-        </span>
-        <span className="rounded-full border border-current/20 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] opacity-80">
-          {provider.badge}
-        </span>
-      </div>
-      <h3 className="mt-5 text-xl font-black text-[var(--color-heading)]">{provider.title}</h3>
-      <p className="mt-2 text-sm font-semibold leading-relaxed text-[var(--color-muted)]">{provider.subtitle}</p>
-      {selected && (
-        <span className="absolute bottom-5 right-5 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-heading)] text-[var(--color-bg)]">
-          <FiCheck size={16} />
-        </span>
-      )}
-    </button>
-  );
-}
-
-function Field({ label, error, children }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.18em] text-[var(--color-muted)]">
-        {label}
-      </span>
-      {children}
-      {error && <p className="mt-2 text-xs font-bold text-rose-500">{error}</p>}
-    </label>
-  );
-}
-
-function FileDrop({ icon: Icon, title, hint, value, onChange, multiple = false }) {
-  return (
-    <label className="flex min-h-[170px] cursor-pointer flex-col justify-between rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] p-5 transition-colors hover:border-indigo-400/60">
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--color-surface)] text-indigo-500">
-        <Icon size={20} />
-      </span>
-      <span>
-        <strong className="block text-sm font-black text-[var(--color-heading)]">{title}</strong>
-        <span className="mt-1 block text-xs font-semibold leading-relaxed text-[var(--color-muted)]">{hint}</span>
-        {value && (
-          <span className="mt-3 flex items-center gap-2 text-xs font-black text-emerald-600">
-            <FiCheckCircle size={14} />
-            {Array.isArray(value) ? `${value.length} files selected` : value.name}
-          </span>
-        )}
-      </span>
-      <input
-        className="hidden"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        multiple={multiple}
-        onChange={onChange}
-      />
-    </label>
-  );
 }
 
 export default function ContractorRegisterPage() {
@@ -748,7 +666,6 @@ export default function ContractorRegisterPage() {
 
   const currentQuestion = adaptiveQuestions[questionIndex];
   const isFinalDetailPanel = step === 3 && questionIndex >= adaptiveQuestions.length;
-  const selectedAccent = selectedProvider?.accent || "indigo";
   const detailCopy = DETAIL_COPY[selectedProvider?.categoryMode] || DETAIL_COPY.project;
   const servicesPlaceholder =
     selectedProvider?.categoryMode === "quick"

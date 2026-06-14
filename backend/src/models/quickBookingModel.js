@@ -74,7 +74,7 @@ exports.setBookingFeePaid = async (id, payment_id) => {
     `UPDATE ${TABLE}
      SET booking_fee_status = 'PAID', booking_fee_payment_id = $2,
          status = 'CONFIRMED', updated_at = NOW()
-     WHERE id = $1 RETURNING *`,
+     WHERE id = $1 AND booking_fee_status = 'UNPAID' RETURNING *`,
     [id, payment_id]
   );
   return rows[0];

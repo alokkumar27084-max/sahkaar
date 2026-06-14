@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -51,11 +51,7 @@ export default function ProjectDashboard() {
 
   const isContractor = user?.role === "contractor";
 
-  useEffect(() => {
-    fetchProjectDetails();
-  }, [id]);
-
-  const fetchProjectDetails = async () => {
+  const fetchProjectDetails = useCallback(async () => {
     try {
       const res = await projectAPI.getProject(id);
       if (res.data?.ok) {
@@ -73,7 +69,11 @@ export default function ProjectDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    fetchProjectDetails();
+  }, [fetchProjectDetails]);
 
   // Actions: Milestones
   const handleCreateMilestone = async (e) => {

@@ -27,7 +27,7 @@ test('contractor search filters by coordinates and orders by nearest first', asy
 
     assert.match(capturedSql, /earth_distance/);
     assert.match(capturedSql, /BETWEEN/);
-    assert.match(capturedSql, /ORDER BY distance_km ASC/);
+    assert.match(capturedSql, /ORDER BY has_priority DESC, c\.rating DESC NULLS LAST, distance_km ASC/);
     assert.match(capturedSql, /unnest\(COALESCE\(c\.services/);
     assert.deepStrictEqual(capturedParams.slice(1, 5), [23.2599, 77.4126, 5000, 0]);
   } finally {
@@ -53,7 +53,7 @@ test('contractor search keeps price sorting inside the selected radius', async (
     });
 
     assert.match(capturedSql, /earth_distance/);
-    assert.match(capturedSql, /ORDER BY c\.daily_rate ASC NULLS LAST, distance_km ASC/);
+    assert.match(capturedSql, /ORDER BY has_priority DESC, c\.rating DESC NULLS LAST, c\.daily_rate ASC NULLS LAST, distance_km ASC/);
   } finally {
     db.query = originalQuery;
   }

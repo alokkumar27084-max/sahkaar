@@ -6,7 +6,7 @@ import { sanitizeForm, isValidImageFile } from "../../utils/validators";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import Icon from "../../components/common/Icon";
 import toast from "react-hot-toast";
-import { getImageUrl, getAvatarUrl, getSafeImageUrl } from "../../utils/imageUtils";
+import { getAvatarUrl, getSafeImageUrl } from "../../utils/imageUtils";
 import { useGeolocation } from "../../hooks/useGeolocation";
 
 export default function ContractorEditPage() {
@@ -31,6 +31,8 @@ export default function ContractorEditPage() {
     is_labour_group: false,
     is_responsibility_model: false,
     labour_crew: [],
+    service_type: "project",
+    quick_services: "",
   });
 
   useEffect(() => {
@@ -56,6 +58,8 @@ export default function ContractorEditPage() {
           is_labour_group: !!p.is_labour_group,
           is_responsibility_model: !!p.is_responsibility_model,
           labour_crew: p.labour_crew || [],
+          service_type: p.service_type || "project",
+          quick_services: Array.isArray(p.quick_services) ? p.quick_services.join(", ") : "",
         });
       })
       .catch((err) => {
@@ -99,6 +103,8 @@ export default function ContractorEditPage() {
         is_labour_group: form.is_labour_group,
         is_responsibility_model: form.is_responsibility_model,
         labour_crew: form.labour_crew,
+        service_type: form.service_type,
+        quick_services: form.quick_services.split(",").map((x) => x.trim()).filter(Boolean),
       });
 
       let res;
@@ -374,6 +380,24 @@ export default function ContractorEditPage() {
           <div className="space-y-1">
             <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Services List (comma separated)</label>
             <input className="input-field" value={form.services} onChange={update("services")} placeholder="e.g. Wet Service, Gas Refill, Shuttering, Plastering" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Service type / Mode</label>
+              <select className="input-field bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-xs font-semibold text-[var(--color-heading)] outline-none" value={form.service_type} onChange={update("service_type")}>
+                <option value="project">Project Contractor only</option>
+                <option value="quick">Quick Handyman only</option>
+                <option value="both">Both (Quick & Project)</option>
+              </select>
+            </div>
+
+            {(form.service_type === "quick" || form.service_type === "both") && (
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Quick Services List (comma separated)</label>
+                <input className="input-field" value={form.quick_services} onChange={update("quick_services")} placeholder="e.g. Electrician, Plumber, AC Repair" />
+              </div>
+            )}
           </div>
 
           {/* Configuration Flags */}
