@@ -1,31 +1,45 @@
 # Thekedaar
 
-Full-stack marketplace for connecting customers with contractors (React + Express + PostgreSQL).
+**Connecting customers with verified contractors — a full-stack marketplace platform.**
 
-## Quick start (development)
+Thekedaar is a marketplace application designed to bridge the gap between customers seeking skilled labour/contractor services and verified professionals ready to deliver them. Built with scalability, reliability, and user trust at its core.
 
-1. **PostgreSQL** — create a database and set `DATABASE_URL` in `backend/.env` (copy from `backend/.env.example`).
-2. **Backend** — `cd backend && npm install && npm run migrate:all && npm run dev` (default port **5000**).
-3. **Frontend** — copy `.env.example` to `.env`, set `REACT_APP_API_URL=http://localhost:5000/api`, then `npm install && npm start`.
+---
+
+## Overview
+
+The contractor and labour services industry is largely unorganized, making it difficult for customers to find reliable, verified professionals — and equally difficult for skilled contractors to find consistent work. Thekedaar solves this by providing a structured, transparent marketplace that connects both sides efficiently.
+
+## Key Features
+
+- **Verified Contractor Profiles** — Customers can browse and connect with vetted contractors across various skill categories.
+- **Secure Authentication** — Robust user authentication and role-based access for customers and contractors.
+- **Real-Time Communication** — Instant updates and notifications powered by real-time messaging infrastructure.
+- **Integrated Payments** — Secure, seamless payment processing built into the booking flow.
+- **Responsive Design** — A clean, modern interface optimized across devices.
+
+## Tech Stack
+
+Thekedaar is built on a modern, production-grade stack:
+
+- **Frontend:** React
+- **Backend:** Node.js / Express
+- **Database:** PostgreSQL
+- **Real-Time Layer:** WebSocket-based communication
+- **Payments:** Integrated third-party payment gateway
+
+## Project Status
+
+Thekedaar is under active development, with continued iteration on core marketplace features, contractor verification workflows, and platform scalability. The project is currently pursuing formal startup recognition (DPIIT) as part of its broader growth roadmap.
 
 ## Documentation
 
-- Critical path / regression scope: [docs/CRITICAL_PATH.md](docs/CRITICAL_PATH.md)
-- Production deployment: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-- UAT checklist: [docs/UAT_CHECKLIST.md](docs/UAT_CHECKLIST.md)
-- Backend API notes: [backend/README.md](backend/README.md)
+Internal engineering documentation, deployment procedures, and testing protocols are maintained privately and are available to authorized contributors and stakeholders on request.
 
-## Scripts
+## Contact
 
-| Command | Purpose |
-|--------|---------|
-| `npm run build` | Production frontend build |
-| `npm run smoke` | HTTP smoke against running backend |
-| `npm run check:release` | Release gate (build + backend load checks) |
-| `npm test --prefix backend` | Backend unit tests |
-| `npm run test:e2e` | Playwright E2E (requires dev server; see `playwright.config.js`) |
+For partnership inquiries, investment interest, or collaboration opportunities, please reach out through the official Thekedaar contact channels.
 
-## Security
+---
 
-- Never commit `.env` files with real secrets. Use `.env.example` templates only.
-- Rotate any credentials that were ever committed to git history.
+*© Thekedaar. All rights reserved.*
