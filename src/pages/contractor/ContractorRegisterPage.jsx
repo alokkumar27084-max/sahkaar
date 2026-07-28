@@ -592,15 +592,6 @@ export default function ContractorRegisterPage() {
 
     setLoading(true);
     try {
-      const registerRes = await authAPI.register({
-        name: sanitize(form.name),
-        email: sanitize(form.email),
-        phone: sanitize(form.phone),
-        password: form.password,
-        role: "contractor",
-      });
-      login(registerRes.data.user, registerRes.data.token);
-
       const flags = selectedProvider?.flags || {};
       const categoryLabel = getCategoryLabel(selectedCategory || { id: form.category });
       const services = form.services
@@ -636,8 +627,21 @@ export default function ContractorRegisterPage() {
         labour_crew: form.labour_crew.filter((item) => item.role || item.count || item.rate),
       });
 
-      const createRes = await contractorAPI.create(profileData);
-      const contractorId = createRes.data.contractor?.id;
+      const registerRes = await authAPI.register({
+        name: sanitize(form.name),
+        email: sanitize(form.email),
+        phone: sanitize(form.phone),
+        password: form.password,
+        role: "contractor",
+        ...profileData,
+      });
+      login(registerRes.data.user, registerRes.data.token);
+
+      let contractorId = registerRes.data.contractor?.id;
+      if (!contractorId) {
+        const profileRes = await contractorAPI.getMyProfile();
+        contractorId = profileRes.data.contractor?.id;
+      }
 
       if (contractorId && form.profile_photo_file) {
         const fd = new FormData();

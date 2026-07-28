@@ -1,10 +1,27 @@
 import React from "react";
-import { FiSearch, FiDownload, FiEye, FiTrash2 } from "react-icons/fi";
-import { BtnPrimary, BtnOutline, BtnDanger, AdminInput, AdminSelect, downloadCsv } from "./AdminShared";
+import { FiSearch, FiDownload, FiEye, FiTrash2, FiEdit2 } from "react-icons/fi";
+import { BtnPrimary, BtnOutline, BtnDanger, AdminInput, AdminSelect, downloadCsv, Pagination } from "./AdminShared";
 
 const emptyUserForm = { name: "", phone: "", email: "", password: "", role: "customer", business_name: "", category: "" };
 
-export default function UsersPanel({ users, busy, onCreateUser, onDeleteUser, onRoleChange, onViewUser, userQuery, setUserQuery, userRoleFilter, setUserRoleFilter }) {
+export default function UsersPanel({
+  users,
+  busy,
+  onCreateUser,
+  onDeleteUser,
+  onRoleChange,
+  onViewUser,
+  onEditUser,
+  userQuery,
+  setUserQuery,
+  userRoleFilter,
+  setUserRoleFilter,
+  page,
+  totalPages,
+  totalItems,
+  limit = 50,
+  onPageChange,
+}) {
   const [form, setForm] = React.useState(emptyUserForm);
   const up = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -42,14 +59,16 @@ export default function UsersPanel({ users, busy, onCreateUser, onDeleteUser, on
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 max-w-sm">
-          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={15} />
-          <AdminInput className="!pl-10" placeholder="Search users by name, email..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} />
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex flex-wrap gap-3 items-center flex-1 max-w-xl">
+          <div className="relative flex-1 min-w-[200px]">
+            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={15} />
+            <AdminInput className="!pl-10" placeholder="Search users by name, phone, email..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} />
+          </div>
+          <AdminSelect value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)} className="capitalize">
+            {["all", "customer", "contractor", "admin"].map((r) => <option key={r} value={r}>{r} Role</option>)}
+          </AdminSelect>
         </div>
-        <AdminSelect value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)} className="capitalize">
-          {["all", "customer", "contractor", "admin"].map((r) => <option key={r} value={r}>{r} Role</option>)}
-        </AdminSelect>
         <BtnOutline onClick={() => downloadCsv("users.csv", users)} className="flex items-center gap-1.5 font-bold">
           <FiDownload size={13} /> Export to CSV
         </BtnOutline>
@@ -88,6 +107,9 @@ export default function UsersPanel({ users, busy, onCreateUser, onDeleteUser, on
                       <BtnOutline disabled={busy} onClick={() => onViewUser(u.id)} className="!py-1" title="View details">
                         <FiEye size={13} />
                       </BtnOutline>
+                      <BtnOutline disabled={busy} onClick={() => onEditUser(u)} className="!py-1 !text-primary" title="Edit user account">
+                        <FiEdit2 size={13} />
+                      </BtnOutline>
                       {u.role !== "admin" && (
                         <BtnOutline disabled={busy} onClick={() => onRoleChange(u, "admin")} className="!py-1">
                           → Admin
@@ -116,6 +138,16 @@ export default function UsersPanel({ users, busy, onCreateUser, onDeleteUser, on
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        limit={limit}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 }
+

@@ -2,9 +2,10 @@
 // Exports a `query` helper used by models.
 const { Pool } = require('pg');
 
+const isNeon = (process.env.DATABASE_URL || '').includes('neon.tech') || (process.env.DATABASE_URL || '').includes('sslmode=require');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
+  ssl: isNeon ? { rejectUnauthorized: false } : (process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false }),
   max: 10,
   connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS || 30000),
   idleTimeoutMillis: 30000,

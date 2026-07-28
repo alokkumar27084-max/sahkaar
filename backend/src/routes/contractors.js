@@ -31,15 +31,17 @@ router.get('/public-stats', controller.getPublicStats);
 router.get('/featured', controller.featured);
 router.get('/', controller.list);
 router.get('/search', controller.search);
+
+// Protected: my profile and availability. Keep these before /:id public routes.
+router.get('/me', requireAuth, controller.getMyProfile);
+router.get('/me/profile', requireAuth, controller.getMyProfile);
+router.patch('/me/availability', requireAuth, controller.setMyAvailability);
+
 router.get('/:id/reviews', controller.getReviews);
 router.post('/:id/lead', controller.recordLead);
 router.post('/:id/leads', controller.recordLead);
 router.get('/:id', controller.getById);
 
-// Protected: my profile and availability
-router.get('/me', requireAuth, controller.getMyProfile);
-router.get('/me/profile', requireAuth, controller.getMyProfile);
-router.patch('/me/availability', requireAuth, controller.setMyAvailability);
 router.patch('/:id/availability', requireAuth, async (req, res, next) => {
   try {
     const target = await Contractor.findById(req.params.id);
@@ -74,9 +76,25 @@ router.post('/photo', requireAuth, upload.single('image'), async (req, res, next
 router.post('/:id/upload', requireAuth, upload.single('image'), controller.uploadImage);
 
 // Base64 image upload routes
-router.post('/photo/base64', requireAuth, controller.uploadImageBase64);
+router.post('/photo/base64', requireAuth, async (req, res, next) => {
+  try {
+    const my = await Contractor.findByUserId(req.user.id);
+    if (!my) return res.status(404).json({ ok: false, message: 'Contractor profile not found' });
+    return controller.uploadImageBase64({ ...req, params: { id: my.id } }, res, next);
+  } catch (err) {
+    return next(err);
+  }
+});
 router.post('/:id/upload/base64', requireAuth, controller.uploadImageBase64);
-router.post('/portfolio/base64', requireAuth, controller.uploadPortfolioBase64);
+router.post('/portfolio/base64', requireAuth, async (req, res, next) => {
+  try {
+    const my = await Contractor.findByUserId(req.user.id);
+    if (!my) return res.status(404).json({ ok: false, message: 'Contractor profile not found' });
+    return controller.uploadPortfolioBase64({ ...req, params: { id: my.id } }, res, next);
+  } catch (err) {
+    return next(err);
+  }
+});
 router.post('/:id/portfolio/base64', requireAuth, controller.uploadPortfolioBase64);
 
 // Upload portfolio photos

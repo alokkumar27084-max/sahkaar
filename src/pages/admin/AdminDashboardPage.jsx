@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { adminAPI } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiUsers, FiUserCheck, FiTrendingUp, FiSettings, FiStar,
-  FiAlertTriangle, FiActivity, FiRefreshCw, FiBarChart2, FiMenu,
+  FiAlertTriangle, FiActivity, FiRefreshCw, FiBarChart2, FiMenu, FiLogOut,
 } from "react-icons/fi";
 
 // Panels
@@ -16,7 +18,7 @@ import ReviewsPanel from "./panels/ReviewsPanel";
 import ModerationPanel from "./panels/ModerationPanel";
 import AnalyticsPanel from "./panels/AnalyticsPanel";
 import SettingsPanel from "./panels/SettingsPanel";
-import { DetailModal } from "./panels/AdminShared";
+import { DetailModal, EditContractorModal, EditUserModal } from "./panels/AdminShared";
 
 /* ──────────── Sidebar config ──────────── */
 const SIDEBAR = [
@@ -31,6 +33,8 @@ const SIDEBAR = [
 ];
 
 export default function AdminDashboardPage() {
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [loading, setLoading] = useState(true);
@@ -46,64 +50,117 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [reports, setReports] = useState([]);
   const [reportFilter, setReportFilter] = useState("pending");
+
   const [users, setUsers] = useState([]);
   const [userRoleFilter, setUserRoleFilter] = useState("all");
   const [userQuery, setUserQuery] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [userTotal, setUserTotal] = useState(0);
+  const [userTotalPages, setUserTotalPages] = useState(1);
+
   const [contractors, setContractors] = useState([]);
   const [contractorQuery, setContractorQuery] = useState("");
   const [verifiedFilter, setVerifiedFilter] = useState("all");
+  const [contractorPage, setContractorPage] = useState(1);
+  const [contractorTotal, setContractorTotal] = useState(0);
+  const [contractorTotalPages, setContractorTotalPages] = useState(1);
+
   const [activity, setActivity] = useState({ users: [], reviews: [], reports: [] });
   const [reviews, setReviews] = useState([]);
   const [reviewQuery, setReviewQuery] = useState("");
   const [analytics, setAnalytics] = useState(null);
   const [settings, setSettings] = useState({});
-  const [selectedDetail, setSelectedDetail] = useState(null);
 
-  // ── Loaders ─────────────────────────────────────────────
+  // Modals state
+  const [selectedDetail, setSelectedDetail] = useState(null);
+  const [editingContractor, setEditingContractor] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+
+  // ── Specific Loaders ─────────────────────────────────────────
   const loadOverview = useCallback(async () => {
-    const [s, r] = await Promise.all([adminAPI.getStats(), adminAPI.getReports(reportFilter)]);
-    setStats(s.data.stats || null);
-    setReports(r.data.reports || []);
+    try {
+      const [s, r] = await Promise.all([adminAPI.getStats(), adminAPI.getReports(reportFilter)]);
+      setStats(s.data.stats || null);
+      setReports(r.data.reports || []);
+    } catch (err) {
+      console.error("Error loading overview:", err);
+    }
   }, [reportFilter]);
 
-  const loadUsers = useCallback(async () => {
-    const res = await adminAPI.getUsers({ role: userRoleFilter, q: userQuery || undefined, page: 1, limit: 50 });
-    setUsers(res.data.users || []);
-  }, [userRoleFilter, userQuery]);
+  const loadUsers = useCallback(async (p = userPage, q = userQuery, r = userRoleFilter) => {
+    try {
+      const res = await adminAPI.getUsers({ role: r, q: q || undefined, page: p, limit: 50 });
+      setUsers(res.data.users || []);
+      const total = res.data.pagination?.total || (res.data.users || []).length;
+      setUserTotal(total);
+      setUserTotalPages(Math.max(1, Math.ceil(total / 50)));
+    } catch (err) {
+      console.error("Error loading users:", err);
+    }
+  }, [userPage, userQuery, userRoleFilter]);
 
-  const loadContractors = useCallback(async () => {
-    const params = { q: contractorQuery || undefined, page: 1, limit: 50 };
-    if (verifiedFilter !== "all") params.verified = verifiedFilter === "verified";
-    const res = await adminAPI.getContractors(params);
-    setContractors(res.data.contractors || []);
-  }, [contractorQuery, verifiedFilter]);
+  const loadContractors = useCallback(async (p = contractorPage, q = contractorQuery, v = verifiedFilter) => {
+    try {
+      const params = { q: q || undefined, page: p, limit: 50 };
+      if (v !== "all") params.verified = v === "verified";
+      const res = await adminAPI.getContractors(params);
+      setContractors(res.data.contractors || []);
+      const total = res.data.pagination?.total || (res.data.contractors || []).length;
+      setContractorTotal(total);
+      setContractorTotalPages(Math.max(1, Math.ceil(total / 50)));
+    } catch (err) {
+      console.error("Error loading contractors:", err);
+    }
+  }, [contractorPage, contractorQuery, verifiedFilter]);
 
   const loadActivity = useCallback(async () => {
-    const res = await adminAPI.getActivity();
-    setActivity(res.data.activity || { users: [], reviews: [], reports: [] });
+    try {
+      const res = await adminAPI.getActivity();
+      setActivity(res.data.activity || { users: [], reviews: [], reports: [] });
+    } catch (err) {
+      console.error("Error loading activity:", err);
+    }
   }, []);
 
   const loadReviews = useCallback(async () => {
-    const res = await adminAPI.getReviews({ q: reviewQuery || undefined, page: 1, limit: 50 });
-    setReviews(res.data.reviews || []);
+    try {
+      const res = await adminAPI.getReviews({ q: reviewQuery || undefined, page: 1, limit: 50 });
+      setReviews(res.data.reviews || []);
+    } catch (err) {
+      console.error("Error loading reviews:", err);
+    }
   }, [reviewQuery]);
 
   const loadAnalytics = useCallback(async () => {
-    const res = await adminAPI.getAnalytics(30);
-    setAnalytics(res.data.analytics || null);
+    try {
+      const res = await adminAPI.getAnalytics(30);
+      setAnalytics(res.data.analytics || null);
+    } catch (err) {
+      console.error("Error loading analytics:", err);
+    }
   }, []);
 
   const loadSettings = useCallback(async () => {
-    const res = await adminAPI.getSettings();
-    setSettings(res.data.settings || {});
+    try {
+      const res = await adminAPI.getSettings();
+      setSettings(res.data.settings || {});
+    } catch (err) {
+      console.error("Error loading settings:", err);
+    }
   }, []);
 
+  // Initial master loader
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      await Promise.all([
-        loadOverview(), loadUsers(), loadContractors(), loadActivity(),
-        loadReviews(), loadAnalytics(), loadSettings(),
+      await Promise.allSettled([
+        loadOverview(),
+        loadUsers(1, "", "all"),
+        loadContractors(1, "", "all"),
+        loadActivity(),
+        loadReviews(),
+        loadAnalytics(),
+        loadSettings(),
       ]);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to load admin data");
@@ -112,20 +169,61 @@ export default function AdminDashboardPage() {
     }
   }, [loadOverview, loadUsers, loadContractors, loadActivity, loadReviews, loadAnalytics, loadSettings]);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
-  useEffect(() => { loadUsers().catch(() => { }); }, [loadUsers]);
-  useEffect(() => { loadContractors().catch(() => { }); }, [loadContractors]);
-  useEffect(() => { loadOverview().catch(() => { }); }, [loadOverview]);
-  useEffect(() => { loadReviews().catch(() => { }); }, [loadReviews]);
+  // Load once on mount
+  useEffect(() => {
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Filter effect handlers with debouncing for search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadContractors(contractorPage, contractorQuery, verifiedFilter);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [contractorQuery, verifiedFilter, contractorPage, loadContractors]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadUsers(userPage, userQuery, userRoleFilter);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [userQuery, userRoleFilter, userPage, loadUsers]);
+
+  useEffect(() => {
+    loadOverview();
+  }, [reportFilter, loadOverview]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadReviews();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [reviewQuery, loadReviews]);
 
   // ── Actions ─────────────────────────────────────────────
   async function withBusy(fn) {
     setBusy(true);
-    try { await fn(); } catch (err) { toast.error(err.response?.data?.message || "Action failed"); } finally { setBusy(false); }
+    try {
+      await fn();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Action failed");
+    } finally {
+      setBusy(false);
+    }
   }
 
-  async function showUserDetail(userId) { await withBusy(async () => { const res = await adminAPI.getUser(userId); setSelectedDetail(res.data.user || null); }); }
-  async function showContractorDetail(c) { if (c?.user_id) return showUserDetail(c.user_id); setSelectedDetail(c || null); }
+  async function showUserDetail(userId) {
+    await withBusy(async () => {
+      const res = await adminAPI.getUser(userId);
+      setSelectedDetail(res.data.user || null);
+    });
+  }
+
+  async function showContractorDetail(c) {
+    if (c?.user_id) return showUserDetail(c.user_id);
+    setSelectedDetail(c || null);
+  }
 
   async function handleCreateUser(form) {
     await withBusy(async () => {
@@ -133,7 +231,7 @@ export default function AdminDashboardPage() {
       if (form.role === "contractor") payload.contractor = { business_name: form.business_name || form.name, category: form.category || undefined };
       await adminAPI.createUser(payload);
       toast.success("User created");
-      await Promise.all([loadUsers(), loadOverview(), loadContractors()]);
+      await Promise.all([loadUsers(userPage, userQuery, userRoleFilter), loadOverview(), loadContractors(contractorPage, contractorQuery, verifiedFilter)]);
     });
   }
 
@@ -141,35 +239,117 @@ export default function AdminDashboardPage() {
     await withBusy(async () => {
       await adminAPI.createContractor({ ...form, business_name: form.business_name || form.name });
       toast.success("Contractor created");
-      await Promise.all([loadContractors(), loadUsers(), loadOverview()]);
+      await Promise.all([loadContractors(contractorPage, contractorQuery, verifiedFilter), loadUsers(userPage, userQuery, userRoleFilter), loadOverview()]);
     });
   }
 
-  async function handleDeleteUser(id) { if (!window.confirm("Delete this user?")) return; await withBusy(async () => { await adminAPI.deleteUser(id); toast.success("Deleted"); await loadAll(); }); }
-  async function handleDeleteContractor(id) { if (!window.confirm("Delete contractor + user?")) return; await withBusy(async () => { await adminAPI.deleteContractor(id); toast.success("Deleted"); await loadAll(); }); }
-  async function handleQuickRoleChange(u, role) { await withBusy(async () => { await adminAPI.updateUser(u.id, { role }); toast.success(`Role → ${role}`); await Promise.all([loadUsers(), loadContractors(), loadOverview()]); }); }
-  async function handleToggleContractorFlag(c, patch) { await withBusy(async () => { await adminAPI.updateContractor(c.id, patch); toast.success("Updated"); await Promise.all([loadContractors(), loadOverview()]); }); }
-  async function handleVerifyRequest(c, status) { await withBusy(async () => { await adminAPI.verifyContractor(c.id, { status }); toast.success(`Request ${status}`); await Promise.all([loadContractors(), loadOverview()]); }); }
-  async function handleResolveReport(id, status) { await withBusy(async () => { await adminAPI.resolveReport(id, status); toast.success(`Report ${status}`); await Promise.all([loadOverview(), loadActivity()]); }); }
+  async function handleUpdateContractor(id, patch) {
+    await withBusy(async () => {
+      await adminAPI.updateContractor(id, patch);
+      toast.success("Contractor updated successfully");
+      await Promise.all([loadContractors(contractorPage, contractorQuery, verifiedFilter), loadOverview()]);
+    });
+  }
+
+  async function handleUpdateUser(id, patch) {
+    await withBusy(async () => {
+      await adminAPI.updateUser(id, patch);
+      toast.success("User profile updated");
+      await Promise.all([loadUsers(userPage, userQuery, userRoleFilter), loadContractors(contractorPage, contractorQuery, verifiedFilter), loadOverview()]);
+    });
+  }
+
+  async function handleDeleteUser(id) {
+    if (!window.confirm("Delete this user account?")) return;
+    await withBusy(async () => {
+      await adminAPI.deleteUser(id);
+      toast.success("User deleted");
+      await Promise.all([loadUsers(userPage, userQuery, userRoleFilter), loadOverview()]);
+    });
+  }
+
+  async function handleDeleteContractor(id) {
+    if (!window.confirm("Delete contractor and associated user account?")) return;
+    await withBusy(async () => {
+      await adminAPI.deleteContractor(id);
+      toast.success("Contractor deleted");
+      await Promise.all([loadContractors(contractorPage, contractorQuery, verifiedFilter), loadUsers(userPage, userQuery, userRoleFilter), loadOverview()]);
+    });
+  }
+
+  async function handleQuickRoleChange(u, role) {
+    await withBusy(async () => {
+      await adminAPI.updateUser(u.id, { role });
+      toast.success(`Role updated to ${role}`);
+      await Promise.all([loadUsers(userPage, userQuery, userRoleFilter), loadContractors(contractorPage, contractorQuery, verifiedFilter), loadOverview()]);
+    });
+  }
+
+  async function handleToggleContractorFlag(c, patch) {
+    await withBusy(async () => {
+      await adminAPI.updateContractor(c.id, patch);
+      toast.success("Contractor flags updated");
+      await Promise.all([loadContractors(contractorPage, contractorQuery, verifiedFilter), loadOverview()]);
+    });
+  }
+
+  async function handleVerifyRequest(c, status) {
+    await withBusy(async () => {
+      await adminAPI.verifyContractor(c.id, { status });
+      toast.success(`Verification ${status}`);
+      await Promise.all([loadContractors(contractorPage, contractorQuery, verifiedFilter), loadOverview()]);
+    });
+  }
+
+  async function handleResolveReport(id, status) {
+    await withBusy(async () => {
+      await adminAPI.resolveReport(id, status);
+      toast.success(`Report ${status}`);
+      await Promise.all([loadOverview(), loadActivity()]);
+    });
+  }
+
   async function handleAddSubscription(contractorId, planType) {
     await withBusy(async () => {
       await adminAPI.addManualSubscription(contractorId, planType);
       toast.success("Manual subscription granted");
-      await loadContractors();
+      await loadContractors(contractorPage, contractorQuery, verifiedFilter);
     });
   }
+
   async function handleCancelSubscription(contractorId) {
     if (!window.confirm("Cancel this contractor's subscription?")) return;
     await withBusy(async () => {
       await adminAPI.cancelSubscription(contractorId);
       toast.success("Subscription cancelled");
-      await loadContractors();
+      await loadContractors(contractorPage, contractorQuery, verifiedFilter);
     });
   }
-  async function handleDeleteReview(id) { if (!window.confirm("Delete this review?")) return; await withBusy(async () => { await adminAPI.deleteReview(id); toast.success("Review deleted"); await Promise.all([loadReviews(), loadOverview()]); }); }
-  async function handleSaveSettings() { await withBusy(async () => { const res = await adminAPI.updateSettings(settings); setSettings(res.data.settings); toast.success("Settings saved"); }); }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-bg"><LoadingSpinner size="lg" /></div>;
+  async function handleDeleteReview(id) {
+    if (!window.confirm("Delete this review?")) return;
+    await withBusy(async () => {
+      await adminAPI.deleteReview(id);
+      toast.success("Review deleted");
+      await Promise.all([loadReviews(), loadOverview()]);
+    });
+  }
+
+  async function handleSaveSettings() {
+    await withBusy(async () => {
+      const res = await adminAPI.updateSettings(settings);
+      setSettings(res.data.settings);
+      toast.success("Site settings saved successfully");
+    });
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   const currentLabel = SIDEBAR.find((s) => s.id === tab)?.label || "Admin";
 
@@ -205,9 +385,17 @@ export default function AdminDashboardPage() {
               </button>
             ))}
           </nav>
-          <div className="absolute bottom-4 left-0 right-0 px-4">
+          <div className="absolute bottom-4 left-0 right-0 px-3 space-y-2">
+            <button
+              onClick={async () => { await logout(); navigate('/login'); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-500 hover:bg-red-500/10 transition border border-transparent hover:border-red-500/20"
+              title="Logout"
+            >
+              <FiLogOut size={18} className="flex-shrink-0" />
+              {sidebarOpen && <span className="truncate">Logout</span>}
+            </button>
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="w-full py-2 rounded-lg text-xs font-semibold text-muted hover:bg-bg-elevated transition border border-transparent hover:border-border">
-              {sidebarOpen ? "← Collapse Sidebar" : "→"}
+              {sidebarOpen ? "← Collapse" : "→"}
             </button>
           </div>
         </aside>
@@ -221,17 +409,26 @@ export default function AdminDashboardPage() {
               </button>
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-heading">{currentLabel}</h1>
-                <p className="hidden md:block text-xs text-muted mt-1 font-medium">Full platform control and analytics dashboard</p>
+                <p className="hidden md:block text-xs text-muted mt-1 font-medium">Full platform control and management dashboard</p>
               </div>
             </div>
-            <button 
-              onClick={loadAll} 
-              disabled={busy} 
-              className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
-            >
-              <FiRefreshCw size={14} className={busy ? "animate-spin" : ""} />
-              <span className="hidden sm:inline">Refresh Data</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={loadAll} 
+                disabled={busy} 
+                className="btn-primary flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
+              >
+                <FiRefreshCw size={14} className={busy ? "animate-spin" : ""} />
+                <span className="hidden sm:inline">Refresh Data</span>
+              </button>
+              <button
+                onClick={async () => { await logout(); navigate('/login'); }}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-red-500 border border-red-500/20 hover:bg-red-500/10 transition md:hidden"
+                title="Logout"
+              >
+                <FiLogOut size={14} />
+              </button>
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
@@ -249,8 +446,11 @@ export default function AdminDashboardPage() {
                   users={users} busy={busy}
                   onCreateUser={handleCreateUser} onDeleteUser={handleDeleteUser}
                   onRoleChange={handleQuickRoleChange} onViewUser={showUserDetail}
-                  userQuery={userQuery} setUserQuery={setUserQuery}
-                  userRoleFilter={userRoleFilter} setUserRoleFilter={setUserRoleFilter}
+                  onEditUser={(u) => setEditingUser(u)}
+                  userQuery={userQuery} setUserQuery={(q) => { setUserQuery(q); setUserPage(1); }}
+                  userRoleFilter={userRoleFilter} setUserRoleFilter={(r) => { setUserRoleFilter(r); setUserPage(1); }}
+                  page={userPage} totalPages={userTotalPages} totalItems={userTotal} limit={50}
+                  onPageChange={setUserPage}
                 />
               )}
 
@@ -260,10 +460,13 @@ export default function AdminDashboardPage() {
                   onCreateContractor={handleCreateContractor} onDeleteContractor={handleDeleteContractor}
                   onToggleFlag={handleToggleContractorFlag} onVerify={handleVerifyRequest}
                   onView={showContractorDetail}
-                  contractorQuery={contractorQuery} setContractorQuery={setContractorQuery}
-                  verifiedFilter={verifiedFilter} setVerifiedFilter={setVerifiedFilter}
+                  onEdit={(c) => setEditingContractor(c)}
+                  contractorQuery={contractorQuery} setContractorQuery={(q) => { setContractorQuery(q); setContractorPage(1); }}
+                  verifiedFilter={verifiedFilter} setVerifiedFilter={(v) => { setVerifiedFilter(v); setContractorPage(1); }}
                   onAddSubscription={handleAddSubscription}
                   onCancelSubscription={handleCancelSubscription}
+                  page={contractorPage} totalPages={contractorTotalPages} totalItems={contractorTotal} limit={50}
+                  onPageChange={setContractorPage}
                 />
               )}
 
@@ -296,6 +499,8 @@ export default function AdminDashboardPage() {
       </div>
 
       <DetailModal data={selectedDetail} onClose={() => setSelectedDetail(null)} />
+      <EditContractorModal contractor={editingContractor} onClose={() => setEditingContractor(null)} onSave={handleUpdateContractor} busy={busy} />
+      <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSave={handleUpdateUser} busy={busy} />
     </main>
   );
 }

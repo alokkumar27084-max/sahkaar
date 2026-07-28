@@ -39,6 +39,7 @@ function cookieOptions() {
 
 // Register: create a user record (very minimal)
 exports.register = async (req, res, next) => {
+  let client;
   try {
     const { name, phone, password, role } = req.body;
     if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
@@ -55,39 +56,144 @@ exports.register = async (req, res, next) => {
     const cleanName = sanitize(name || null);
     const cleanPhone = sanitize(phone || null);
     const cleanEmail = sanitize(req.body.email || null);
-    const user = await User.create({ name: cleanName, phone: cleanPhone, email: cleanEmail, password_hash: hashed, role: requestedRole });
+    client = await db.pool.connect();
+    await client.query('BEGIN');
+
+    const duplicateChecks = [];
+    if (cleanPhone) duplicateChecks.push(client.query('SELECT id FROM users WHERE phone = $1 LIMIT 1', [cleanPhone]));
+    if (cleanEmail) duplicateChecks.push(client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1', [cleanEmail]));
+    const duplicates = await Promise.all(duplicateChecks);
+    if (duplicates.some((result) => result.rows.length > 0)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ ok: false, message: 'An account with this phone or email already exists. Please log in.' });
+    }
+
+    const userRes = await client.query(
+      `INSERT INTO users (name, phone, email, password_hash, role)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, phone, email, role`,
+      [cleanName, cleanPhone, cleanEmail, hashed, requestedRole]
+    );
+    const user = userRes.rows[0];
+    let contractor = null;
 
     if (requestedRole === 'contractor') {
-      const { business_name, description, categories, services, latitude, longitude } = req.body;
+      const {
+        business_name,
+        category,
+        categories,
+        description,
+        services,
+        daily_rate,
+        experience_years,
+        team_size,
+        is_labour_group,
+        is_responsibility_model,
+        location_text,
+        latitude,
+        longitude,
+        lat,
+        lng,
+        onboarding_data,
+        labour_crew,
+        service_type,
+        quick_services,
+        tier,
+      } = req.body;
       const hasProfilePayload =
         business_name !== undefined ||
+        category !== undefined ||
         description !== undefined ||
         categories !== undefined ||
         services !== undefined ||
+        daily_rate !== undefined ||
+        location_text !== undefined ||
         latitude !== undefined ||
-        longitude !== undefined;
+        longitude !== undefined ||
+        lat !== undefined ||
+        lng !== undefined;
 
       if (hasProfilePayload) {
-        const cleanProfile = sanitizeObject({ business_name, description, categories, services, latitude, longitude });
-        await Contractor.create({
-          user_id: user.id,
-          business_name: cleanProfile.business_name || null,
-          description: cleanProfile.description || null,
-          categories: cleanProfile.categories || [],
-          services: cleanProfile.services || [],
-          latitude: cleanProfile.latitude || null,
-          longitude: cleanProfile.longitude || null,
+        const cleanProfile = sanitizeObject({
+          business_name,
+          category,
+          categories,
+          description,
+          services,
+          daily_rate,
+          experience_years,
+          team_size,
+          is_labour_group,
+          is_responsibility_model,
+          location_text,
+          latitude,
+          longitude,
+          lat,
+          lng,
+          onboarding_data,
+          labour_crew,
+          service_type,
+          quick_services,
+          tier,
         });
+        const profileCategories = Array.isArray(cleanProfile.categories)
+          ? cleanProfile.categories
+          : cleanProfile.category
+            ? [cleanProfile.category]
+            : [];
+        const profileCategory = cleanProfile.category || profileCategories[0] || null;
+        const profileLat = toFiniteNumber(cleanProfile.lat ?? cleanProfile.latitude);
+        const profileLng = toFiniteNumber(cleanProfile.lng ?? cleanProfile.longitude);
+
+        const contractorRes = await client.query(
+          `INSERT INTO contractors (
+            user_id, business_name, category, categories, description, services,
+            daily_rate, experience_years, team_size, is_labour_group,
+            is_responsibility_model, location_text, lat, lng, latitude, longitude,
+            onboarding_data, labour_crew, service_type, quick_services, tier
+          )
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+           RETURNING *`,
+          [
+            user.id,
+            cleanProfile.business_name || cleanName,
+            profileCategory,
+            profileCategories,
+            cleanProfile.description || null,
+            Array.isArray(cleanProfile.services) ? cleanProfile.services : [],
+            cleanProfile.daily_rate || null,
+            cleanProfile.experience_years || 0,
+            cleanProfile.team_size || 1,
+            !!cleanProfile.is_labour_group,
+            !!cleanProfile.is_responsibility_model,
+            cleanProfile.location_text || null,
+            profileLat,
+            profileLng,
+            profileLat,
+            profileLng,
+            cleanProfile.onboarding_data ? JSON.stringify(cleanProfile.onboarding_data) : '{}',
+            cleanProfile.labour_crew ? JSON.stringify(cleanProfile.labour_crew) : '[]',
+            cleanProfile.service_type || 'project',
+            cleanProfile.quick_services ? JSON.stringify(cleanProfile.quick_services) : '[]',
+            cleanProfile.tier || 'standard',
+          ]
+        );
+        contractor = contractorRes.rows[0];
       }
     }
+
+    await client.query('COMMIT');
 
     const safeUser = await User.findById(user.id);
     const token = signUserToken(safeUser);
     res.cookie('token', token, cookieOptions());
 
-    res.status(201).json({ ok: true, user: safeUser, token });
+    res.status(201).json({ ok: true, user: safeUser, contractor, token });
   } catch (err) {
+    if (client) await client.query('ROLLBACK').catch(() => {});
     next(err);
+  } finally {
+    if (client) client.release();
   }
 };
 

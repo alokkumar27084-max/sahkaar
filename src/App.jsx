@@ -118,6 +118,7 @@ function ThemedToaster() {
 function FooterWrapper() {
   const location = useLocation();
   const hideFooterOn = [
+    "/admin",
     "/dashboard",
     "/chat",
     "/login",
@@ -139,8 +140,7 @@ function NavbarWrapper() {
   const location = useLocation();
 
   const hideNavbarOn = [
-    // "/search", // User wants navbar back
-    // "/chat"
+    "/admin"
   ];
 
   const shouldHide = hideNavbarOn.some(path => location.pathname.includes(path));

@@ -136,6 +136,12 @@ exports.update = async (id, data) => {
   const category = data.category || (categories && categories[0]) || undefined;
   const lat = parseCoordinate(data.lat ?? data.latitude, -90, 90, 'latitude');
   const lng = parseCoordinate(data.lng ?? data.longitude, -180, 180, 'longitude');
+  const photoUrl = data.photo_url || data.image_url;
+  const portfolio = Array.isArray(data.portfolio_photos)
+    ? data.portfolio_photos
+    : Array.isArray(data.portfolio_urls)
+      ? data.portfolio_urls
+      : undefined;
 
   const res = await db.query(
     `UPDATE contractors
@@ -159,6 +165,11 @@ exports.update = async (id, data) => {
          service_type = COALESCE($17, service_type),
          quick_services = COALESCE($18, quick_services),
          tier = COALESCE($19, tier),
+         photo_url = COALESCE($20, photo_url),
+         image_url = COALESCE($20, image_url),
+         portfolio_photos = COALESCE($21, portfolio_photos),
+         portfolio_urls = COALESCE($21, portfolio_urls),
+         id_proof_url = COALESCE($22, id_proof_url),
          updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -182,6 +193,9 @@ exports.update = async (id, data) => {
       data.service_type,
       data.quick_services ? JSON.stringify(data.quick_services) : undefined,
       data.tier,
+      photoUrl,
+      portfolio,
+      data.id_proof_url,
     ]
   );
   return res.rows[0];
@@ -214,7 +228,7 @@ exports.search = async ({
   const lngValue = Number(lng);
   const hasCoordinates = Number.isFinite(latValue) && Number.isFinite(lngValue) &&
     latValue >= -90 && latValue <= 90 && lngValue >= -180 && lngValue <= 180;
-  const maxRadiusKm = Math.max(2, Math.min(parseFloat(radius_km) || 5, 25));
+  const maxRadiusKm = Math.max(1, Math.min(parseFloat(radius_km) || 10, 100));
   const minRadiusKmSafe = Math.max(0, Math.min(parseFloat(min_radius_km) || 0, maxRadiusKm));
   const maxRadiusMeters = maxRadiusKm * 1000;
   const minRadiusMeters = minRadiusKmSafe * 1000;

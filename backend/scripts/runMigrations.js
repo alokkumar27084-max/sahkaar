@@ -1,12 +1,12 @@
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { Pool } = require('pg');
 
-// Create a new pool for migrations (fresh connection)
+const isNeon = (process.env.DATABASE_URL || '').includes('neon.tech') || (process.env.DATABASE_URL || '').includes('sslmode=require');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false },
+  ssl: isNeon ? { rejectUnauthorized: false } : (process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false }),
   connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS || 30000),
   keepAlive: true,
 });

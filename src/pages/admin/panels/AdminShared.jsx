@@ -206,6 +206,252 @@ export function DetailModal({ data, onClose }) {
   );
 }
 
+/* ──────────── Pagination Bar ──────────── */
+export function Pagination({ page, totalPages, totalItems, limit, onPageChange }) {
+  if (!totalPages || totalPages <= 1) return null;
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, totalItems || page * limit);
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border">
+      <p className="text-xs text-muted font-medium">
+        Showing <span className="font-bold text-heading">{start}</span> - <span className="font-bold text-heading">{end}</span> {totalItems ? `of ${totalItems}` : ""}
+      </p>
+      <div className="flex items-center gap-2">
+        <BtnOutline
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
+          Previous
+        </BtnOutline>
+        <span className="text-xs font-bold text-heading px-2">
+          Page {page} of {totalPages}
+        </span>
+        <BtnOutline
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
+        >
+          Next
+        </BtnOutline>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────── Edit Contractor Modal ──────────── */
+export function EditContractorModal({ contractor, onClose, onSave, busy }) {
+  const [form, setForm] = React.useState({
+    business_name: contractor?.business_name || contractor?.user_name || "",
+    name: contractor?.user_name || contractor?.name || "",
+    phone: contractor?.phone || "",
+    email: contractor?.email || "",
+    category: contractor?.category || "",
+    daily_rate: contractor?.daily_rate || "",
+    experience_years: contractor?.experience_years || 0,
+    team_size: contractor?.team_size || 1,
+    location_text: contractor?.location_text || "",
+    description: contractor?.description || "",
+    tier: contractor?.tier || "standard",
+    is_verified: contractor?.is_verified ?? false,
+    is_featured: contractor?.is_featured ?? false,
+    is_available: contractor?.is_available ?? true,
+  });
+
+  if (!contractor) return null;
+
+  const handleFieldChange = (field, val) => setForm(f => ({ ...f, [field]: val }));
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    await onSave(contractor.id, form);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[1400] bg-black/60 backdrop-blur-sm p-4 overflow-y-auto flex items-center justify-center" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-xl w-full bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden my-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-border bg-bg-elevated">
+          <h3 className="text-base font-bold text-heading">Edit Contractor Profile #{contractor.id}</h3>
+          <button onClick={onClose} className="text-muted hover:text-heading font-bold text-sm">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Business Name</label>
+              <AdminInput value={form.business_name} onChange={e => handleFieldChange("business_name", e.target.value)} required />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Owner / User Name</label>
+              <AdminInput value={form.name} onChange={e => handleFieldChange("name", e.target.value)} required />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Phone</label>
+              <AdminInput value={form.phone} onChange={e => handleFieldChange("phone", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Email</label>
+              <AdminInput value={form.email} onChange={e => handleFieldChange("email", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Category</label>
+              <AdminInput value={form.category} onChange={e => handleFieldChange("category", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Daily Rate (₹)</label>
+              <AdminInput type="number" value={form.daily_rate} onChange={e => handleFieldChange("daily_rate", e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Experience (Yrs)</label>
+              <AdminInput type="number" value={form.experience_years} onChange={e => handleFieldChange("experience_years", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Team Size</label>
+              <AdminInput type="number" value={form.team_size} onChange={e => handleFieldChange("team_size", e.target.value)} />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Tier</label>
+              <AdminSelect value={form.tier} onChange={e => handleFieldChange("tier", e.target.value)}>
+                <option value="standard">Standard</option>
+                <option value="silver">Silver</option>
+                <option value="gold">Gold</option>
+                <option value="platinum">Platinum</option>
+              </AdminSelect>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Location</label>
+            <AdminInput value={form.location_text} onChange={e => handleFieldChange("location_text", e.target.value)} />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Bio / Description</label>
+            <textarea
+              className="w-full px-4 py-2.5 rounded-lg bg-surface border border-border text-body placeholder-muted text-sm focus:border-primary transition outline-none h-24 resize-none"
+              value={form.description}
+              onChange={e => handleFieldChange("description", e.target.value)}
+            />
+          </div>
+
+          {/* Toggles */}
+          <div className="grid grid-cols-3 gap-3 pt-2">
+            <label className="flex items-center gap-2 p-3 bg-bg-elevated rounded-xl border border-border cursor-pointer">
+              <input type="checkbox" checked={form.is_verified} onChange={e => handleFieldChange("is_verified", e.target.checked)} className="rounded text-primary focus:ring-0" />
+              <span className="text-xs font-bold text-heading">Verified</span>
+            </label>
+            <label className="flex items-center gap-2 p-3 bg-bg-elevated rounded-xl border border-border cursor-pointer">
+              <input type="checkbox" checked={form.is_featured} onChange={e => handleFieldChange("is_featured", e.target.checked)} className="rounded text-primary focus:ring-0" />
+              <span className="text-xs font-bold text-heading">Featured</span>
+            </label>
+            <label className="flex items-center gap-2 p-3 bg-bg-elevated rounded-xl border border-border cursor-pointer">
+              <input type="checkbox" checked={form.is_available} onChange={e => handleFieldChange("is_available", e.target.checked)} className="rounded text-primary focus:ring-0" />
+              <span className="text-xs font-bold text-heading">Available</span>
+            </label>
+          </div>
+
+          <div className="pt-4 border-t border-border flex justify-end gap-2">
+            <BtnOutline type="button" onClick={onClose}>Cancel</BtnOutline>
+            <BtnPrimary type="submit" disabled={busy}>Save Changes</BtnPrimary>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+/* ──────────── Edit User Modal ──────────── */
+export function EditUserModal({ user, onClose, onSave, busy }) {
+  const [form, setForm] = React.useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    email: user?.email || "",
+    role: user?.role || "customer",
+    password: "",
+  });
+
+  if (!user) return null;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const payload = {
+      name: form.name,
+      phone: form.phone || undefined,
+      email: form.email || undefined,
+      role: form.role,
+    };
+    if (form.password) payload.password = form.password;
+    await onSave(user.id, payload);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[1400] bg-black/60 backdrop-blur-sm p-4 overflow-y-auto flex items-center justify-center" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md w-full bg-surface border border-border rounded-2xl shadow-2xl overflow-hidden my-8"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-border bg-bg-elevated">
+          <h3 className="text-base font-bold text-heading">Edit User #{user.id}</h3>
+          <button onClick={onClose} className="text-muted hover:text-heading font-bold text-sm">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Full Name</label>
+            <AdminInput value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Phone Number</label>
+            <AdminInput value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Email Address</label>
+            <AdminInput value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">System Role</label>
+            <AdminSelect value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
+              <option value="customer">Customer</option>
+              <option value="contractor">Contractor</option>
+              <option value="admin">System Admin</option>
+            </AdminSelect>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-muted uppercase tracking-wider mb-1 block">Reset Password (leave blank to keep current)</label>
+            <AdminInput type="password" placeholder="New password (min 8 chars)" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+          </div>
+
+          <div className="pt-4 border-t border-border flex justify-end gap-2">
+            <BtnOutline type="button" onClick={onClose}>Cancel</BtnOutline>
+            <BtnPrimary type="submit" disabled={busy}>Save User Account</BtnPrimary>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
 /* ──────────── CSV utilities ──────────── */
 function toCsv(rows) {
   if (!rows?.length) return "";
@@ -222,3 +468,4 @@ export function downloadCsv(filename, rows) {
   Object.assign(document.createElement("a"), { href: url, download: filename }).click();
   URL.revokeObjectURL(url);
 }
+

@@ -710,18 +710,39 @@ exports.createContractor = async (req, res, next) => {
 };
 
 exports.updateContractor = async (req, res, next) => {
+  const client = await db.pool.connect();
   try {
     const id = parseIdParam(req.params.id);
     if (!id) return res.status(400).json({ ok: false, message: 'invalid id' });
 
     const payload = sanitizeObject(req.body || {});
+    await client.query('BEGIN');
+
+    const contRes = await client.query('SELECT user_id FROM contractors WHERE id = $1', [id]);
+    if (!contRes.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ ok: false, message: 'Contractor not found' });
+    }
+    const userId = contRes.rows[0].user_id;
+
+    if (payload.name || payload.phone || payload.email) {
+      await client.query(
+        `UPDATE users
+         SET name = COALESCE($2, name),
+             phone = COALESCE($3, phone),
+             email = COALESCE($4, email)
+         WHERE id = $1`,
+        [userId, payload.name || null, payload.phone || null, payload.email || null]
+      );
+    }
+
     const categories = Array.isArray(payload.categories)
       ? payload.categories
       : payload.category
         ? [payload.category]
         : undefined;
 
-    const result = await db.query(
+    const result = await client.query(
       `UPDATE contractors
        SET business_name = COALESCE($2, business_name),
            category = COALESCE($3, category),
@@ -765,10 +786,13 @@ exports.updateContractor = async (req, res, next) => {
       ]
     );
 
-    if (!result.rows[0]) return res.status(404).json({ ok: false, message: 'Contractor not found' });
+    await client.query('COMMIT');
     return res.json({ ok: true, contractor: result.rows[0] });
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     return next(err);
+  } finally {
+    client.release();
   }
 };
 

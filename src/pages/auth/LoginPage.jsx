@@ -17,6 +17,7 @@ import {
   sendSignInLinkToEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
+  isFirebaseConfigured,
 } from '../../config/firebase';
 
 export default function LoginPage() {
@@ -54,6 +55,7 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("admin") === "1") { setMode("email"); setEmail(""); setPassword(""); }
+    else if (!isFirebaseConfigured) { setMode("email"); }
   }, []);
 
   useEffect(() => {
@@ -85,7 +87,7 @@ export default function LoginPage() {
       } finally { setLoading(false); }
     }
 
-    if (isSignInWithEmailLink(firebaseAuth, window.location.href)) {
+    if (firebaseAuth && isSignInWithEmailLink(firebaseAuth, window.location.href)) {
       let savedEmail = window.localStorage.getItem('emailForSignIn');
       if (!savedEmail) {
         savedEmail = window.prompt('Please provide your email for confirmation');
@@ -98,6 +100,7 @@ export default function LoginPage() {
 
   // Initialize invisible reCAPTCHA for Firebase Phone Auth
   const setupRecaptcha = useCallback(() => {
+    if (!firebaseAuth) throw new Error("Firebase phone auth is not configured. Use email/password login or check Firebase env keys.");
     if (recaptchaVerifierRef.current) return;
     recaptchaVerifierRef.current = new RecaptchaVerifier(firebaseAuth, 'recaptcha-container', {
       size: 'invisible',
@@ -124,6 +127,11 @@ export default function LoginPage() {
     if (!isValidPhone(cleanPhone)) { setErrors({ phone: t("err.invalid_phone") || "Invalid phone number" }); return; }
     setLoading(true); setErrors({});
     try {
+      if (!isFirebaseConfigured || !firebaseAuth) {
+        toast.error("Phone OTP is not configured. Please use email/password login.");
+        setMode("email");
+        return;
+      }
       setupRecaptcha();
       const phoneNumber = `+91${cleanPhone}`;
       const result = await signInWithPhoneNumber(firebaseAuth, phoneNumber, recaptchaVerifierRef.current);
@@ -184,6 +192,11 @@ export default function LoginPage() {
     if (!isValidEmail(cleanEmail)) { setErrors({ emailOtp: t("err.invalid_email") || "Invalid email" }); return; }
     setLoading(true); setErrors({});
     try {
+      if (!isFirebaseConfigured || !firebaseAuth) {
+        toast.error("Email sign-in links are not configured. Please use email/password login.");
+        setMode("email");
+        return;
+      }
       const actionCodeSettings = {
         url: window.location.origin + '/login',
         handleCodeInApp: true,
