@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
@@ -59,21 +59,27 @@ export default function GovHeader() {
           <div className="flex items-center gap-1 bg-[#0B3C5D] rounded px-1.5 py-0.5 border border-slate-700">
             <button
               onClick={() => handleFontResize(-1)}
-              className={px-1 text-[10px] font-bold }
+              className={`px-1 text-[10px] font-bold ${
+                fontSizeLevel === -1 ? "text-amber-300 font-extrabold" : "text-slate-300 hover:text-white"
+              }`}
               title="Decrease Font Size"
             >
               A-
             </button>
             <button
               onClick={() => handleFontResize(0)}
-              className={px-1 text-[10px] font-bold }
+              className={`px-1 text-[10px] font-bold ${
+                fontSizeLevel === 0 ? "text-amber-300 font-extrabold" : "text-slate-300 hover:text-white"
+              }`}
               title="Normal Font Size"
             >
               A
             </button>
             <button
               onClick={() => handleFontResize(1)}
-              className={px-1 text-[10px] font-bold }
+              className={`px-1 text-[10px] font-bold ${
+                fontSizeLevel === 1 ? "text-amber-300 font-extrabold" : "text-slate-300 hover:text-white"
+              }`}
               title="Increase Font Size"
             >
               A+
