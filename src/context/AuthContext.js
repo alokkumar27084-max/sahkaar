@@ -45,10 +45,23 @@ export function AuthProvider({ children }) {
   const isContractor = user?.role === "contractor";
   const isAdmin = user?.role === "admin";
   const isCustomer = user?.role === "customer";
+  const isSocietyAdmin = user?.role === "society_admin";
+  const isFederationAdmin = user?.role === "federation_admin";
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, refreshUser, isContractor, isAdmin, isCustomer }}
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        refreshUser,
+        isContractor,
+        isAdmin,
+        isCustomer,
+        isSocietyAdmin,
+        isFederationAdmin,
+      }}
     >
       {children}
     </AuthContext.Provider>

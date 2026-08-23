@@ -135,7 +135,11 @@ const bookingController = {
             locationLat,
             locationLng,
             scheduledFor,
+            is_emergency,
+            isEmergency,
         } = req.body;
+
+        const emergencyFlag = Boolean(is_emergency || isEmergency);
 
         const client = await pool.pool.connect();
         try {
@@ -171,9 +175,10 @@ const bookingController = {
         INSERT INTO bookings (
           customer_id, contractor_id, quote_id, service_category, service_tier, payment_plan,
           amount, estimated_project_value, escrow_amount, milestone_details, scheduled_for,
-          address_label, location_address, location_lat, location_lng, notes
+          address_label, location_address, location_lat, location_lng, notes,
+          is_emergency, priority_level
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15, $16)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING *;
       `;
             const bookingResult = await client.query(insertBookingQuery, [
@@ -192,7 +197,9 @@ const bookingController = {
                 locationAddress,
                 locationLat,
                 locationLng,
-                notes || ""
+                notes || "",
+                emergencyFlag,
+                emergencyFlag ? 'emergency' : 'standard'
             ]);
 
             const booking = bookingResult.rows[0];

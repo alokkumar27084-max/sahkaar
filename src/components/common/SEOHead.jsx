@@ -1,10 +1,10 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 
-const SITE_NAME = "Thekedaar";
-const SITE_URL = "https://thekedaar.com";
+const SITE_NAME = "SahKaari";
+const SITE_URL = "https://sahkaari.in";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.jpg`;
-const DEFAULT_DESCRIPTION = "Thekedaar connects you with India's premium verified contractors — from civil construction to electrical, plumbing, and full renovation projects. Secure escrow payments. Verified professionals.";
+const DEFAULT_DESCRIPTION = "SahKaari connects households and institutions with verified skilled workers from registered Labour Cooperative Federations and Societies. 100% verified, welfare protected, transparent escrow.";
 
 /**
  * SEOHead — Drop this into any page for full SEO coverage.

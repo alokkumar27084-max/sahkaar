@@ -21,5 +21,6 @@ router.use('/projects', require('./projects'));
 router.use('/quick-bookings', require('./quickBookings'));
 router.use('/labour', require('./labour'));
 router.use('/subscriptions', require('./subscriptions'));
+router.use('/cooperatives', require('./cooperatives'));
 
 module.exports = router;

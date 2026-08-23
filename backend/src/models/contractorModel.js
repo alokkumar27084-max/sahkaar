@@ -17,9 +17,15 @@ function contractorSelect() {
            COALESCE(c.business_name, u.name) AS name,
            COALESCE(c.category, c.categories[1], NULL) AS category,
            COALESCE(c.review_count, c.reviews_count, 0) AS review_count,
-           COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos
+           COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos,
+           s.name AS society_name,
+           s.registration_no AS society_registration_no,
+           s.district AS society_district,
+           f.name AS federation_name
     FROM contractors c
     JOIN users u ON u.id = c.user_id
+    LEFT JOIN cooperative_societies s ON s.id = c.society_id
+    LEFT JOIN federations f ON f.id = s.federation_id
   `;
 }
 
@@ -317,6 +323,10 @@ exports.search = async ({
       COALESCE(c.category, c.categories[1], NULL) AS category,
       COALESCE(c.review_count, c.reviews_count, 0) AS review_count,
       COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos,
+      soc.name AS society_name,
+      soc.registration_no AS society_registration_no,
+      soc.district AS society_district,
+      fed.name AS federation_name,
       EXISTS (
         SELECT 1 FROM subscriptions s
         WHERE s.contractor_id = c.id
@@ -327,6 +337,8 @@ exports.search = async ({
       ${distanceSql}
     FROM contractors c
     JOIN users u ON u.id = c.user_id
+    LEFT JOIN cooperative_societies soc ON soc.id = c.society_id
+    LEFT JOIN federations fed ON fed.id = soc.federation_id
     WHERE ${where.join(' AND ')}
     ORDER BY ${orderBy}
     LIMIT $${limitIdx} OFFSET $${offsetIdx}

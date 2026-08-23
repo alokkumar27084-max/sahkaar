@@ -13,13 +13,18 @@ export default function Footer() {
           {/* Column 1: Brand Info */}
           <div className="flex flex-col gap-4">
             <Link to="/" className="flex items-center gap-2">
-              <ThekedaarLogo className="h-8 w-8" />
-              <span className="font-bold text-base tracking-wider text-[var(--color-heading)] uppercase font-display">
-                THEKEDAAR
-              </span>
+              <ThekedaarLogo className="h-9 w-9" />
+              <div className="flex flex-col">
+                <span className="font-extrabold text-base tracking-tight text-[var(--color-heading)] leading-none font-display">
+                  Sah<span className="text-primary">Kaari</span>
+                </span>
+                <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase">
+                  सहकारी श्रम मंच
+                </span>
+              </div>
             </Link>
             <p className="text-sm text-[var(--color-muted)] leading-relaxed max-w-xs">
-              India's trusted marketplace for verified contractors and home services. Providing quality and transparency.
+              Bharat's cooperative-owned digital marketplace connecting verified workers from Labour Cooperative Federations and Societies with households and enterprises.
             </p>
             <div className="flex gap-3 mt-2">
               <a
@@ -52,78 +57,78 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 2: Company */}
+          {/* Column 2: Cooperative Governance */}
           <div>
             <h3 className="text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider mb-4">
-              Company
+              Cooperative System
             </h3>
             <ul className="flex flex-col gap-2.5">
               <li>
-                <a href="#about" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  About Us
+                <Link to="/federation-dashboard" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  State Federations
+                </Link>
+              </li>
+              <li>
+                <Link to="/society-dashboard" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  Primary Societies Roster
+                </Link>
+              </li>
+              <li>
+                <a href="#welfare" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  Welfare Corpus Fund
                 </a>
               </li>
               <li>
-                <a href="#careers" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="#blog" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#press" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Press
+                <a href="#insurance" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  Pradhan Mantri Suraksha Bima
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Column 3: For Customers */}
+          {/* Column 3: For Households & Institutions */}
           <div>
             <h3 className="text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider mb-4">
-              For Customers
+              For Households & Institutions
             </h3>
             <ul className="flex flex-col gap-2.5">
               <li>
-                <a href="#how-it-works" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  How it works
-                </a>
-              </li>
-              <li>
-                <Link to="/select-service" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Service Categories
+                <Link to="/search" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  Book Verified Worker
                 </Link>
               </li>
               <li>
-                <Link to="/safety" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Trust & Safety
+                <Link to="/categories" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  Cooperative Trades
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy-policy" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  Escrow Guarantee
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: For Partners */}
+          {/* Column 4: For Workers */}
           <div>
             <h3 className="text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider mb-4">
-              For Partners
+              For Cooperative Workers
             </h3>
             <ul className="flex flex-col gap-2.5">
               <li>
                 <Link to="/register/contractor" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Register as Partner
+                  Register with Society
                 </Link>
               </li>
               <li>
-                <a href="#partner-resources" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Partner Resources
+                <a href="#training" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  NCCT Skill Certification
                 </a>
               </li>
               <li>
-                <a href="#success-stories" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Success Stories
+                <a href="#welfare-claims" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
+                  Social Security Benefits
                 </a>
               </li>
             </ul>
@@ -135,8 +140,8 @@ export default function Footer() {
         <div className="border-t border-[var(--color-border)] pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Left Side: Copyright */}
           <div className="text-xs text-[var(--color-muted)] flex items-center gap-1">
-            <span>© {new Date().getFullYear()} Thekedaar.</span>
-            <span>Made with pride in India.</span>
+            <span>© {new Date().getFullYear()} SahKaari Cooperative Marketplace.</span>
+            <span>Made with pride in India for Bharat.</span>
           </div>
 
           {/* Right Side: Legal Links */}

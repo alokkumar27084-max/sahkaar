@@ -45,6 +45,8 @@ const ServiceSelectPage = lazy(() => import("./pages/customer/ServiceSelectPage"
 const ProjectDashboard = lazy(() => import("./pages/project/ProjectDashboard"));
 const ProjectListPage = lazy(() => import("./pages/project/ProjectListPage"));
 const AllCategoriesPage = lazy(() => import("./pages/customer/AllCategoriesPage"));
+const FederationAdminDashboard = lazy(() => import("./pages/admin/FederationAdminDashboard"));
+const SocietyAdminDashboard = lazy(() => import("./pages/admin/SocietyAdminDashboard"));
 
 function PageFallback() {
   return (
@@ -287,6 +289,18 @@ function AnimatedRoutes() {
             <ProtectedRoute requiredRole="admin">
               <PageWrapper><AdminDashboardPage /></PageWrapper>
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/federation-dashboard"
+          element={
+            <PageWrapper><FederationAdminDashboard /></PageWrapper>
+          }
+        />
+        <Route
+          path="/society-dashboard"
+          element={
+            <PageWrapper><SocietyAdminDashboard /></PageWrapper>
           }
         />
 

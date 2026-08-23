@@ -116,7 +116,7 @@ export default function RegisterPage() {
             Create Account
           </h1>
           <p className="text-sm text-[var(--color-muted)] mt-1">
-            Join Thekedaar today to hire verified contractors
+            Join SahKaari today to book verified cooperative workers
           </p>
         </div>
 

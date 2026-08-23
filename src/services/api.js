@@ -203,3 +203,15 @@ export const subscriptionAPI = {
   fileDispute: (data) => api.post("/subscriptions/disputes", data),
   getMyDisputes: () => api.get("/subscriptions/disputes/me"),
 };
+
+export const cooperativeAPI = {
+  getFederations: () => api.get("/cooperatives/federations"),
+  getSocieties: (federation_id) => api.get("/cooperatives/societies", { params: { federation_id } }),
+  getSocietyById: (id) => api.get(`/cooperatives/society/${id}`),
+  getWorkerWelfare: (workerId) => api.get(`/cooperatives/worker/${workerId}/welfare`),
+  getDemandForecast: (params) => api.get("/cooperatives/forecast", { params }),
+  verifyWorker: (data) => api.post("/cooperatives/verify-worker", data),
+  getFederationStats: () => api.get("/cooperatives/stats/federation"),
+  getSocietyStats: (societyId) => api.get(`/cooperatives/stats/society${societyId ? `/${societyId}` : ""}`),
+};
+

@@ -114,41 +114,60 @@ export default function Navbar() {
           {/* Logo — Left */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <ThekedaarLogo className="h-8 w-8 transition-transform duration-300 group-hover:scale-105" />
-              <span className="font-bold text-sm md:text-base tracking-wider text-[var(--color-heading)] uppercase font-display leading-none">
-                THEKEDAAR
-              </span>
+              <ThekedaarLogo className="h-9 w-9 transition-transform duration-300 group-hover:scale-105" />
+              <div className="flex flex-col">
+                <span className="font-extrabold text-base tracking-tight text-[var(--color-heading)] leading-none font-display">
+                  Sah<span className="text-primary">Kaari</span>
+                </span>
+                <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase">
+                  {lang === "hi" ? "सहकारी श्रम मंच" : "Co-op Marketplace"}
+                </span>
+              </div>
             </Link>
           </div>
 
           {/* Links — Center (Hidden on Mobile) */}
-          <div className="hidden md:flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] p-1 rounded-xl">
+          <div className="hidden lg:flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] p-1 rounded-xl">
             <Link
               to="/"
               className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
                 location.pathname === "/"
-                  ? "text-[var(--color-primary)] bg-[var(--color-surface)] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[var(--color-border)]"
+                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
                   : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
               }`}
             >
-              Home
+              {lang === "hi" ? "होम" : "Home"}
             </Link>
             <Link
-              to="/select-service"
+              to="/search"
               className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
-                location.pathname === "/select-service"
-                  ? "text-[var(--color-primary)] bg-[var(--color-surface)] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[var(--color-border)]"
+                location.pathname === "/search"
+                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
                   : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
               }`}
             >
-              Services
+              {lang === "hi" ? "कारीगर खोजें" : "Find Co-op Workers"}
             </Link>
-            <a
-              href="/#about"
-              className="text-xs font-bold tracking-wide text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50 transition-all px-3 py-1.5 rounded-lg"
+            <Link
+              to="/federation-dashboard"
+              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
+                location.pathname === "/federation-dashboard"
+                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
+                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
+              }`}
             >
-              About
-            </a>
+              {lang === "hi" ? "महासंघ पोर्टल" : "Federation Admin"}
+            </Link>
+            <Link
+              to="/society-dashboard"
+              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
+                location.pathname === "/society-dashboard"
+                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
+                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
+              }`}
+            >
+              {lang === "hi" ? "समिति पोर्टल" : "Society Admin"}
+            </Link>
           </div>
 
           {/* Actions — Right */}
@@ -227,6 +246,22 @@ export default function Navbar() {
                           <span>Dashboard</span>
                         </Link>
                         <Link
+                          to="/federation-dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors font-semibold text-primary"
+                        >
+                          <FiLayers size={14} />
+                          <span>Federation Admin</span>
+                        </Link>
+                        <Link
+                          to="/society-dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors font-semibold text-amber-700"
+                        >
+                          <FiUsers size={14} />
+                          <span>Society Admin</span>
+                        </Link>
+                        <Link
                           to="/profile"
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
@@ -298,8 +333,8 @@ export default function Navbar() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <ThekedaarLogo className="h-8 w-8" />
-                  <span className="font-bold text-sm tracking-wider text-[var(--color-heading)] uppercase font-display">
-                    THEKEDAAR
+                  <span className="font-bold text-base tracking-tight text-[var(--color-heading)] font-display">
+                    Sah<span className="text-primary">Kaari</span>
                   </span>
                 </div>
                 <button
@@ -313,7 +348,7 @@ export default function Navbar() {
               {/* User Info if logged in */}
               {user && (
                 <div className="flex items-center gap-3 p-3 bg-[var(--color-bg-elevated)] rounded-xl">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-teal-100 text-primary font-bold flex items-center justify-center shrink-0">
                     {user?.name?.[0]?.toUpperCase() || "U"}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -329,7 +364,7 @@ export default function Navbar() {
 
               <div className="flex flex-col gap-1">
                 <p className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-2 px-3">
-                  Discover
+                  Cooperative Marketplace
                 </p>
                 <Link
                   to="/"
@@ -337,24 +372,32 @@ export default function Navbar() {
                   className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
                 >
                   <FiHome size={16} />
-                  <span>Home</span>
+                  <span>{lang === "hi" ? "होम" : "Home"}</span>
                 </Link>
                 <Link
-                  to="/select-service"
+                  to="/search"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
                 >
                   <FiBriefcase size={16} />
-                  <span>Services</span>
+                  <span>{lang === "hi" ? "कारीगर खोजें" : "Find Co-op Workers"}</span>
                 </Link>
-                <a
-                  href="/#about"
+                <Link
+                  to="/federation-dashboard"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-bold text-primary hover:bg-teal-50 transition-colors"
                 >
-                  <FiStar size={16} />
-                  <span>About</span>
-                </a>
+                  <FiLayers size={16} />
+                  <span>{lang === "hi" ? "महासंघ पोर्टल" : "Federation Admin"}</span>
+                </Link>
+                <Link
+                  to="/society-dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-bold text-amber-700 hover:bg-amber-50 transition-colors"
+                >
+                  <FiUsers size={16} />
+                  <span>{lang === "hi" ? "समिति पोर्टल" : "Society Admin"}</span>
+                </Link>
               </div>
 
               {user && (

@@ -20,8 +20,13 @@ export default function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to={`/login?next=${next}`} replace />;
   }
 
-  // Wrong role
-  if (requiredRole && user.role !== requiredRole) return <Navigate to="/" replace />;
+  // Wrong role check (supports single role or array of allowed roles)
+  if (requiredRole) {
+    const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    if (!allowed.includes(user.role) && user.role !== "admin") {
+      return <Navigate to="/" replace />;
+    }
+  }
 
   return children;
 }

@@ -276,11 +276,11 @@ export default function LoginPage() {
             <ThekedaarLogo className="h-9 w-9" />
           </Link>
           <h1 className="text-2xl font-bold text-[var(--color-heading)] tracking-tight">
-            {step === 1 ? "Welcome to Thekedaar" : "Verify code"}
+            {step === 1 ? "Welcome to SahKaari" : "Verify code"}
           </h1>
           <p className="text-sm text-[var(--color-muted)] mt-1">
             {step === 1 
-              ? "Your trusted marketplace for local contractors"
+              ? "Bharat's Cooperative-Owned Worker Marketplace"
               : `We sent a 6-digit OTP code to +91 ${phone}`}
           </p>
         </div>
@@ -626,7 +626,7 @@ export default function LoginPage() {
 
         {/* Footer info link */}
         <p className="text-center text-sm text-[var(--color-muted)] mt-8 pt-4 border-t border-[var(--color-border)]">
-          New to Thekedaar?{" "}
+          New to SahKaari?{" "}
           <Link
             to={customerNext !== "/" ? `/register?next=${encodeURIComponent(customerNext)}` : "/register"}
             className="text-[var(--color-primary)] font-bold hover:underline"

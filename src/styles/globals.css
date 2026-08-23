@@ -2,24 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 /* ═══════════════════════════════════════════════════════════
-   THEKEDAAR — SOFT UI NEUMORPHIC DESIGN SYSTEM
-   Version: 6.0 — Premium Local Contractor Marketplace
-   Fonts: Outfit (Display) & Plus Jakarta Sans (Body)
+   SAHKAARI — COOPERATIVE WORKER MARKETPLACE DESIGN SYSTEM
+   Theme: Institutional Trust & Cooperative Solidarity
+   Colors: Deep Cooperative Teal & Saffron Gold Accent
    ═══════════════════════════════════════════════════════════ */
 
 /* ─── Design Tokens ─── */
 @layer base {
   :root {
-    /* Brand - Highly Premium */
-    --color-primary: #4F46E5;
-    --color-primary-hover: #4338CA;
-    --color-primary-muted: rgba(79, 70, 229, 0.08);
-    --color-accent: #0891B2;
-    --color-accent-hover: #0E7490;
-    --color-accent-muted: rgba(8, 145, 178, 0.08);
+    /* Brand - Deep Teal & Cooperative Trust */
+    --color-primary: #0F5C5C;
+    --color-primary-hover: #0A4242;
+    --color-primary-muted: rgba(15, 92, 92, 0.08);
+    --color-accent: #F5A623;
+    --color-accent-hover: #D98207;
+    --color-accent-muted: rgba(245, 166, 35, 0.1);
 
     /* Premium Soft UI Canvas — Soft Off-white for neomorphic contrast */
     --color-bg: #F1F5F9;

@@ -42,6 +42,7 @@ export default function BookingCheckoutPage() {
   });
   const [scheduledFor, setScheduledFor] = useState("");
   const [notes, setNotes] = useState("");
+  const [isEmergency, setIsEmergency] = useState(false);
   const [loading, setLoading] = useState(false);
   const [quote, setQuote] = useState(null);
   const [loadingQuote, setLoadingQuote] = useState(!!state?.quoteId);
@@ -196,6 +197,7 @@ export default function BookingCheckoutPage() {
         locationLat: selectedLocation.lat,
         locationLng: selectedLocation.lng,
         scheduledFor: scheduledFor || null,
+        is_emergency: isEmergency,
       });
       const orderData = res.data.data;
 
@@ -442,6 +444,32 @@ export default function BookingCheckoutPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Emergency / Urgent Dispatch Option */}
+              <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-amber-950">
+                      Need it urgently within 45 mins? (तत्काल सेवा)
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-200/70 px-1.5 py-0.5 rounded">
+                      Priority
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800/90 mt-0.5">
+                    Alerts nearby verified cooperative workers for rapid emergency dispatch.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={isEmergency}
+                    onChange={(e) => setIsEmergency(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                </label>
+              </div>
               
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">Job Details & Notes (Optional)</label>
@@ -455,15 +483,25 @@ export default function BookingCheckoutPage() {
             <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
               <div className="mb-4 flex items-center gap-2 text-[var(--color-heading)]">
                 <FiCreditCard className="text-[var(--color-primary)]" size={18} />
-                <h2 className="text-lg font-extrabold tracking-tight">Price details</h2>
+                <h2 className="text-lg font-extrabold tracking-tight">Cooperative price details</h2>
               </div>
 
               {/* Fee Breakdown */}
               <div className="mb-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-4 font-semibold text-xs text-[var(--color-muted)] space-y-3">
                 <div className="flex justify-between gap-4">
-                  <span>{serviceTier === "macro" ? "Total project value" : "Base service cost"}</span>
+                  <span>{serviceTier === "macro" ? "Total project value" : "Base artisan service value"}</span>
                   <span className="font-extrabold text-[var(--color-heading)]">{money(pricing?.estimatedProjectValue || projectValue)}</span>
                 </div>
+                <div className="flex justify-between gap-4 text-teal-800">
+                  <span>Cooperative Worker Welfare Fund</span>
+                  <span className="font-bold">₹25 (Included)</span>
+                </div>
+                {isEmergency && (
+                  <div className="flex justify-between gap-4 text-amber-800 font-bold">
+                    <span>Priority Emergency Dispatch</span>
+                    <span>Free Co-op Service</span>
+                  </div>
+                )}
                 {pricingLoading ? (
                   <p className="text-[10px] text-[var(--color-muted)] italic">Computing escrow breakdown...</p>
                 ) : pricing?.milestoneDetails?.length ? (

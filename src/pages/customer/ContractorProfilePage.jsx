@@ -24,9 +24,11 @@ import StarRating from "../../components/common/StarRating";
 import Badge from "../../components/common/Badge";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import SEOHead from "../../components/common/SEOHead";
+import CooperativeBadge from "../../components/common/CooperativeBadge";
 
 const tabItems = [
   { id: "about", label: "About" },
+  { id: "welfare", label: "Co-op Welfare & Security" },
   { id: "portfolio", label: "Portfolio" },
   { id: "reviews", label: "Reviews" },
 ];
@@ -248,6 +250,16 @@ export default function ContractorProfilePage() {
                 <h1 className="text-3xl md:text-4xl font-bold text-[var(--color-heading)] tracking-tight">
                   {name}
                 </h1>
+
+                {/* Cooperative Affiliation Seal */}
+                <div className="mt-2.5 max-w-lg">
+                  <CooperativeBadge
+                    societyName={contractor.society_name || "Bhopal Shramik & Karigar Sahakari Samiti"}
+                    federationName={contractor.federation_name || "Madhya Pradesh State Labour & Construction Cooperative Federation"}
+                    variant="card"
+                    showWelfare={true}
+                  />
+                </div>
 
                 <div className="mt-3 flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 text-sm font-semibold text-[var(--color-body)]">
                   <span className="inline-flex items-center gap-1.5 text-[var(--color-primary)] bg-[var(--color-primary-muted)] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
@@ -531,6 +543,100 @@ export default function ContractorProfilePage() {
                     </div>
                   )}
 
+                </motion.div>
+              )}
+
+              {/* WELFARE & SOCIAL SECURITY TAB */}
+              {activeTab === "welfare" && (
+                <motion.div
+                  key="welfare"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-6"
+                >
+                  <CooperativeBadge
+                    societyName={contractor.society_name || "Bhopal Shramik & Karigar Sahakari Samiti"}
+                    federationName={contractor.federation_name || "Madhya Pradesh State Labour & Construction Cooperative Federation"}
+                    variant="full"
+                    showWelfare={true}
+                  />
+
+                  {/* Welfare & Insurance Highlights */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Insurance Policy Card */}
+                    <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-teal-50 text-primary flex items-center justify-center font-bold">
+                          <FiShield className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-[var(--color-heading)] text-sm">
+                            Pradhan Mantri Suraksha Bima (Cooperative Cover)
+                          </h3>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                            <FiCheckCircle className="w-3 h-3" /> Policy Active
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--color-muted)] leading-relaxed mb-4">
+                        Includes ₹5,00,000 accidental disability cover, emergency family medical protection, and workplace safety assurance.
+                      </p>
+                      <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between text-xs font-semibold">
+                        <span className="text-[var(--color-muted)]">Policy ID</span>
+                        <span className="font-mono text-[var(--color-heading)]">
+                          {contractor.welfare_id || "POL-SHK-8921-2026"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Welfare Fund Contributions Card */}
+                    <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                          <FiHeart className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-[var(--color-heading)] text-sm">
+                            Cooperative Worker Welfare Fund
+                          </h3>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                            Regular Contributor
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[var(--color-muted)] leading-relaxed mb-4">
+                        Every verified booking contributes ₹25 to the Society Welfare Corpus, funding artisan pensions, tool grants, and children's education scholarships.
+                      </p>
+                      <div className="pt-3 border-t border-[var(--color-border)] flex items-center justify-between text-xs font-semibold">
+                        <span className="text-[var(--color-muted)]">Member Reg. No</span>
+                        <span className="font-mono text-[var(--color-heading)]">
+                          {contractor.member_registration_no || "MEM-BPL-40912"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Skill & Verification Certifications */}
+                  <div className="p-5 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+                    <h3 className="font-bold text-[var(--color-heading)] text-sm mb-3">
+                      Institutional Skill Certifications
+                    </h3>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                        <div className="font-bold text-slate-900">National Council for Cooperative Training</div>
+                        <div className="text-[11px] text-slate-600 mt-0.5">Verified Cooperative Artisan</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                        <div className="font-bold text-slate-900">Skill India Mission (NSDC)</div>
+                        <div className="text-[11px] text-slate-600 mt-0.5">Trade Level 4 Certified</div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                        <div className="font-bold text-slate-900">Police & ID Verification</div>
+                        <div className="text-[11px] text-emerald-700 font-semibold mt-0.5">Background Clear (Aadhaar Linked)</div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 

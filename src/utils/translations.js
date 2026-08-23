@@ -13,9 +13,9 @@ const translations = {
   // ── English ──────────────────────────────
   en: {
     // App-wide
-    "app.name":        "Thekedaar",
-    "app.tagline":     "Har Kaam Ka Ek Thekedaar",
-    "app.subtitle":    "India's Universal Contractor Discovery Platform",
+    "app.name":        "SahKaari",
+    "app.tagline":     "Cooperative-Owned Worker Marketplace",
+    "app.subtitle":    "India's Digital Platform for Verified Labour Cooperative Societies & Skilled Tradesmen",
     "app.loading":     "Loading...",
     "app.error":       "Something went wrong. Please try again.",
     "app.retry":       "Retry",
@@ -31,22 +31,24 @@ const translations = {
 
     // Navigation
     "nav.home":        "Home",
-    "nav.search":      "Find Contractor",
+    "nav.search":      "Find Co-op Worker",
     "nav.profile":     "My Profile",
     "nav.dashboard":   "Dashboard",
     "nav.login":       "Login",
     "nav.logout":      "Logout",
-    "nav.register":    "Register as Contractor",
+    "nav.register":    "Register as Worker",
+    "nav.federation":  "Federation Admin",
+    "nav.society":     "Society Admin",
 
     // Home page
-    "home.hero_title":    "Find Any Contractor, Any Field",
-    "home.hero_sub":      "Verified • Rated • Direct Contact — Zero Commission",
-    "home.search_placeholder": "What work do you need done?",
+    "home.hero_title":    "Find Verified Cooperative Workers & Skilled Artisans",
+    "home.hero_sub":      "Backed by Labour Cooperative Federations & Societies • 100% Verified • Welfare Protected",
+    "home.search_placeholder": "What service do you need (Electrician, Plumber, Mason)?",
     "home.near_you":      "Near You",
-    "home.categories":    "Browse by Category",
-    "home.how_it_works":  "How It Works",
-    "home.why_us":        "Why Thekedaar?",
-    "home.featured":      "Featured Contractors",
+    "home.categories":    "Browse Cooperative Trades",
+    "home.how_it_works":  "How SahKaari Works",
+    "home.why_us":        "Why SahKaari Cooperative?",
+    "home.featured":      "Featured Cooperative Workers",
 
     // Categories
     "cat.construction":   "Construction & Civil Works",
@@ -245,9 +247,9 @@ const translations = {
   // ── Hindi ─────────────────────────────────
   hi: {
     // App-wide
-    "app.name":        "ठेकेदार",
-    "app.tagline":     "हर काम का एक ठेकेदार",
-    "app.subtitle":    "भारत का यूनिवर्सल कॉन्ट्रैक्टर खोज प्लेटफॉर्म",
+    "app.name":        "सहकारी",
+    "app.tagline":     "सहकारी स्वामित्व वाला डिजिटल श्रम बाज़ार",
+    "app.subtitle":    "प्रमाणित श्रम सहकारी समितियों और कुशल कारीगरों का राष्ट्रीय मंच",
     "app.loading":     "लोड हो रहा है...",
     "app.error":       "कुछ गलत हुआ। कृपया फिर कोशिश करें।",
     "app.retry":       "पुनः प्रयास करें",
@@ -263,22 +265,24 @@ const translations = {
 
     // Navigation
     "nav.home":        "होम",
-    "nav.search":      "ठेकेदार खोजें",
+    "nav.search":      "कारीगर खोजें",
     "nav.profile":     "मेरी प्रोफ़ाइल",
     "nav.dashboard":   "डैशबोर्ड",
     "nav.login":       "लॉगिन",
     "nav.logout":      "लॉगआउट",
-    "nav.register":    "ठेकेदार के रूप में रजिस्टर करें",
+    "nav.register":    "कारीगर के रूप में जुड़ें",
+    "nav.federation":  "महासंघ व्यवस्थापक",
+    "nav.society":     "समिति व्यवस्थापक",
 
     // Home page
-    "home.hero_title":    "किसी भी काम के लिए ठेकेदार खोजें",
-    "home.hero_sub":      "वेरिफाइड • रेटेड • सीधा संपर्क — शून्य कमीशन",
-    "home.search_placeholder": "आपको क्या काम करवाना है?",
-    "home.near_you":      "आपके पास",
-    "home.categories":    "श्रेणी के अनुसार खोजें",
-    "home.how_it_works":  "यह कैसे काम करता है",
-    "home.why_us":        "ठेकेदार क्यों?",
-    "home.featured":      "फीचर्ड ठेकेदार",
+    "home.hero_title":    "सत्यापित सहकारी कारीगर एवं कुशल कामगार खोजें",
+    "home.hero_sub":      "श्रम सहकारी समितियों द्वारा प्रमाणित • सामाजिक सुरक्षा व बीमा कवरेज • पारदर्शी एस्क्रो",
+    "home.search_placeholder": "आपको किस कार्य के लिए कारीगर चाहिए (इलेक्ट्रीशियन, प्लंबर, राजमिस्त्री)?",
+    "home.near_you":      "आपके निकटतम",
+    "home.categories":    "सहकारी कार्य श्रेणियाँ",
+    "home.how_it_works":  "सहकारी कैसे काम करता है",
+    "home.why_us":        "सहकारी बाज़ार ही क्यों?",
+    "home.featured":      "सत्यापित सहकारी कारीगर",
 
     // Categories
     "cat.construction":   "निर्माण और सिविल कार्य",

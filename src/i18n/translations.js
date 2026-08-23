@@ -10,27 +10,29 @@ export const translations = {
   en: {
     translation: {
       // App
-      appName: "Thekedaar",
-      tagline: "Har Kaam Ka Ek Thekedaar",
-      subTagline: "India's Universal Contractor Discovery Platform",
+      appName: "SahKaari",
+      tagline: "Cooperative-Owned Worker Marketplace",
+      subTagline: "India's Digital Platform for Verified Labour Cooperative Societies & Skilled Tradesmen",
 
       // Navigation
       nav: {
         home: "Home",
-        search: "Search",
+        search: "Find Co-op Worker",
         profile: "Profile",
         login: "Login",
-        register: "Register",
+        register: "Register as Worker",
         dashboard: "Dashboard",
+        federationDashboard: "Federation Admin",
+        societyDashboard: "Society Admin",
         logout: "Logout",
       },
 
       // Homepage
       home: {
-        heroTitle: "Find the Right",
-        heroTitleHighlight: "Thekedaar",
-        heroSub: "Compare verified contractors, labour groups & vendors near you — zero commission, direct contact.",
-        searchPlaceholder: "Search for contractor, service, or category...",
+        heroTitle: "Find Verified",
+        heroTitleHighlight: "Cooperative Workers",
+        heroSub: "Connecting verified tradesmen from Labour Cooperative Federations & Societies with households and institutions.",
+        searchPlaceholder: "Search for cooperative worker, trade, or service...",
         searchBtn: "Search",
         detectLocation: "Use My Location",
         popularCategories: "Popular Categories",
@@ -204,30 +206,32 @@ export const translations = {
   // ── HINDI ────────────────────────────────────────────────
   hi: {
     translation: {
-      appName: "ठेकेदार",
-      tagline: "हर काम का एक ठेकेदार",
-      subTagline: "भारत का यूनिवर्सल कॉन्ट्रैक्टर डिस्कवरी प्लेटफ़ॉर्म",
+      appName: "सहकारी",
+      tagline: "सहकारी स्वामित्व वाला डिजिटल श्रम बाज़ार",
+      subTagline: "प्रमाणित श्रम सहकारी समितियों और कुशल कारीगरों का राष्ट्रीय मंच",
 
       nav: {
         home: "होम",
-        search: "खोजें",
+        search: "कारीगर खोजें",
         profile: "प्रोफ़ाइल",
         login: "लॉगिन",
-        register: "रजिस्टर",
+        register: "कारीगर के रूप में जुड़ें",
         dashboard: "डैशबोर्ड",
+        federationDashboard: "महासंघ व्यवस्थापक",
+        societyDashboard: "समिति व्यवस्थापक",
         logout: "लॉगआउट",
       },
 
       home: {
-        heroTitle: "सही",
-        heroTitleHighlight: "ठेकेदार",
-        heroSub: "नज़दीकी वेरिफाइड ठेकेदार, मज़दूर ग्रुप और वेंडर को तुलना करके हायर करें — बिना कमीशन, सीधा संपर्क।",
-        searchPlaceholder: "ठेकेदार, सेवा या कैटेगरी खोजें...",
+        heroTitle: "सत्यापित",
+        heroTitleHighlight: "सहकारी कारीगर",
+        heroSub: "श्रम सहकारी समितियों एवं महासंघों द्वारा प्रमाणित कामगारों को घरों और संस्थानों से जोड़ने वाला डिजिटल मंच।",
+        searchPlaceholder: "सहकारी कारीगर, कौशल या सेवा खोजें...",
         searchBtn: "खोजें",
         detectLocation: "मेरी लोकेशन इस्तेमाल करें",
-        popularCategories: "पॉपुलर कैटेगरी",
-        whyUs: "ठेकेदार क्यों?",
-        featuredContractors: "नज़दीकी फीचर्ड ठेकेदार",
+        popularCategories: "सहकारी कार्य श्रेणियाँ",
+        whyUs: "सहकारी बाज़ार ही क्यों?",
+        featuredContractors: "नज़दीकी सत्यापित सहकारी कारीगर",
         viewAll: "सभी देखें",
       },
 

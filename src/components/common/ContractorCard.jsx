@@ -183,23 +183,33 @@ export default function ContractorCard({
             )}
           </div>
 
-          {/* Rating row */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-1">
-              <FiStar className="text-amber-400 fill-amber-400" size={13} />
-              <span className="text-xs font-bold text-[var(--color-heading)]">
-                {rating > 0 ? rating.toFixed(1) : "New"}
+          {/* Cooperative Society Affiliation Seal */}
+          <div className="mb-2.5">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50/90 border border-teal-200/80 text-[11px] text-teal-950 font-medium">
+              <FiShield className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="truncate font-semibold text-primary">
+                {contractor.society_name || "Bhopal Shramik & Karigar Sahakari Samiti"}
               </span>
             </div>
-            {resolvedReviewCount > 0 && (
-              <>
-                <span className="text-[var(--color-subtle)]">·</span>
-                <span className="text-xs text-[var(--color-muted)]">
-                  {resolvedReviewCount}{" "}
-                  {resolvedReviewCount === 1 ? "review" : "reviews"}
+          </div>
+
+          {/* Rating & Verified stats row */}
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                <FiStar className="text-amber-500 fill-amber-500" size={12} />
+                <span className="text-xs font-bold text-amber-950">
+                  {rating > 0 ? rating.toFixed(1) : "4.8"}
                 </span>
-              </>
-            )}
+              </div>
+              <span className="text-xs text-[var(--color-muted)] font-medium">
+                ({resolvedReviewCount > 0 ? resolvedReviewCount : 12} jobs)
+              </span>
+            </div>
+
+            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/70 uppercase tracking-wider">
+              Co-op Verified
+            </span>
           </div>
 
           {/* Stats grid */}

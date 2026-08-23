@@ -139,8 +139,8 @@ export default function HomePage() {
   return (
     <main className="bg-[var(--color-bg)]">
       <SEOHead
-        title="Thekedaar — India's Premier Informal Contractor Marketplace"
-        description="Find verified local builders, shuttering masons, wiring electricians, tractor logistics, and daily quick helpers near you."
+        title="SahKaari — Bharat's Cooperative Worker & Artisan Marketplace"
+        description="Connecting verified skilled workers from Labour Cooperative Federations and Societies with households and institutions. 100% verified, welfare protected, zero exploitation."
       />
 
       {/* ═══════ SECTION 1: HERO ═══════ */}
@@ -159,7 +159,7 @@ export default function HomePage() {
             <source src={activeBackdrop.src} type="video/mp4" />
           </video>
           {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-teal-950/85 via-black/60 to-slate-950/90" />
         </div>
 
         {/* Hero Content - No manual backdrop selector pills */}
@@ -169,22 +169,24 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            {/* Trust badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 mb-8">
-              <FiCheckCircle className="text-green-400" size={14} />
-              <span className="text-white/85 text-xs font-semibold uppercase tracking-wider">
-                India's Trust-Based Contractor Network
+            {/* Cooperative Trust Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-900/60 backdrop-blur-md border border-teal-500/30 mb-8 text-amber-300 shadow-sm">
+              <FiShield className="text-amber-400" size={15} />
+              <span className="text-white text-xs font-bold uppercase tracking-wider">
+                {lang === "hi" ? "श्रम सहकारी समितियों का राष्ट्रीय मंच" : "Labour Cooperative Society Verified Network"}
               </span>
             </div>
 
-            {/* Headline - taglined */}
+            {/* Headline */}
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.1] tracking-tight mb-6 font-display">
-              Har Kaam Ka Ek<br />
-              <span className="text-indigo-400">Thekedaar</span>
+              {lang === "hi" ? "सत्यापित सहकारी" : "Bharat's Cooperative"}<br />
+              <span className="text-amber-400">{lang === "hi" ? "श्रम बाज़ार" : "Worker Marketplace"}</span>
             </h1>
 
-            <p className="text-white/70 text-base md:text-lg max-w-xl mx-auto mb-10 leading-relaxed font-medium">
-              India's premier marketplace for informal contractors & daily-wage expert hires. Connect directly, zero commission.
+            <p className="text-white/85 text-base md:text-lg max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+              {lang === "hi"
+                ? "इलेक्ट्रीशियन, प्लंबर, राजमिस्त्री व कुशल कामगार — श्रम सहकारी समितियों द्वारा प्रमाणित, सामाजिक सुरक्षा व कल्याण कोष से सुरक्षित।"
+                : "Connecting households and institutions directly with verified electricians, plumbers, masons, painters & tradesmen from registered Labour Cooperatives."}
             </p>
           </motion.div>
 
@@ -197,22 +199,22 @@ export default function HomePage() {
             className="relative max-w-2xl mx-auto"
           >
             <div className="flex items-center bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 p-1">
-              <FiSearch className="ml-4 text-gray-400 shrink-0" size={20} />
+              <FiSearch className="ml-4 text-primary shrink-0" size={20} />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onFocus={() => setShowTrending(true)}
                 onBlur={() => setTimeout(() => setShowTrending(false), 200)}
-                placeholder="Search for builders, wiring, plumbers, material logistics..."
+                placeholder={lang === "hi" ? "इलेक्ट्रीशियन, प्लंबर, कारपेंटर या पेंटर खोजें..." : "Search for certified electricians, plumbers, masons, carpenters..."}
                 autoComplete="off"
                 className="flex-1 h-14 md:h-16 bg-transparent border-none outline-none px-3 text-gray-900 text-sm md:text-base placeholder:text-gray-400 font-semibold"
               />
               <button
                 type="submit"
-                className="h-12 md:h-14 px-6 md:px-8 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#4F46E5] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0"
+                className="h-12 md:h-14 px-6 md:px-8 rounded-xl bg-primary hover:bg-[#0A4242] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all shrink-0"
               >
-                Search
+                {lang === "hi" ? "खोजें" : "Search"}
               </button>
             </div>
 

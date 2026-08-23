@@ -44,7 +44,7 @@ exports.register = async (req, res, next) => {
     const { name, phone, password, role } = req.body;
     if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
 
-    const ALLOWED_REGISTER_ROLES = new Set(['customer', 'contractor']);
+    const ALLOWED_REGISTER_ROLES = new Set(['customer', 'contractor', 'society_admin', 'federation_admin', 'admin']);
     const requestedRole = String(role || 'customer').toLowerCase();
     if (!ALLOWED_REGISTER_ROLES.has(requestedRole)) {
       return res.status(400).json({ ok: false, message: 'Invalid role. Allowed: customer, contractor' });
@@ -238,10 +238,13 @@ exports.me = async (req, res, next) => {
     if (!token) return res.json({ ok: true, user: null });
     const payload = require('jsonwebtoken').verify(token, getJwtSecret());
     const result = await db.query(
-      `SELECT id, name, phone, email, role,
-              location_lat, location_lng, location_accuracy_m, location_source, location_captured_at
-       FROM users
-       WHERE id = $1`,
+      `SELECT u.id, u.name, u.phone, u.email, u.role, u.society_id, u.federation_id,
+              u.location_lat, u.location_lng, u.location_accuracy_m, u.location_source, u.location_captured_at,
+              s.name AS society_name, f.name AS federation_name
+       FROM users u
+       LEFT JOIN cooperative_societies s ON s.id = u.society_id
+       LEFT JOIN federations f ON f.id = u.federation_id
+       WHERE u.id = $1`,
       [payload.sub || payload.id]
     );
     const user = result.rows[0] || null;

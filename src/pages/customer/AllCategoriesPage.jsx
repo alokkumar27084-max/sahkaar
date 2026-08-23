@@ -69,8 +69,8 @@ export default function AllCategoriesPage() {
   return (
     <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-16">
       <SEOHead
-        title="All Service Categories — Thekedaar"
-        description="Browse all 40+ service categories on Thekedaar. Find verified contractors for construction, electrical, plumbing, events, IT, and more."
+        title="All Cooperative Trades & Categories — SahKaari"
+        description="Browse certified trades and services on SahKaari. Find verified workers from Labour Cooperative Federations and Societies."
       />
 
       <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8">

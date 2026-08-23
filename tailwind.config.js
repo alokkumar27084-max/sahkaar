@@ -5,17 +5,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#6366F1", light: "#818CF8", dark: "#4F46E5", 50: "#EEF2FF" },
-        accent: { DEFAULT: "#06B6D4", light: "#22D3EE", dark: "#0891B2", 50: "#ECFEFF" },
+        primary: { DEFAULT: "#0F5C5C", light: "#157A7A", dark: "#0A4242", 50: "#E8F4F4", 100: "#D1EAEA" },
+        accent: { DEFAULT: "#F5A623", light: "#FBBE5B", dark: "#D98207", 50: "#FEF8EC" },
         surface: { DEFAULT: "#FFFFFF", dark: "#0F172A" },
-        navy: { DEFAULT: "#0F172A", light: "#1E293B", dark: "#020617" },
+        navy: { DEFAULT: "#0A2828", light: "#133D3D", dark: "#051A1A" },
         success: { DEFAULT: "#10B981", light: "#34D399" },
         danger: { DEFAULT: "#EF4444", light: "#F87171" },
         warning: { DEFAULT: "#F59E0B", light: "#FBBF24" },
       },
       fontFamily: {
-        display: ['"Syne"', 'system-ui', 'sans-serif'],
-        body: ['"Inter"', 'system-ui', 'sans-serif'],
+        display: ['"Plus Jakarta Sans"', '"Noto Sans Devanagari"', '"Inter"', 'system-ui', 'sans-serif'],
+        body: ['"Inter"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
         script: ['"Caveat"', 'cursive'],
       },
