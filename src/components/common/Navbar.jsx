@@ -15,7 +15,9 @@ import {
   FiBriefcase,
   FiMessageCircle,
   FiStar,
-  FiGlobe
+  FiGlobe,
+  FiLayers,
+  FiUsers
 } from "react-icons/fi";
 import { ThekedaarLogo } from "./ThekedaarLogo";
 import toast from "react-hot-toast";

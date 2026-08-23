@@ -14,7 +14,8 @@ import {
   FiShare2,
   FiShield,
   FiUsers,
-  FiStar
+  FiStar,
+  FiHeart
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { contractorAPI, reviewAPI } from "../../services/api";
