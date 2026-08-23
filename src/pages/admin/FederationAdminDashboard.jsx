@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FiActivity,
@@ -137,7 +137,7 @@ export default function FederationAdminDashboard() {
         locality: forecastLocality,
         category: forecastCategory,
         workersNeeded: Number(deployCount),
-        notes: Apex Federation mobilization dispatch to 
+        notes: `Apex Federation mobilization dispatch to ${forecastLocality}`
       });
       if (res.data?.ok) {
         toast.success(res.data.message);
@@ -179,7 +179,7 @@ export default function FederationAdminDashboard() {
     }
   }
 
-  const formatRupees = (val) => ₹;
+  const formatRupees = (val) => "₹" + Number(val || 0).toLocaleString("en-IN");
 
   if (loading) {
     return (
@@ -312,12 +312,16 @@ export default function FederationAdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={px-4 py-2.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shrink-0 }
+                className={`px-4 py-2.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
+                  active
+                    ? "bg-[#0B3C5D] text-white shadow-sm"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className={px-1.5 py-0.2 rounded-full text-[10px] font-bold }>
+                  <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${active ? "bg-amber-400 text-slate-900" : "bg-rose-100 text-rose-700"}`}>
                     {tab.badge}
                   </span>
                 )}
@@ -416,7 +420,7 @@ export default function FederationAdminDashboard() {
                       <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
                         <div className="w-full flex items-end justify-center gap-1 h-full">
                           <div
-                            style={{ height: ${predH}% }}
+                            style={{ height: `${predH}%` }}
                             className="w-1/2 bg-[#0B3C5D] rounded-t hover:bg-[#0E4A73] transition-all relative"
                           >
                             <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
@@ -424,7 +428,7 @@ export default function FederationAdminDashboard() {
                             </span>
                           </div>
                           <div
-                            style={{ height: ${actualH}% }}
+                            style={{ height: `${actualH}%` }}
                             className="w-1/2 bg-[#138808] rounded-t hover:bg-[#0E6806] transition-all relative"
                           >
                             <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
@@ -575,7 +579,13 @@ export default function FederationAdminDashboard() {
                         <div className="flex items-center gap-2">
                           <span className="font-extrabold text-slate-900 text-sm">{c.worker_name}</span>
                           <span className="text-slate-500 font-medium">({c.trade})</span>
-                          <span className={	ext-[10px] font-extrabold px-2 py-0.5 rounded }>
+                          <span
+                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
+                              c.status === "APPROVED"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
                             {c.status}
                           </span>
                         </div>

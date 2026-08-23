@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
@@ -93,13 +93,21 @@ export default function Navbar() {
           <nav className="hidden lg:flex items-center gap-1">
             <Link
               to="/"
-              className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
+              className={`text-xs font-bold px-3.5 py-2 rounded-md transition-all ${
+                location.pathname === "/"
+                  ? "bg-[#0B3C5D] text-white"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
             >
               {lang === "hi" ? "मुख्य पृष्ठ" : "Home"}
             </Link>
             <Link
               to="/search"
-              className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
+              className={`text-xs font-bold px-3.5 py-2 rounded-md transition-all ${
+                location.pathname === "/search"
+                  ? "bg-[#0B3C5D] text-white"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
             >
               {lang === "hi" ? "कारीगर सेवा बुक करें" : "Find Certified Artisans"}
             </Link>
@@ -108,7 +116,11 @@ export default function Navbar() {
             {(isFederationAdmin || isAdmin) && (
               <Link
                 to="/federation/dashboard"
-                className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
+                className={`text-xs font-bold px-3.5 py-2 rounded-md transition-all ${
+                  location.pathname.startsWith("/federation")
+                    ? "bg-[#0B3C5D] text-white"
+                    : "text-[#0B3C5D] bg-[#EDF4F9] hover:bg-[#D6E6F0]"
+                }`}
               >
                 {lang === "hi" ? "महासंघ पोर्टल" : "Federation Portal"}
               </Link>
@@ -117,7 +129,11 @@ export default function Navbar() {
             {(isSocietyAdmin || isAdmin) && (
               <Link
                 to="/society/dashboard"
-                className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
+                className={`text-xs font-bold px-3.5 py-2 rounded-md transition-all ${
+                  location.pathname.startsWith("/society")
+                    ? "bg-[#D35400] text-white"
+                    : "text-[#D35400] bg-orange-50 hover:bg-orange-100"
+                }`}
               >
                 {lang === "hi" ? "समिति पोर्टल" : "Society Portal"}
               </Link>

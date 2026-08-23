@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
@@ -56,11 +56,11 @@ export default function HomePage() {
     if (!query.trim()) return;
     const params = new URLSearchParams({ q: query });
     if (lat && lng) { params.set("lat", lat); params.set("lng", lng); }
-    navigate(/search?);
+    navigate(`/search?${params.toString()}`);
   };
 
   const handleCategoryClick = (categoryId) => {
-    navigate(/search?category=);
+    navigate(`/search?category=${encodeURIComponent(categoryId)}`);
   };
 
   return (
@@ -134,7 +134,7 @@ export default function HomePage() {
                 key={i}
                 onClick={() => {
                   setQuery(term);
-                  navigate(/search?q=);
+                  navigate(`/search?q=${encodeURIComponent(term)}`);
                 }}
                 className="px-3 py-1 rounded-md bg-[#082B42]/80 hover:bg-[#0E4A73] text-amber-200 border border-slate-600 font-semibold transition-colors text-[11px]"
               >

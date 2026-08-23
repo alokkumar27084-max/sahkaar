@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FiCheck,
@@ -255,7 +255,11 @@ export default function SocietyAdminDashboard() {
                     <span className="bg-[#EDF4F9] text-[#0B3C5D] text-[10px] font-extrabold px-2 py-0.5 rounded capitalize">
                       {w.category}
                     </span>
-                    <span className={	ext-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 }>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${
+                        w.is_verified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
                       {w.is_verified ? <><FiCheckCircle size={10} /> Certified & Active</> : "Pending Verification"}
                     </span>
                   </div>
@@ -275,7 +279,7 @@ export default function SocietyAdminDashboard() {
 
                 <div className="flex items-center gap-2 shrink-0">
                   <Link
-                    to={/contractor/}
+                    to={`/contractor/${w.id}`}
                     target="_blank"
                     className="px-3 py-1.5 text-xs font-bold text-[#0B3C5D] bg-[#EDF4F9] hover:bg-[#D6E6F0] rounded-lg border border-[#D6E6F0] transition-colors"
                   >
