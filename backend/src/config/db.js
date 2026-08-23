@@ -1,11 +1,14 @@
-// Minimal Postgres connection using `pg`.
-// Exports a `query` helper used by models.
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const { Pool } = require('pg');
 
-const isNeon = (process.env.DATABASE_URL || '').includes('neon.tech') || (process.env.DATABASE_URL || '').includes('sslmode=require');
+const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/sahkaari';
+const isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('sslmode=require');
+const useSsl = isNeon || process.env.DB_SSL === 'true';
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: isNeon ? { rejectUnauthorized: false } : (process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false }),
+  connectionString: dbUrl,
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
   max: 10,
   connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS || 30000),
   idleTimeoutMillis: 30000,

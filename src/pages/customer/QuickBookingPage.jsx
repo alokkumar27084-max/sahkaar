@@ -293,7 +293,7 @@ export default function QuickBookingPage() {
   const photoUrl = getAvatarUrl(contractor?.photo_url || contractor?.profile_photo);
   const contractorPhone = contractor?.phone || contractor?.user_phone || "";
   const whatsappLink = contractorPhone
-    ? `https://wa.me/91${contractorPhone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(`Hi, I booked ${serviceName} on Thekedaar. My booking ID: ${bookingResult?.booking?.id || "N/A"}`)}`
+    ? `https://wa.me/91${contractorPhone.replace(/\D/g, "").slice(-10)}?text=${encodeURIComponent(`Hi, I booked ${serviceName} on SahKaari Cooperative Marketplace. My booking ID: ${bookingResult?.booking?.id || "N/A"}`)}`
     : "";
 
   if (contractorLoading) {

@@ -4,9 +4,14 @@ const crypto = require("crypto");
 const notificationService = require("../services/notificationService");
 
 // ── RAZORPAY INITIALIZATION ──
-// We construct an instance ONLY if keys exist, avoiding crashes for the user who hasn't generated them.
+// We construct an instance ONLY if valid real keys exist, avoiding crashes for development with mock keys.
 let razorpayInstance = null;
-if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+if (
+    process.env.RAZORPAY_KEY_ID && 
+    process.env.RAZORPAY_KEY_SECRET && 
+    !process.env.RAZORPAY_KEY_ID.includes("mock_") &&
+    !process.env.RAZORPAY_KEY_ID.includes("your_")
+) {
     razorpayInstance = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID,
         key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -277,12 +282,14 @@ const bookingController = {
                 return res.status(400).json({ status: "error", message: "Payment verification data is incomplete" });
             }
 
-            if (!process.env.RAZORPAY_KEY_SECRET) {
+            const isMockMode = !process.env.RAZORPAY_KEY_SECRET || 
+                               process.env.RAZORPAY_KEY_SECRET.includes("mock_") || 
+                               !razorpayInstance ||
+                               razorpay_order_id.startsWith("mock_order_");
+
+            if (isMockMode) {
                 if (process.env.NODE_ENV === "production") {
                     return res.status(503).json({ status: "error", message: "Payment verification is not configured" });
-                }
-                if (razorpay_order_id !== `mock_order_${booking_id}`) {
-                    return res.status(400).json({ status: "error", message: "Invalid mock payment order" });
                 }
 
                 const bookingRes = await pool.query("SELECT customer_id, contractor_id, service_category FROM bookings WHERE id = $1", [booking_id]);

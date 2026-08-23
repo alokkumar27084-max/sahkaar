@@ -7,15 +7,12 @@ import {
   FiCalendar,
   FiCheckCircle,
   FiDollarSign,
-  FiFileText,
   FiFilter,
-  FiGlobe,
   FiHeart,
   FiLayers,
   FiLogOut,
   FiMapPin,
   FiRefreshCw,
-  FiShield,
   FiTrendingUp,
   FiUsers,
 } from "react-icons/fi";
@@ -27,7 +24,7 @@ import { SahKaariLogo } from "../../components/common/SahKaariLogo";
 import toast from "react-hot-toast";
 
 export default function FederationAdminDashboard() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { lang } = useLanguage();
   const navigate = useNavigate();
   const isHi = lang === "hi";

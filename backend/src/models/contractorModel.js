@@ -262,7 +262,7 @@ exports.search = async ({
     )`);
   }
 
-  if (category) {
+  if (category && category !== 'all') {
     params.push(category);
     const i = params.length;
     where.push(`(c.category = $${i} OR $${i} = ANY(COALESCE(c.categories, '{}')))`);

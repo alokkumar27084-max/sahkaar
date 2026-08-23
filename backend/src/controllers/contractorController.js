@@ -35,9 +35,15 @@ exports.featured = async (req, res, next) => {
               COALESCE(c.business_name, u.name) AS name,
               COALESCE(c.category, c.categories[1], NULL) AS category,
               COALESCE(c.review_count, c.reviews_count, 0) AS review_count,
-              COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos
+              COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos,
+              s.name AS society_name,
+              s.registration_no AS society_registration_no,
+              s.district AS society_district,
+              f.name AS federation_name
        FROM contractors c
        JOIN users u ON u.id = c.user_id
+       LEFT JOIN cooperative_societies s ON s.id = c.society_id
+       LEFT JOIN federations f ON f.id = s.federation_id
        WHERE COALESCE(array_length(c.categories, 1), 0) > 0
          AND c.is_featured = true
        ORDER BY c.rating DESC, c.created_at DESC
@@ -59,9 +65,15 @@ exports.list = async (req, res, next) => {
               COALESCE(c.business_name, u.name) AS name,
               COALESCE(c.category, c.categories[1], NULL) AS category,
               COALESCE(c.review_count, c.reviews_count, 0) AS review_count,
-              COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos
+              COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos,
+              s.name AS society_name,
+              s.registration_no AS society_registration_no,
+              s.district AS society_district,
+              f.name AS federation_name
        FROM contractors c
        JOIN users u ON u.id = c.user_id
+       LEFT JOIN cooperative_societies s ON s.id = c.society_id
+       LEFT JOIN federations f ON f.id = s.federation_id
        WHERE COALESCE(array_length(c.categories, 1), 0) > 0
        ORDER BY c.created_at DESC
        LIMIT $1`,

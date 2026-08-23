@@ -1,23 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  FiAward,
   FiCheck,
   FiCheckCircle,
   FiClock,
-  FiDollarSign,
   FiFileText,
   FiHeart,
-  FiLayers,
   FiLogOut,
-  FiMapPin,
-  FiPhone,
   FiRefreshCw,
   FiSearch,
-  FiShield,
   FiUserCheck,
   FiUsers,
-  FiX,
 } from "react-icons/fi";
 import { cooperativeAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
