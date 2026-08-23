@@ -29,12 +29,34 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!user) return;
-    navigate(
-      user.role === "admin" ? "/admin/dashboard"
-        : user.role === "contractor" ? "/contractor/dashboard"
-          : customerNext
-    );
+    if (user.role === "admin") navigate("/admin/dashboard");
+    else if (user.role === "federation_admin") navigate("/federation/dashboard");
+    else if (user.role === "society_admin") navigate("/society/dashboard");
+    else if (user.role === "contractor") navigate("/contractor/dashboard");
+    else navigate(customerNext);
   }, [user, navigate, customerNext]);
+
+  async function handleQuickRoleLogin(emailToLogin, rolePassword) {
+    setLoading(true);
+    try {
+      const res = await authAPI.login({
+        email: emailToLogin,
+        password: rolePassword || "Password@123",
+      });
+      const data = res.data;
+      login(data.user, data.token);
+      toast.success(`Logged in as ${data.user.name} (${data.user.role.toUpperCase()})`);
+      if (data.user.role === "federation_admin") navigate("/federation/dashboard");
+      else if (data.user.role === "society_admin") navigate("/society/dashboard");
+      else if (data.user.role === "admin") navigate("/admin/dashboard");
+      else if (data.user.role === "contractor") navigate("/contractor/dashboard");
+      else navigate(customerNext);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to log in as demo account");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // modes: "phone" = phone OTP, "emailOtp" = email OTP, "email" = email+password
   const [mode, setMode] = useState("phone");
@@ -624,14 +646,86 @@ export default function LoginPage() {
           )}
         </AnimatePresence>
 
+        {/* Official Government Role Fast Access / Demonstration Portal */}
+        <div className="mt-6 pt-5 border-t-2 border-[#0B3C5D]/20 bg-[#EDF4F9]/60 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-extrabold text-[#0B3C5D] uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#138808]"></span>
+              {lang === "hi" ? "आधिकारिक पोर्टल एक्सेस (एक-क्लिक लॉगिन)" : "Official Authority Access (1-Click Demo Login)"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* 1. Federation Director */}
+            <button
+              type="button"
+              onClick={() => handleQuickRoleLogin("federation_admin@sahkaari.in", "Password@123")}
+              disabled={loading}
+              className="text-left p-2.5 rounded-lg bg-white border border-[#0B3C5D]/30 hover:border-[#0B3C5D] hover:bg-[#0B3C5D] hover:text-white transition-all group shadow-xs"
+            >
+              <div className="text-[10px] font-extrabold text-[#0B3C5D] group-hover:text-amber-300">
+                🏛️ {lang === "hi" ? "राज्य महासंघ निदेशक" : "State Federation"}
+              </div>
+              <div className="text-[9px] text-slate-500 group-hover:text-slate-200 mt-0.5 truncate">
+                federation_admin@...
+              </div>
+            </button>
+
+            {/* 2. Society Secretary */}
+            <button
+              type="button"
+              onClick={() => handleQuickRoleLogin("society_admin@sahkaari.in", "Password@123")}
+              disabled={loading}
+              className="text-left p-2.5 rounded-lg bg-white border border-[#D35400]/30 hover:border-[#D35400] hover:bg-[#D35400] hover:text-white transition-all group shadow-xs"
+            >
+              <div className="text-[10px] font-extrabold text-[#D35400] group-hover:text-amber-200">
+                🏢 {lang === "hi" ? "प्राथमिक समिति सचिव" : "Primary Society"}
+              </div>
+              <div className="text-[9px] text-slate-500 group-hover:text-slate-200 mt-0.5 truncate">
+                society_admin@...
+              </div>
+            </button>
+
+            {/* 3. Certified Artisan */}
+            <button
+              type="button"
+              onClick={() => handleQuickRoleLogin("worker@sahkaari.in", "Password@123")}
+              disabled={loading}
+              className="text-left p-2.5 rounded-lg bg-white border border-[#138808]/30 hover:border-[#138808] hover:bg-[#138808] hover:text-white transition-all group shadow-xs"
+            >
+              <div className="text-[10px] font-extrabold text-[#138808] group-hover:text-emerald-200">
+                🛠️ {lang === "hi" ? "प्रमाणित सहकारी कारीगर" : "Certified Artisan"}
+              </div>
+              <div className="text-[9px] text-slate-500 group-hover:text-slate-200 mt-0.5 truncate">
+                worker@sahkaari.in
+              </div>
+            </button>
+
+            {/* 4. Citizen Customer */}
+            <button
+              type="button"
+              onClick={() => handleQuickRoleLogin("customer@sahkaari.in", "Password@123")}
+              disabled={loading}
+              className="text-left p-2.5 rounded-lg bg-white border border-slate-300 hover:border-slate-800 hover:bg-slate-800 hover:text-white transition-all group shadow-xs"
+            >
+              <div className="text-[10px] font-extrabold text-slate-800 group-hover:text-amber-300">
+                👤 {lang === "hi" ? "नागरिक / उपभोक्ता" : "Citizen / Customer"}
+              </div>
+              <div className="text-[9px] text-slate-500 group-hover:text-slate-200 mt-0.5 truncate">
+                customer@sahkaari.in
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* Footer info link */}
-        <p className="text-center text-sm text-[var(--color-muted)] mt-8 pt-4 border-t border-[var(--color-border)]">
-          New to SahKaari?{" "}
+        <p className="text-center text-xs text-[var(--color-muted)] mt-6 pt-3 border-t border-[var(--color-border)]">
+          {lang === "hi" ? "सहकारी मंच पर नए हैं?" : "New to SahKaari?"}{" "}
           <Link
             to={customerNext !== "/" ? `/register?next=${encodeURIComponent(customerNext)}` : "/register"}
-            className="text-[var(--color-primary)] font-bold hover:underline"
+            className="text-[#0B3C5D] font-bold hover:underline"
           >
-            Register here
+            {lang === "hi" ? "यहाँ पंजीकरण करें" : "Register here"}
           </Link>
         </p>
       </motion.div>

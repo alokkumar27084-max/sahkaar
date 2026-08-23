@@ -12,23 +12,27 @@ export function SahKaariLogo({ className = "h-10 w-10", showText = false, textCl
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            <linearGradient id="skTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#0F5C5C" />
-              <stop offset="100%" stopColor="#0A3C3C" />
+            <linearGradient id="skGovNavyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0B3C5D" />
+              <stop offset="100%" stopColor="#061F30" />
             </linearGradient>
-            <linearGradient id="skGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F5A623" />
-              <stop offset="100%" stopColor="#E08E0B" />
+            <linearGradient id="skGovSaffronGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#E67E22" />
+              <stop offset="100%" stopColor="#D35400" />
+            </linearGradient>
+            <linearGradient id="skGovGreenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#138808" />
+              <stop offset="100%" stopColor="#0E6806" />
             </linearGradient>
             <linearGradient id="skRimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#F5A623" />
-              <stop offset="50%" stopColor="#2DD4BF" />
-              <stop offset="100%" stopColor="#F5A623" />
+              <stop offset="0%" stopColor="#E67E22" />
+              <stop offset="50%" stopColor="#FFFFFF" />
+              <stop offset="100%" stopColor="#138808" />
             </linearGradient>
           </defs>
 
           {/* Hexagonal / Rounded Cooperative Shield */}
-          <rect x="6" y="6" width="88" height="88" rx="24" fill="url(#skTealGrad)" stroke="url(#skRimGrad)" strokeWidth="2.5" />
+          <rect x="6" y="6" width="88" height="88" rx="22" fill="url(#skGovNavyGrad)" stroke="url(#skRimGrad)" strokeWidth="2.5" />
 
           {/* Central Cooperative Symbol: Three Interlocking Nodes of Federation, Society & Worker */}
           {/* Top Apex Node (Federation) */}

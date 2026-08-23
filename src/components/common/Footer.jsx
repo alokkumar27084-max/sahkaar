@@ -1,165 +1,117 @@
-import React from "react";
+﻿import React from "react";
 import { Link } from "react-router-dom";
-import { FiLinkedin, FiInstagram, FiTwitter } from "react-icons/fi";
-import { ThekedaarLogo } from "./ThekedaarLogo";
+import { SahKaariLogo } from "./SahKaariLogo";
+import { FiPhone, FiMail, FiMapPin, FiShield, FiCheckCircle } from "react-icons/fi";
 
 export default function Footer() {
   return (
-    <footer className="bg-[var(--color-bg-elevated)] border-t border-[var(--color-border)] pt-16 pb-12 px-6 md:px-12">
-      <div className="max-w-[var(--max-width)] mx-auto">
-        {/* 4-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+    <footer className="bg-[#082B42] text-slate-300 pt-12 pb-8 border-t-4 border-[#0B3C5D] select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        
+        {/* 4-Column Government Portal Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-10 border-b border-slate-700/60 text-xs">
           
-          {/* Column 1: Brand Info */}
-          <div className="flex flex-col gap-4">
-            <Link to="/" className="flex items-center gap-2">
-              <ThekedaarLogo className="h-9 w-9" />
+          {/* Col 1: Institutional Identity */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2.5">
+              <SahKaariLogo className="h-10 w-10" />
               <div className="flex flex-col">
-                <span className="font-extrabold text-base tracking-tight text-[var(--color-heading)] leading-none font-display">
-                  Sah<span className="text-primary">Kaari</span>
-                </span>
-                <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase">
-                  सहकारी श्रम मंच
+                <div className="flex items-center gap-1">
+                  <span className="font-extrabold text-lg text-white font-display leading-none">
+                    सह<span className="text-[#FF9933]">कारी</span>
+                  </span>
+                  <span className="text-slate-500">|</span>
+                  <span className="font-bold text-sm text-slate-200 font-display leading-none">
+                    SahKaari
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-[#138808] mt-0.5">
+                  राष्ट्रीय श्रम सहकारी सेवा मंच
                 </span>
               </div>
-            </Link>
-            <p className="text-sm text-[var(--color-muted)] leading-relaxed max-w-xs">
-              Bharat's cooperative-owned digital marketplace connecting verified workers from Labour Cooperative Federations and Societies with households and enterprises.
+            </div>
+
+            <p className="text-slate-400 leading-relaxed text-[11px]">
+              A cooperative-owned digital service marketplace connecting skilled workers from Labour Cooperative Federations and Societies with households and institutions across Bharat.
             </p>
-            <div className="flex gap-3 mt-2">
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:border-[var(--color-heading)] transition-all"
-                title="LinkedIn"
-              >
-                <FiLinkedin size={15} />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:border-[var(--color-heading)] transition-all"
-                title="Instagram"
-              >
-                <FiInstagram size={15} />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-center text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:border-[var(--color-heading)] transition-all"
-                title="Twitter"
-              >
-                <FiTwitter size={15} />
-              </a>
+
+            <div className="pt-2 text-[10px] text-amber-300 font-semibold flex items-center gap-1.5">
+              <FiShield className="w-3.5 h-3.5" />
+              <span>National Council for Cooperative Training (NCCT) Certified</span>
             </div>
           </div>
 
-          {/* Column 2: Cooperative Governance */}
-          <div>
-            <h3 className="text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider mb-4">
-              Cooperative System
-            </h3>
-            <ul className="flex flex-col gap-2.5">
-              <li>
-                <Link to="/federation-dashboard" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  State Federations
-                </Link>
-              </li>
-              <li>
-                <Link to="/society-dashboard" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Primary Societies Roster
-                </Link>
-              </li>
-              <li>
-                <a href="#welfare" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Welfare Corpus Fund
-                </a>
-              </li>
-              <li>
-                <a href="#insurance" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Pradhan Mantri Suraksha Bima
-                </a>
-              </li>
+          {/* Col 2: Certified Trades */}
+          <div className="space-y-2.5">
+            <h4 className="font-extrabold text-white text-xs uppercase tracking-wider border-b border-slate-700 pb-1 text-[#FF9933]">
+              Accredited Trades
+            </h4>
+            <ul className="space-y-1.5 text-slate-400">
+              <li><Link to="/search?category=electrical" className="hover:text-white transition-colors">Electricians (इलेक्ट्रीशियन)</Link></li>
+              <li><Link to="/search?category=plumbing" className="hover:text-white transition-colors">Plumbers (प्लंबर)</Link></li>
+              <li><Link to="/search?category=carpentry" className="hover:text-white transition-colors">Carpenters (बढ़ई / कारपेंटर)</Link></li>
+              <li><Link to="/search?category=painting" className="hover:text-white transition-colors">Painters (पेंटर / रंगसाज)</Link></li>
+              <li><Link to="/search?category=domestic_help" className="hover:text-white transition-colors">Domestic Helpers (घरेलू सहायिका)</Link></li>
+              <li><Link to="/search?category=appliance_repair" className="hover:text-white transition-colors">Appliance Technicians (तकनीशियन)</Link></li>
             </ul>
           </div>
 
-          {/* Column 3: For Households & Institutions */}
-          <div>
-            <h3 className="text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider mb-4">
-              For Households & Institutions
-            </h3>
-            <ul className="flex flex-col gap-2.5">
-              <li>
-                <Link to="/search" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Book Verified Worker
-                </Link>
-              </li>
-              <li>
-                <Link to="/categories" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Cooperative Trades
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy-policy" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Escrow Guarantee
-                </Link>
-              </li>
+          {/* Col 3: Institutional Portals */}
+          <div className="space-y-2.5">
+            <h4 className="font-extrabold text-white text-xs uppercase tracking-wider border-b border-slate-700 pb-1 text-[#FF9933]">
+              Administrative Portals
+            </h4>
+            <ul className="space-y-1.5 text-slate-400">
+              <li><Link to="/federation/dashboard" className="hover:text-amber-300 transition-colors">State Federation Apex Portal</Link></li>
+              <li><Link to="/society/dashboard" className="hover:text-amber-300 transition-colors">District Society Admin Console</Link></li>
+              <li><Link to="/login" className="hover:text-white transition-colors">Official Authority Login</Link></li>
+              <li><Link to="/register/contractor" className="hover:text-white transition-colors">Artisan Society Onboarding</Link></li>
+              <li><Link to="/privacy" className="hover:text-white transition-colors">Cooperative Citizen Charter</Link></li>
             </ul>
           </div>
 
-          {/* Column 4: For Workers */}
-          <div>
-            <h3 className="text-sm font-bold text-[var(--color-heading)] uppercase tracking-wider mb-4">
-              For Cooperative Workers
-            </h3>
-            <ul className="flex flex-col gap-2.5">
-              <li>
-                <Link to="/register/contractor" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Register with Society
-                </Link>
-              </li>
-              <li>
-                <a href="#training" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  NCCT Skill Certification
-                </a>
-              </li>
-              <li>
-                <a href="#welfare-claims" className="text-sm text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-                  Social Security Benefits
-                </a>
-              </li>
-            </ul>
+          {/* Col 4: Helpdesk & Grievance */}
+          <div className="space-y-2.5">
+            <h4 className="font-extrabold text-white text-xs uppercase tracking-wider border-b border-slate-700 pb-1 text-[#FF9933]">
+              Cooperative Helpdesk
+            </h4>
+            <div className="space-y-2 text-slate-400 text-[11px]">
+              <div className="flex items-center gap-2">
+                <FiPhone className="text-amber-400 shrink-0" />
+                <span className="font-bold text-white">1800-180-2026 (Toll Free)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <FiMail className="text-amber-400 shrink-0" />
+                <span>support@sahkaari.gov.in</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <FiMapPin className="text-amber-400 shrink-0 mt-0.5" />
+                <span>Apex Cooperative Bhawan, Central Zone, Bhopal (M.P.)</span>
+              </div>
+            </div>
           </div>
 
         </div>
 
-        {/* Divider */}
-        <div className="border-t border-[var(--color-border)] pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Left Side: Copyright */}
-          <div className="text-xs text-[var(--color-muted)] flex items-center gap-1">
-            <span>© {new Date().getFullYear()} SahKaari Cooperative Marketplace.</span>
-            <span>Made with pride in India for Bharat.</span>
+        {/* Bottom Legal & Tricolor Strip */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+          <div>
+            © {new Date().getFullYear()} SahKaari (सहकारी) • National Labour Cooperative Marketplace Portal.
           </div>
-
-          {/* Right Side: Legal Links */}
-          <div className="flex items-center gap-4 text-xs">
-            <Link to="/terms" className="text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-              Terms of Service
-            </Link>
-            <span className="text-[var(--color-border)]">•</span>
-            <Link to="/privacy-policy" className="text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-              Privacy Policy
-            </Link>
-            <span className="text-[var(--color-border)]">•</span>
-            <Link to="/refund-policy" className="text-[var(--color-muted)] hover:text-[var(--color-heading)] transition-colors">
-              Refund & Cancellation
-            </Link>
+          <div className="flex items-center gap-4 text-[10px] text-slate-500">
+            <span>Accessibility Compliant (WCAG 2.1)</span>
+            <span>•</span>
+            <span>Digital India Aligned</span>
           </div>
         </div>
 
+      </div>
+
+      {/* Bottom Tricolor Accent Ribbon */}
+      <div className="h-[4px] w-full flex mt-6">
+        <div className="w-1/3 bg-[#FF9933]"></div>
+        <div className="w-1/3 bg-[#FFFFFF]"></div>
+        <div className="w-1/3 bg-[#138808]"></div>
       </div>
     </footer>
   );

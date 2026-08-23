@@ -14,8 +14,17 @@ router.get('/forecast', controller.getDemandForecast);
 // Society Admin Endpoints
 router.get('/stats/society/:societyId?', optionalAuth, controller.getSocietyAdminStats);
 router.post('/verify-worker', optionalAuth, controller.verifyWorker);
+router.post('/reject-worker', optionalAuth, controller.rejectWorker);
 
-// Federation Admin Endpoints
+// Federation Admin & Control Endpoints
 router.get('/stats/federation', optionalAuth, controller.getFederationAdminStats);
+router.post('/allocate-workforce', optionalAuth, controller.allocateWorkforce);
+router.get('/disputes', optionalAuth, controller.getDisputes);
+router.post('/resolve-dispute', optionalAuth, controller.resolveDispute);
+router.get('/welfare-claims', optionalAuth, controller.getWelfareClaims);
+router.post('/approve-claim', optionalAuth, controller.approveWelfareClaim);
+
+// Invoicing
+router.get('/invoice/:bookingId', optionalAuth, controller.getBookingInvoice);
 
 module.exports = router;

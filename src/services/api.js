@@ -211,7 +211,14 @@ export const cooperativeAPI = {
   getWorkerWelfare: (workerId) => api.get(`/cooperatives/worker/${workerId}/welfare`),
   getDemandForecast: (params) => api.get("/cooperatives/forecast", { params }),
   verifyWorker: (data) => api.post("/cooperatives/verify-worker", data),
+  rejectWorker: (data) => api.post("/cooperatives/reject-worker", data),
   getFederationStats: () => api.get("/cooperatives/stats/federation"),
   getSocietyStats: (societyId) => api.get(`/cooperatives/stats/society${societyId ? `/${societyId}` : ""}`),
+  allocateWorkforce: (data) => api.post("/cooperatives/allocate-workforce", data),
+  getDisputes: () => api.get("/cooperatives/disputes"),
+  resolveDispute: (data) => api.post("/cooperatives/resolve-dispute", data),
+  getWelfareClaims: () => api.get("/cooperatives/welfare-claims"),
+  approveClaim: (data) => api.post("/cooperatives/approve-claim", data),
+  getInvoice: (bookingId) => api.get(`/cooperatives/invoice/${bookingId}`),
 };
 

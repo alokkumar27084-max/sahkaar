@@ -292,15 +292,35 @@ function AnimatedRoutes() {
           }
         />
         <Route
+          path="/federation/dashboard"
+          element={
+            <ProtectedRoute requiredRole={["federation_admin", "admin"]}>
+              <PageWrapper><FederationAdminDashboard /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/federation-dashboard"
           element={
-            <PageWrapper><FederationAdminDashboard /></PageWrapper>
+            <ProtectedRoute requiredRole={["federation_admin", "admin"]}>
+              <PageWrapper><FederationAdminDashboard /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/society/dashboard"
+          element={
+            <ProtectedRoute requiredRole={["society_admin", "admin"]}>
+              <PageWrapper><SocietyAdminDashboard /></PageWrapper>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/society-dashboard"
           element={
-            <PageWrapper><SocietyAdminDashboard /></PageWrapper>
+            <ProtectedRoute requiredRole={["society_admin", "admin"]}>
+              <PageWrapper><SocietyAdminDashboard /></PageWrapper>
+            </ProtectedRoute>
           }
         />
 

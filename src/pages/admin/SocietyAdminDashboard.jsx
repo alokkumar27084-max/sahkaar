@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+﻿import React, { useState, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FiCheck,
   FiCheckCircle,
@@ -11,6 +11,9 @@ import {
   FiSearch,
   FiUserCheck,
   FiUsers,
+  FiShield,
+  FiAlertCircle,
+  FiX
 } from "react-icons/fi";
 import { cooperativeAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -20,27 +23,24 @@ import { SahKaariLogo } from "../../components/common/SahKaariLogo";
 import toast from "react-hot-toast";
 
 export default function SocietyAdminDashboard() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { lang } = useLanguage();
-  const location = useLocation();
   const navigate = useNavigate();
   const isHi = lang === "hi";
-
-  const searchParams = new URLSearchParams(location.search);
-  const societyId = searchParams.get("id") || user?.society_id || "33333333-3333-4333-a333-333333333333";
 
   const [loading, setLoading] = useState(true);
   const [society, setSociety] = useState(null);
   const [workers, setWorkers] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [activeTab, setActiveTab] = useState("roster");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [rejectModal, setRejectModal] = useState(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const loadSocietyData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await cooperativeAPI.getSocietyStats(societyId);
+      const res = await cooperativeAPI.getSocietyStats();
       if (res.data?.ok) {
         setSociety(res.data.data.society);
         setWorkers(res.data.data.workers || []);
@@ -52,7 +52,7 @@ export default function SocietyAdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [societyId]);
+  }, []);
 
   useEffect(() => {
     loadSocietyData();
@@ -60,14 +60,31 @@ export default function SocietyAdminDashboard() {
 
   const handleVerifyWorker = async (workerId) => {
     try {
-      const res = await cooperativeAPI.verifyWorker({ workerId, societyId, skillsCertified: true });
+      const res = await cooperativeAPI.verifyWorker({ workerId, skillsCertified: true });
       if (res.data?.ok) {
-        toast.success(isHi ? "कारीगर को सहकारी मान्यता प्रदान की गई" : "Worker verified & skill certified under society!");
+        toast.success(isHi ? "कारीगर को सहकारी मान्यता प्रदान की गई" : "Worker verified & certified under primary society!");
         loadSocietyData();
       }
     } catch (err) {
-      console.error("Verification error:", err);
       toast.error("Failed to verify worker");
+    }
+  };
+
+  const handleRejectWorker = async () => {
+    if (!rejectModal) return;
+    try {
+      const res = await cooperativeAPI.rejectWorker({
+        workerId: rejectModal,
+        reason: rejectReason || "Documentation incomplete"
+      });
+      if (res.data?.ok) {
+        toast.success("Worker verification rejected with feedback note.");
+        setRejectModal(null);
+        setRejectReason("");
+        loadSocietyData();
+      }
+    } catch (err) {
+      toast.error("Failed to reject worker");
     }
   };
 
@@ -82,34 +99,37 @@ export default function SocietyAdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-bg)]">
+      <div className="min-h-[80vh] flex flex-col items-center justify-center bg-[#F4F6F9]">
         <LoadingSpinner size="lg" />
-        <p className="mt-4 text-sm font-semibold text-[var(--color-muted)]">
-          {isHi ? "समिति अभिलेख लोड हो रहे हैं..." : "Loading Primary Cooperative Society Roster..."}
+        <p className="mt-4 text-xs font-bold text-[#0B3C5D] animate-pulse">
+          {isHi ? "प्राथमिक सहकारी समिति पोर्टल लोड हो रहा है..." : "Loading Primary Cooperative Society Portal..."}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-heading)] flex flex-col">
-      {/* Top Society Header */}
-      <header className="bg-gradient-to-r from-teal-900 via-teal-800 to-slate-900 text-white px-6 py-4 shadow-md border-b border-teal-700/40">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <SahKaariLogo className="h-10 w-10 shrink-0" />
+    <div className="min-h-screen bg-[#F4F6F9] py-8 text-slate-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
+
+        {/* ── SOCIETY HEADER ── */}
+        <header className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <SahKaariLogo className="w-14 h-14" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
-                  {isHi ? "प्राथमिक सहकारी समिति" : "Primary Cooperative Society"}
+                <span className="bg-[#D35400] text-white text-[10px] font-extrabold px-2 py-0.5 rounded tracking-wide uppercase">
+                  {isHi ? "प्राथमिक श्रम सहकारी समिति" : "Primary Labour Cooperative Society"}
                 </span>
-                <span className="text-xs text-teal-300 font-medium">{society?.registration_no || "SOC-BPL-2020-0412"}</span>
+                <span className="text-xs font-mono font-bold text-slate-500">
+                  {society?.registration_no || "SOC-BPL-2020-0412"}
+                </span>
               </div>
-              <h1 className="text-lg md:text-xl font-extrabold tracking-tight mt-0.5">
-                {society?.name || "Bhopal Shramik & Karigar Sahakari Samiti"}
+              <h1 className="text-xl sm:text-2xl font-extrabold text-[#0B3C5D] mt-1">
+                {society?.name || "Bhopal Shramik & Karigar Sahakari Samiti (Ward 1-25)"}
               </h1>
-              <p className="text-xs text-teal-200">
-                {society?.federation_name || "Affiliated with MP State Labour Cooperative Federation"}
+              <p className="text-xs text-slate-600 mt-0.5">
+                Affiliated to: <strong className="text-slate-800">{society?.federation_name || "Madhya Pradesh State Labour & Construction Federation"}</strong> • District: {society?.district || "Bhopal"}
               </p>
             </div>
           </div>
@@ -118,286 +138,212 @@ export default function SocietyAdminDashboard() {
             <button
               onClick={() => {
                 loadSocietyData();
-                toast.success("Society records synced");
+                toast.success("Society records refreshed");
               }}
-              className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-[#EDF4F9] text-[#0B3C5D] rounded-lg border border-[#D6E6F0] hover:bg-[#D6E6F0] transition-colors"
             >
               <FiRefreshCw className="w-3.5 h-3.5" />
-              <span>{isHi ? "रिफ्रेश" : "Refresh"}</span>
+              <span>{isHi ? "ताज़ा करें" : "Refresh"}</span>
             </button>
             <button
               onClick={async () => {
                 await logout();
                 navigate("/");
               }}
-              className="px-3 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-red-500/30"
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-rose-50 text-rose-700 rounded-lg border border-rose-200 hover:bg-rose-100 transition-colors"
             >
               <FiLogOut className="w-3.5 h-3.5" />
               <span>{isHi ? "लॉगआउट" : "Logout"}</span>
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-8">
-        
-        {/* KPI Cards Row */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs rounded-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">
-                {isHi ? "समिति सदस्य कारीगर" : "Total Members"}
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-teal-50 text-primary flex items-center justify-center font-bold">
-                <FiUsers className="w-4 h-4" />
-              </div>
+        {/* ── SOCIETY STATS ── */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
+              {isHi ? "पंजीकृत सदस्य" : "Registered Members"}
             </div>
-            <div className="text-2xl font-extrabold text-[var(--color-heading)]">
-              {workers.length || 184}
-            </div>
-            <div className="text-[11px] text-teal-700 font-semibold mt-1">
-              Registered Cooperative Tradesmen
-            </div>
-          </div>
-
-          <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs rounded-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">
-                {isHi ? "सत्यापित मान्यता प्राप्त" : "Certified Verified"}
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                <FiCheckCircle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-extrabold text-emerald-600">
-              {workers.filter((w) => w.is_verified).length || 178}
+            <div className="text-2xl font-extrabold text-[#0B3C5D] mt-1">
+              {workers.length}
             </div>
             <div className="text-[11px] text-emerald-700 font-semibold mt-1">
-              NCCT & Police Verified
+              {workers.filter(w => w.is_verified).length} Verified by NCCT
             </div>
           </div>
 
-          <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs rounded-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">
-                {isHi ? "स्थानीय कल्याण कोष" : "Society Welfare Pool"}
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                <FiHeart className="w-4 h-4" />
-              </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
+              {isHi ? "सत्यापन लंबित" : "Verification Queue"}
             </div>
-            <div className="text-2xl font-extrabold text-amber-700">
+            <div className="text-2xl font-extrabold text-[#D35400] mt-1">
+              {workers.filter(w => !w.is_verified).length}
+            </div>
+            <div className="text-[11px] text-[#D35400] font-semibold mt-1">
+              Requires Society Approval
+            </div>
+          </div>
+
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
+              {isHi ? "समिति कल्याण कोष" : "Welfare Pool Balance"}
+            </div>
+            <div className="text-2xl font-extrabold text-[#138808] mt-1 font-mono">
               ₹{Number(society?.welfare_pool_balance || 620000).toLocaleString("en-IN")}
             </div>
-            <div className="text-[11px] text-amber-800 font-semibold mt-1">
-              Emergency & Healthcare Pool
+            <div className="text-[11px] text-emerald-800 font-semibold mt-1">
+              + ₹25 per completed job
             </div>
           </div>
 
-          <div className="card p-5 border border-[var(--color-border)] bg-[var(--color-surface)] shadow-xs rounded-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">
-                {isHi ? "सक्रिय स्थानीय कार्य" : "Active Work Orders"}
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                <FiClock className="w-4 h-4" />
-              </div>
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
+              {isHi ? "मासिक डिस्पैच" : "Monthly Dispatches"}
             </div>
-            <div className="text-2xl font-extrabold text-[var(--color-heading)]">
-              {recentBookings.length || 24}
+            <div className="text-2xl font-extrabold text-[#0B3C5D] mt-1">
+              {recentBookings.length || 18}
             </div>
             <div className="text-[11px] text-blue-700 font-semibold mt-1">
-              Escrow Protected Contracts
+              100% Digital Escrow Settled
             </div>
           </div>
         </section>
 
-        {/* Dashboard Navigation Tabs */}
-        <div className="flex items-center gap-3 border-b border-[var(--color-border)] pb-2">
-          {[
-            { id: "roster", label: isHi ? "कारीगर रोस्टर एवं सत्यापन" : "Worker Roster & Verification", icon: FiUserCheck },
-            { id: "bookings", label: isHi ? "समिति कार्य एवं विवाद निवारण" : "Bookings & Local Operations", icon: FiFileText },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 transition-all ${
-                  active
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-[var(--color-muted)] hover:bg-[var(--color-bg-elevated)]"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* ── WORKER VERIFICATION & ROSTER ── */}
+        <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-extrabold text-[#0B3C5D] flex items-center gap-2">
+                <FiUserCheck className="text-[#138808] w-5 h-5" />
+                <span>{isHi ? "कारीगर सत्यापन व कौशल प्रमाणन रोस्टर" : "Artisan Verification & Skill Certification Queue"}</span>
+              </h2>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Review trade credentials, daily rates, and approve workers into the official cooperative pool.
+              </p>
+            </div>
 
-        {/* ── TAB 1: WORKER ROSTER & VERIFICATION QUEUE ── */}
-        {activeTab === "roster" && (
-          <section className="space-y-6">
-            
-            {/* Search and Filters */}
-            <div className="card p-4 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="relative flex-1 max-w-md">
-                <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
                 <input
                   type="text"
-                  placeholder={isHi ? "कारीगर का नाम या कौशल खोजें..." : "Search worker by name or skill..."}
+                  placeholder="Search by name or trade..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-xs font-semibold rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] outline-none focus:border-primary text-[var(--color-heading)]"
+                  className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none w-48"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                {["all", "verified", "pending"].map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setStatusFilter(filter)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${
-                      statusFilter === filter
-                        ? "bg-teal-900 text-white"
-                        : "bg-[var(--color-bg-elevated)] text-[var(--color-muted)] hover:text-[var(--color-heading)]"
-                    }`}
-                  >
-                    {filter === "all" ? (isHi ? "सभी" : "All") : filter === "verified" ? (isHi ? "सत्यापित" : "Verified") : (isHi ? "लंबित" : "Pending")}
-                  </button>
-                ))}
-              </div>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 outline-none"
+              >
+                <option value="all">All Status</option>
+                <option value="verified">Verified Only</option>
+                <option value="pending">Pending Approval</option>
+              </select>
             </div>
+          </div>
 
-            {/* Workers Table */}
-            <div className="card border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl shadow-xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)] text-[var(--color-muted)] uppercase tracking-wider font-bold">
-                    <tr>
-                      <th className="py-3.5 px-4">Worker / Artisan</th>
-                      <th className="py-3.5 px-4">Trade / Category</th>
-                      <th className="py-3.5 px-4">Member ID & Welfare</th>
-                      <th className="py-3.5 px-4">Completed Jobs</th>
-                      <th className="py-3.5 px-4">Co-op Status</th>
-                      <th className="py-3.5 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--color-border)] font-medium">
-                    {filteredWorkers.map((worker) => {
-                      const isVerified = worker.is_verified;
-                      const workerName = worker.business_name || worker.user_name || "Co-op Artisan";
-
-                      return (
-                        <tr key={worker.id} className="hover:bg-[var(--color-bg-elevated)] transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-[var(--color-heading)] text-sm">{workerName}</div>
-                            <div className="text-[11px] text-[var(--color-muted)]">{worker.phone || "Verified Contact"}</div>
-                          </td>
-                          <td className="py-3 px-4 capitalize font-semibold text-primary">
-                            {(worker.category || "General Service").replace(/_/g, " ")}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="font-mono text-xs text-[var(--color-heading)]">
-                              {worker.member_registration_no || "MEM-BPL-1092"}
-                            </div>
-                            <div className="text-[10px] text-amber-700 font-semibold">
-                              {worker.welfare_id || "WLF-ACTIVE"}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 font-bold text-[var(--color-heading)]">
-                            {worker.completed_jobs || 18} jobs
-                          </td>
-                          <td className="py-3 px-4">
-                            {isVerified ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
-                                <FiCheckCircle className="w-3.5 h-3.5" />
-                                {isHi ? "सत्यापित" : "Verified"}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/60">
-                                <FiClock className="w-3.5 h-3.5" />
-                                {isHi ? "सत्यापन प्रतीक्षारत" : "Pending Review"}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            {!isVerified ? (
-                              <button
-                                onClick={() => handleVerifyWorker(worker.id)}
-                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs inline-flex items-center gap-1 transition-colors shadow-xs"
-                              >
-                                <FiCheck className="w-3.5 h-3.5" />
-                                <span>{isHi ? "सत्यापित करें" : "Approve & Certify"}</span>
-                              </button>
-                            ) : (
-                              <span className="text-[11px] text-[var(--color-muted)] font-semibold">
-                                Certified Active
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* ── TAB 2: LOCAL BOOKINGS & ARBITRATION ── */}
-        {activeTab === "bookings" && (
-          <section className="space-y-6">
-            <div className="card p-6 border border-[var(--color-border)] bg-[var(--color-surface)] rounded-2xl shadow-xs">
-              <h2 className="text-lg font-bold text-[var(--color-heading)] mb-4">
-                {isHi ? "समिति क्षेत्र के अंतर्गत स्थानीय कार्य आदेश" : "Local Society Work Orders & Escrow Operations"}
-              </h2>
-
-              <div className="divide-y divide-[var(--color-border)]">
-                {recentBookings.map((b) => (
-                  <div key={b.id} className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[var(--color-heading)] capitalize">
-                          {b.service_category} Service
-                        </span>
-                        {b.is_emergency && (
-                          <span className="text-[10px] font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
-                            Emergency Dispatch
-                          </span>
-                        )}
-                        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                          {b.status}
-                        </span>
-                      </div>
-                      <div className="text-xs text-[var(--color-muted)] mt-1">
-                        Worker: <strong className="text-[var(--color-heading)]">{b.worker_name}</strong> | Customer: {b.customer_name || "Verified Resident"}
-                      </div>
-                      <div className="text-[11px] text-[var(--color-muted)] mt-0.5">
-                        Location: {b.location_address || "TT Nagar, Bhopal"}
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-sm font-extrabold text-[var(--color-heading)]">
-                        ₹{Number(b.amount || 1200).toLocaleString("en-IN")}
-                      </div>
-                      <div className="text-[10px] text-amber-700 font-semibold">
-                        +₹25 Society Welfare Allocation
-                      </div>
-                    </div>
+          <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs">
+            {filteredWorkers.map((w) => (
+              <div key={w.id} className="p-4 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-sm text-slate-900">{w.business_name || w.user_name}</span>
+                    <span className="bg-[#EDF4F9] text-[#0B3C5D] text-[10px] font-extrabold px-2 py-0.5 rounded capitalize">
+                      {w.category}
+                    </span>
+                    <span className={	ext-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 }>
+                      {w.is_verified ? <><FiCheckCircle size={10} /> Certified & Active</> : "Pending Verification"}
+                    </span>
                   </div>
-                ))}
+
+                  <div className="text-[11px] text-slate-600">
+                    Location: <strong className="text-slate-800">{w.location_text || "Bhopal Central"}</strong> • Experience: {w.experience_years || 5} Years • Wage: <strong className="text-slate-900 font-mono">₹{w.daily_rate}/day</strong>
+                  </div>
+
+                  <div className="text-[10px] text-slate-500 font-mono flex items-center gap-3">
+                    <span>Member ID: {w.member_registration_no || "MEM-BPL-2026-PENDING"}</span>
+                    <span>Welfare ID: {w.welfare_id || "WLF-2026-PENDING"}</span>
+                    <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
+                      <FiShield size={10} /> PM Suraksha Bima (₹5L) Eligible
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    to={/contractor/}
+                    target="_blank"
+                    className="px-3 py-1.5 text-xs font-bold text-[#0B3C5D] bg-[#EDF4F9] hover:bg-[#D6E6F0] rounded-lg border border-[#D6E6F0] transition-colors"
+                  >
+                    View Profile
+                  </Link>
+
+                  {!w.is_verified ? (
+                    <>
+                      <button
+                        onClick={() => handleVerifyWorker(w.id)}
+                        className="bg-[#138808] hover:bg-[#0E6806] text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-xs flex items-center gap-1"
+                      >
+                        <FiCheck size={12} />
+                        <span>Approve & Certify</span>
+                      </button>
+                      <button
+                        onClick={() => setRejectModal(w.id)}
+                        className="bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-bold text-xs px-3 py-1.5 rounded-lg"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <span className="text-emerald-700 text-xs font-extrabold flex items-center gap-1">
+                      <FiCheckCircle className="w-4 h-4" /> Approved
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Modal: Reject Worker */}
+        {rejectModal && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <div className="bg-white rounded-xl max-w-md w-full p-6 border border-slate-200 shadow-xl space-y-4">
+              <h3 className="font-extrabold text-rose-700 text-base flex items-center gap-2">
+                <FiAlertCircle /> Reject Verification
+              </h3>
+              <p className="text-xs text-slate-600">
+                Provide feedback to the artisan regarding missing ID proof or required trade certifications:
+              </p>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="e.g. Valid Aadhaar proof / NCCT trade certificate is required..."
+                className="w-full h-24 p-3 border border-slate-300 rounded-lg text-xs outline-none"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setRejectModal(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRejectWorker}
+                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 rounded-lg"
+                >
+                  Confirm Rejection
+                </button>
               </div>
             </div>
-          </section>
+          </div>
         )}
 
-      </main>
+      </div>
     </div>
   );
 }

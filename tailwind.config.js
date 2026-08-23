@@ -5,17 +5,54 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: { DEFAULT: "#0F5C5C", light: "#157A7A", dark: "#0A4242", 50: "#E8F4F4", 100: "#D1EAEA" },
-        accent: { DEFAULT: "#F5A623", light: "#FBBE5B", dark: "#D98207", 50: "#FEF8EC" },
-        surface: { DEFAULT: "#FFFFFF", dark: "#0F172A" },
-        navy: { DEFAULT: "#0A2828", light: "#133D3D", dark: "#051A1A" },
-        success: { DEFAULT: "#10B981", light: "#34D399" },
-        danger: { DEFAULT: "#EF4444", light: "#F87171" },
-        warning: { DEFAULT: "#F59E0B", light: "#FBBF24" },
+        // Indian Government Portal Theme Tokens
+        govNavy: {
+          50: "#EDF4F9",
+          100: "#D6E6F0",
+          500: "#0B3C5D", // Official Ashoka Navy Blue
+          600: "#082B42",
+          700: "#061F30",
+        },
+        govSaffron: {
+          50: "#FEF7EE",
+          100: "#FDEDD7",
+          500: "#E67E22", // Bharat Saffron
+          600: "#D35400",
+          700: "#A04000",
+        },
+        govGreen: {
+          50: "#EAF5EA",
+          100: "#CAE6CA",
+          500: "#138808", // India Green (National flag)
+          600: "#0E6806",
+          700: "#094A04",
+        },
+        primary: {
+          DEFAULT: "#0B3C5D", // Ashoka Navy
+          hover: "#082B42",
+          light: "#EDF4F9",
+          dark: "#061F30",
+        },
+        accent: {
+          DEFAULT: "#E67E22", // Bharat Saffron
+          hover: "#D35400",
+          light: "#FEF7EE",
+        },
+        success: {
+          DEFAULT: "#138808", // National Green
+          light: "#EAF5EA",
+        },
+        surface: "var(--color-surface)",
+        background: "var(--color-bg)",
+        border: "var(--color-border)",
+        heading: "var(--color-heading)",
+        body: "var(--color-body)",
+        muted: "var(--color-muted)",
       },
       fontFamily: {
-        display: ['"Plus Jakarta Sans"', '"Noto Sans Devanagari"', '"Inter"', 'system-ui', 'sans-serif'],
-        body: ['"Inter"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        sans: ["'Plus Jakarta Sans'", "'Noto Sans Devanagari'", "Inter", "-apple-system", "sans-serif"],
+        display: ["'Plus Jakarta Sans'", "'Noto Sans Devanagari'", "sans-serif"],
+        devanagari: ["'Noto Sans Devanagari'", "sans-serif"],
         mono: ['"JetBrains Mono"', 'monospace'],
         script: ['"Caveat"', 'cursive'],
       },

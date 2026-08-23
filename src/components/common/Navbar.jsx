@@ -1,31 +1,27 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
 import {
-  FiHome,
-  FiLogOut,
   FiMenu,
-  FiUser,
   FiX,
-  FiMoon,
-  FiSun,
+  FiUser,
   FiBriefcase,
-  FiMessageCircle,
-  FiStar,
-  FiGlobe,
+  FiLogOut,
   FiLayers,
-  FiUsers
+  FiUsers,
+  FiLock,
+  FiCheckCircle,
+  FiShield
 } from "react-icons/fi";
-import { ThekedaarLogo } from "./ThekedaarLogo";
+import GovHeader from "./GovHeader";
+import { SahKaariLogo } from "./SahKaariLogo";
 import toast from "react-hot-toast";
 
 export default function Navbar() {
-  const { lang, setLang } = useLanguage();
-  const { user, logout, isContractor, isAdmin } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
+  const { lang } = useLanguage();
+  const { user, logout, isContractor, isAdmin, isSocietyAdmin, isFederationAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,462 +29,277 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const [visible, setVisible] = useState(true);
-  const [prevScrollPos, setPrevScrollPos] = useState(0);
-
-  // Show/Hide Navbar on Scroll with smooth direction tracking
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollPos = window.scrollY;
-      const isScrollingUp = prevScrollPos > currentScrollPos;
-
-      if (currentScrollPos < 10) {
-        setVisible(true);
-      } else {
-        setVisible(isScrollingUp);
-      }
-
-      setPrevScrollPos(currentScrollPos);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [prevScrollPos]);
-
-  // Close mobile drawer and dropdown on path change
-  useEffect(() => {
-    setMobileOpen(false);
-    setDropdownOpen(false);
-  }, [location.pathname]);
-
-  // Click outside listener for user menu dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
       }
-    };
+    }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Handle body scroll locking when mobile drawer is open
-  useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-      if (window.lenis) window.lenis.stop();
-    } else {
-      document.body.style.overflow = "";
-      if (window.lenis) window.lenis.start();
-    }
-    return () => {
-      document.body.style.overflow = "";
-      if (window.lenis) window.lenis.start();
-    };
-  }, [mobileOpen]);
-
   async function handleLogout() {
     await logout();
-    toast.success("Logged out");
+    toast.success("Logged out successfully");
     navigate("/");
   }
 
   const dashboardPath = isAdmin
     ? "/admin/dashboard"
+    : isFederationAdmin
+    ? "/federation/dashboard"
+    : isSocietyAdmin
+    ? "/society/dashboard"
     : isContractor
     ? "/contractor/dashboard"
     : "/customer/dashboard";
 
   return (
     <>
-      <a href="#main-content" className="skip-link">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-white focus:text-[#0B3C5D] focus:z-[9999]">
         Skip to main content
       </a>
 
-      <motion.header
-        animate={{ y: visible ? 0 : -90, scale: visible ? 1 : 0.95 }}
-        style={{ x: "-50%" }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="fixed top-4 left-1/2 w-[calc(100%-2rem)] max-w-7xl h-16 bg-[var(--color-surface-glass)] backdrop-blur-md border border-[var(--color-border)] rounded-2xl z-[1000] flex items-center px-4 md:px-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)]"
-      >
-        <div className="w-full mx-auto flex items-center justify-between h-full">
+      {/* Official Government of India & Ministry Strip */}
+      <GovHeader />
+
+      {/* Main Government Navigation Bar */}
+      <header className="sticky top-0 w-full bg-white border-b-2 border-[#0B3C5D] z-[990] shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
           
-          {/* Logo — Left */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <ThekedaarLogo className="h-9 w-9 transition-transform duration-300 group-hover:scale-105" />
+          {/* Logo & National Cooperative Identity */}
+          <div className="flex items-center gap-3.5">
+            <Link to="/" className="flex items-center gap-3 group">
+              <SahKaariLogo className="h-12 w-12 transition-transform duration-200 group-hover:scale-105" />
               <div className="flex flex-col">
-                <span className="font-extrabold text-base tracking-tight text-[var(--color-heading)] leading-none font-display">
-                  Sah<span className="text-primary">Kaari</span>
-                </span>
-                <span className="text-[9px] font-bold text-amber-600 tracking-wider uppercase">
-                  {lang === "hi" ? "सहकारी श्रम मंच" : "Co-op Marketplace"}
+                <div className="flex items-center gap-1.5">
+                  <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-[#0B3C5D] font-display leading-none">
+                    सह<span className="text-[#E67E22]">कारी</span>
+                  </span>
+                  <span className="font-bold text-xs text-slate-400">|</span>
+                  <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-800 font-display leading-none">
+                    Sah<span className="text-[#E67E22]">Kaari</span>
+                  </span>
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-bold text-[#138808] tracking-wide mt-0.5">
+                  {lang === "hi" ? "राष्ट्रीय श्रम सहकारी सेवा मंच (भारत सरकार)" : "National Labour Cooperative Marketplace (Govt. of India)"}
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Links — Center (Hidden on Mobile) */}
-          <div className="hidden lg:flex items-center gap-1 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] p-1 rounded-xl">
+          {/* Center Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-1">
             <Link
               to="/"
-              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
-                location.pathname === "/"
-                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
-                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
-              }`}
+              className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
             >
-              {lang === "hi" ? "होम" : "Home"}
+              {lang === "hi" ? "मुख्य पृष्ठ" : "Home"}
             </Link>
             <Link
               to="/search"
-              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
-                location.pathname === "/search"
-                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
-                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
-              }`}
+              className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
             >
-              {lang === "hi" ? "कारीगर खोजें" : "Find Co-op Workers"}
+              {lang === "hi" ? "कारीगर सेवा बुक करें" : "Find Certified Artisans"}
             </Link>
-            <Link
-              to="/federation-dashboard"
-              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
-                location.pathname === "/federation-dashboard"
-                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
-                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
-              }`}
-            >
-              {lang === "hi" ? "महासंघ पोर्टल" : "Federation Admin"}
-            </Link>
-            <Link
-              to="/society-dashboard"
-              className={`text-xs font-bold tracking-wide transition-all px-3 py-1.5 rounded-lg ${
-                location.pathname === "/society-dashboard"
-                  ? "text-primary bg-[var(--color-surface)] shadow-xs border border-[var(--color-border)]"
-                  : "text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-surface)]/50"
-              }`}
-            >
-              {lang === "hi" ? "समिति पोर्टल" : "Society Admin"}
-            </Link>
-          </div>
-
-          {/* Actions — Right */}
-          <div className="flex items-center gap-3">
             
-            {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-3">
-              {/* Language Toggle */}
-              <button
-                onClick={() => setLang(lang === "en" ? "hi" : "en")}
-                className="text-[10px] font-bold px-2 py-1 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-all flex items-center gap-1"
-                aria-label="Toggle language"
+            {/* Conditional Role Based Links */}
+            {(isFederationAdmin || isAdmin) && (
+              <Link
+                to="/federation/dashboard"
+                className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
               >
-                <FiGlobe size={12} />
-                <span>{lang === "en" ? "EN" : "HI"}</span>
-              </button>
-
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                aria-label="Toggle theme"
+                {lang === "hi" ? "महासंघ पोर्टल" : "Federation Portal"}
+              </Link>
+            )}
+            
+            {(isSocietyAdmin || isAdmin) && (
+              <Link
+                to="/society/dashboard"
+                className={	ext-xs font-bold px-3.5 py-2 rounded-md transition-all }
               >
-                {isDark ? <FiSun size={15} /> : <FiMoon size={15} />}
-              </button>
+                {lang === "hi" ? "समिति पोर्टल" : "Society Portal"}
+              </Link>
+            )}
+          </nav>
 
-              {/* Auth button or Dropdown */}
-              {!user ? (
-                <>
-                  <Link
-                    to="/login"
-                    className="text-xs font-bold text-[var(--color-body)] hover:text-[var(--color-heading)] transition-colors px-1"
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    to="/register/contractor"
-                    className="border border-[var(--color-border)] hover:border-[var(--color-heading)] text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)] rounded-xl px-3.5 py-2 text-xs font-bold transition-all shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
-                  >
-                    List your business
-                  </Link>
-                </>
-              ) : (
-                <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center border border-indigo-200 dark:border-indigo-800 hover:shadow-sm transition-all focus:outline-none"
-                  >
+          {/* Right Actions & Portal Login */}
+          <div className="flex items-center gap-3">
+            {!user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="bg-[#0B3C5D] hover:bg-[#082B42] text-white text-xs font-bold px-4 py-2.5 rounded-md shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <FiLock size={13} className="text-amber-300" />
+                  <span>{lang === "hi" ? "पोर्टल लॉगिन" : "Official Login"}</span>
+                </Link>
+                <Link
+                  to="/register/contractor"
+                  className="hidden sm:inline-flex border border-[#138808] text-[#138808] hover:bg-[#EAF5EA] text-xs font-bold px-3.5 py-2.5 rounded-md transition-all"
+                >
+                  {lang === "hi" ? "कारीगर पंजीकरण" : "Worker Registration"}
+                </Link>
+              </div>
+            ) : (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-2 bg-[#EDF4F9] border border-[#D6E6F0] text-[#0B3C5D] px-3 py-1.5 rounded-md font-bold text-xs hover:bg-[#D6E6F0] transition-all"
+                >
+                  <div className="w-6 h-6 rounded-full bg-[#0B3C5D] text-white flex items-center justify-center text-[10px] font-bold">
                     {user?.name?.[0]?.toUpperCase() || "U"}
-                  </button>
+                  </div>
+                  <span className="max-w-[110px] truncate">{user.name}</span>
+                  <span className="text-[10px] uppercase px-1.5 py-0.5 bg-[#0B3C5D] text-white rounded font-extrabold">
+                    {user.role}
+                  </span>
+                </button>
 
-                  <AnimatePresence>
-                    {dropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-lg py-2 z-[1001]"
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      className="absolute right-0 mt-2 w-60 rounded-md bg-white border border-[#CBD5E1] shadow-lg py-2 z-[1001]"
+                    >
+                      <div className="px-4 py-2.5 border-b border-slate-100 mb-1 bg-slate-50">
+                        <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
+                        <p className="text-[11px] text-slate-500 truncate">{user.email || user.phone}</p>
+                        <span className="inline-block mt-1 text-[10px] font-bold text-[#0B3C5D] bg-[#EDF4F9] px-2 py-0.5 rounded">
+                          Role: {user.role?.replace("_", " ")?.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <Link
+                        to={dashboardPath}
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-[#EDF4F9] hover:text-[#0B3C5D]"
                       >
-                        <div className="px-4 py-2 border-b border-[var(--color-border)] mb-1">
-                          <p className="text-sm font-bold text-[var(--color-heading)] truncate">
-                            {user.name}
-                          </p>
-                          <p className="text-xs text-[var(--color-muted)] truncate">
-                            {user.email || user.phone}
-                          </p>
-                        </div>
+                        <FiBriefcase size={14} />
+                        <span>My Dashboard</span>
+                      </Link>
 
+                      {(isFederationAdmin || isAdmin) && (
                         <Link
-                          to={dashboardPath}
+                          to="/federation/dashboard"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                        >
-                          <FiBriefcase size={14} />
-                          <span>Dashboard</span>
-                        </Link>
-                        <Link
-                          to="/federation-dashboard"
-                          onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors font-semibold text-primary"
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#0B3C5D] hover:bg-[#EDF4F9]"
                         >
                           <FiLayers size={14} />
-                          <span>Federation Admin</span>
+                          <span>Federation Admin Console</span>
                         </Link>
+                      )}
+
+                      {(isSocietyAdmin || isAdmin) && (
                         <Link
-                          to="/society-dashboard"
+                          to="/society/dashboard"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors font-semibold text-amber-700"
+                          className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#D35400] hover:bg-[#FEF7EE]"
                         >
                           <FiUsers size={14} />
-                          <span>Society Admin</span>
+                          <span>Society Admin Console</span>
                         </Link>
-                        <Link
-                          to="/profile"
-                          onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                        >
-                          <FiUser size={14} />
-                          <span>Profile</span>
-                        </Link>
-                        <Link
-                          to="/chat"
-                          onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                        >
-                          <FiMessageCircle size={14} />
-                          <span>Messages</span>
-                        </Link>
+                      )}
 
-                        <div className="border-t border-[var(--color-border)] my-1" />
+                      <Link
+                        to="/profile"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <FiUser size={14} />
+                        <span>Profile Settings</span>
+                      </Link>
 
-                        <button
-                          onClick={() => {
-                            setDropdownOpen(false);
-                            handleLogout();
-                          }}
-                          className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
-                        >
-                          <FiLogOut size={14} />
-                          <span>Logout</span>
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
+                      <div className="border-t border-slate-100 my-1" />
 
-            {/* Mobile Menu Trigger */}
+                      <button
+                        onClick={() => {
+                          setDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50"
+                      >
+                        <FiLogOut size={14} />
+                        <span>Logout</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-              aria-label="Toggle mobile menu"
+              className="lg:hidden p-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
+              aria-label="Open mobile menu"
             >
               {mobileOpen ? <FiX size={20} /> : <FiMenu size={20} />}
             </button>
-
           </div>
+
         </div>
-      </motion.header>
 
-      {/* Mobile Drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            {/* Overlay */}
+        {/* Mobile Dropdown Menu */}
+        <AnimatePresence>
+          {mobileOpen && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/40 z-[998] md:hidden"
-            />
-            {/* Side Panel */}
-            <motion.aside
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-80 bg-[var(--color-surface)] border-l border-[var(--color-border)] z-[999] p-6 flex flex-col gap-6 md:hidden shadow-2xl overflow-y-auto"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="lg:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-2"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <ThekedaarLogo className="h-8 w-8" />
-                  <span className="font-bold text-base tracking-tight text-[var(--color-heading)] font-display">
-                    Sah<span className="text-primary">Kaari</span>
-                  </span>
-                </div>
-                <button
+              <Link
+                to="/"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-bold text-slate-800 py-2"
+              >
+                {lang === "hi" ? "मुख्य पृष्ठ" : "Home"}
+              </Link>
+              <Link
+                to="/search"
+                onClick={() => setMobileOpen(false)}
+                className="block text-sm font-bold text-slate-800 py-2"
+              >
+                {lang === "hi" ? "कारीगर सेवा बुक करें" : "Book Services"}
+              </Link>
+              {(isFederationAdmin || isAdmin) && (
+                <Link
+                  to="/federation/dashboard"
                   onClick={() => setMobileOpen(false)}
-                  className="p-2 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                  className="block text-sm font-bold text-[#0B3C5D] py-2"
                 >
-                  <FiX size={18} />
-                </button>
-              </div>
-
-              {/* User Info if logged in */}
-              {user && (
-                <div className="flex items-center gap-3 p-3 bg-[var(--color-bg-elevated)] rounded-xl">
-                  <div className="w-10 h-10 rounded-full bg-teal-100 text-primary font-bold flex items-center justify-center shrink-0">
-                    {user?.name?.[0]?.toUpperCase() || "U"}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-[var(--color-heading)] truncate">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-[var(--color-muted)] truncate">
-                      {user.email || user.phone}
-                    </p>
-                  </div>
-                </div>
+                  {lang === "hi" ? "महासंघ प्रशासन" : "Federation Admin Portal"}
+                </Link>
               )}
-
-              <div className="flex flex-col gap-1">
-                <p className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-2 px-3">
-                  Cooperative Marketplace
-                </p>
+              {(isSocietyAdmin || isAdmin) && (
                 <Link
-                  to="/"
+                  to="/society/dashboard"
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                  className="block text-sm font-bold text-[#D35400] py-2"
                 >
-                  <FiHome size={16} />
-                  <span>{lang === "hi" ? "होम" : "Home"}</span>
+                  {lang === "hi" ? "समिति प्रशासन" : "Society Admin Portal"}
                 </Link>
-                <Link
-                  to="/search"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                >
-                  <FiBriefcase size={16} />
-                  <span>{lang === "hi" ? "कारीगर खोजें" : "Find Co-op Workers"}</span>
-                </Link>
-                <Link
-                  to="/federation-dashboard"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-bold text-primary hover:bg-teal-50 transition-colors"
-                >
-                  <FiLayers size={16} />
-                  <span>{lang === "hi" ? "महासंघ पोर्टल" : "Federation Admin"}</span>
-                </Link>
-                <Link
-                  to="/society-dashboard"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-bold text-amber-700 hover:bg-amber-50 transition-colors"
-                >
-                  <FiUsers size={16} />
-                  <span>{lang === "hi" ? "समिति पोर्टल" : "Society Admin"}</span>
-                </Link>
-              </div>
-
-              {user && (
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider mb-2 px-3">
-                    Your Space
-                  </p>
+              )}
+              {!user && (
+                <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
                   <Link
-                    to={dashboardPath}
+                    to="/login"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
+                    className="w-full text-center bg-[#0B3C5D] text-white py-2.5 rounded-md font-bold text-sm"
                   >
-                    <FiBriefcase size={16} />
-                    <span>Dashboard</span>
-                  </Link>
-                  <Link
-                    to="/profile"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                  >
-                    <FiUser size={16} />
-                    <span>My Profile</span>
-                  </Link>
-                  <Link
-                    to="/chat"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 py-2.5 px-3 rounded-lg text-sm font-medium text-[var(--color-body)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                  >
-                    <FiMessageCircle size={16} />
-                    <span>Messages</span>
+                    Official Portal Login
                   </Link>
                 </div>
               )}
-
-              <div className="flex flex-col gap-2 mt-auto">
-                <div className="flex items-center justify-between py-2 border-t border-[var(--color-border)]">
-                  <span className="text-sm font-semibold text-[var(--color-body)]">Theme</span>
-                  <button
-                    onClick={toggleTheme}
-                    className="p-2 rounded-lg text-[var(--color-muted)] hover:text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors"
-                  >
-                    {isDark ? <FiSun size={18} /> : <FiMoon size={18} />}
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-b border-[var(--color-border)]">
-                  <span className="text-sm font-semibold text-[var(--color-body)]">Language</span>
-                  <button
-                    onClick={() => setLang(lang === "en" ? "hi" : "en")}
-                    className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[var(--color-bg-elevated)] text-[var(--color-heading)] hover:bg-[var(--color-border)] transition-all"
-                  >
-                    {lang === "en" ? "English" : "हिंदी"}
-                  </button>
-                </div>
-
-                {!user ? (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <Link
-                      to="/login"
-                      onClick={() => setMobileOpen(false)}
-                      className="w-full h-11 flex items-center justify-center rounded-xl bg-[var(--color-bg-elevated)] hover:bg-[var(--color-border)] text-sm font-semibold text-[var(--color-heading)] transition-colors"
-                    >
-                      Log in
-                    </Link>
-                    <Link
-                      to="/register/contractor"
-                      onClick={() => setMobileOpen(false)}
-                      className="w-full h-11 flex items-center justify-center rounded-xl bg-[var(--color-heading)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-                    >
-                      List your business
-                    </Link>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setMobileOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-rose-200 dark:border-rose-950/40 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/10 text-sm font-semibold transition-colors mt-2"
-                  >
-                    <FiLogOut size={16} />
-                    <span>Logout</span>
-                  </button>
-                )}
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
     </>
   );
 }

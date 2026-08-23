@@ -5,48 +5,48 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
 /* ═══════════════════════════════════════════════════════════
-   SAHKAARI — COOPERATIVE WORKER MARKETPLACE DESIGN SYSTEM
-   Theme: Institutional Trust & Cooperative Solidarity
-   Colors: Deep Cooperative Teal & Saffron Gold Accent
+   SAHKAARI — GOVERNMENT COOPERATIVE DIGITAL MARKETPLACE DESIGN SYSTEM
+   Ministry of Cooperation & National Labour Cooperatives Portal
+   Colors: Ashoka Navy Blue (#0B3C5D), Bharat Saffron (#E67E22), National Green (#138808)
    ═══════════════════════════════════════════════════════════ */
 
 /* ─── Design Tokens ─── */
 @layer base {
   :root {
-    /* Brand - Deep Teal & Cooperative Trust */
-    --color-primary: #0F5C5C;
-    --color-primary-hover: #0A4242;
-    --color-primary-muted: rgba(15, 92, 92, 0.08);
-    --color-accent: #F5A623;
-    --color-accent-hover: #D98207;
-    --color-accent-muted: rgba(245, 166, 35, 0.1);
+    /* Brand - Official Indian Government Portal */
+    --color-primary: #0B3C5D;
+    --color-primary-hover: #082B42;
+    --color-primary-muted: rgba(11, 60, 93, 0.08);
+    --color-accent: #E67E22;
+    --color-accent-hover: #D35400;
+    --color-accent-muted: rgba(230, 126, 34, 0.1);
 
-    /* Premium Soft UI Canvas — Soft Off-white for neomorphic contrast */
-    --color-bg: #F1F5F9;
-    --color-bg-elevated: #F8FAFC;
+    /* National Government Surface Canvas */
+    --color-bg: #F4F6F9;
+    --color-bg-elevated: #E9ECEF;
     --color-surface: #FFFFFF;
-    --color-surface-hover: #F8FAFC;
-    --color-surface-glass: rgba(255, 255, 255, 0.85);
+    --color-surface-hover: #F8F9FA;
+    --color-surface-glass: rgba(255, 255, 255, 0.95);
 
-    /* Text - Balanced High Contrast */
-    --color-heading: #0F172A;
-    --color-body: #334155;
-    --color-muted: #64748B;
-    --color-subtle: #94A3B8;
+    /* Text - High Legibility Institutional Contrast */
+    --color-heading: #0B192C;
+    --color-body: #1E293B;
+    --color-muted: #475569;
+    --color-subtle: #64748B;
 
-    /* Borders & Dividers - Extremely subtle and soft */
-    --color-border: rgba(15, 23, 42, 0.04);
-    --color-border-hover: rgba(15, 23, 42, 0.08);
-    --color-divider: rgba(15, 23, 42, 0.03);
+    /* Crisp Official Borders */
+    --color-border: #DDE2E8;
+    --color-border-hover: #CBD5E1;
+    --color-divider: #E2E8F0;
 
-    /* Status */
-    --color-success: #16A34A;
-    --color-error: #DC2626;
-    --color-warning: #D97706;
+    /* Status - National Green */
+    --color-success: #138808;
+    --color-error: #C0392B;
+    --color-warning: #D35400;
 
-    /* Strong Premium Neumorphic Raised & Pressed Elevation Shadows */
-    --shadow-neumorphic-raised: 8px 8px 20px #e2e8f0, -8px -8px 20px #ffffff;
-    --shadow-neumorphic-pressed: inset 6px 6px 12px #e2e8f0, inset -6px -6px 12px #ffffff;
+    /* Elevation Shadows */
+    --shadow-neumorphic-raised: 0 4px 12px rgba(11, 60, 93, 0.06);
+    --shadow-neumorphic-pressed: inset 0 2px 4px rgba(0, 0, 0, 0.06);
     
     --shadow-xs: 2px 2px 5px #e2e8f0, -2px -2px 5px #ffffff;
     --shadow-sm: 4px 4px 10px #e2e8f0, -4px -4px 10px #ffffff;
