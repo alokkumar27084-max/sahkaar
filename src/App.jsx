@@ -2,17 +2,19 @@ import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
+import { LocationProvider } from "./context/LocationContext";
+import { NotificationProvider } from "./context/NotificationContext";
+import LocationSelectorModal from "./components/common/LocationSelectorModal";
 import Navbar from "./components/common/Navbar";
 import Footer from "./components/common/Footer";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import Icon from "./components/common/Icon";
-import LocationPromptModal from "./components/common/LocationPromptModal";
 import PageWrapper from "./components/common/PageWrapper";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import usePageTracking from "./hooks/usePageTracking";
@@ -36,7 +38,7 @@ const PrivacyPolicy = lazy(() => import("./pages/customer/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/customer/TermsOfService"));
 const RefundPolicy = lazy(() => import("./pages/customer/RefundPolicy"));
 
-// New pages for Platform Pivot
+// Pivot Pages
 const QuickBookingPage = lazy(() => import("./pages/customer/QuickBookingPage"));
 const MeetingBookingPage = lazy(() => import("./pages/customer/MeetingBookingPage"));
 const LabourSearchPage = lazy(() => import("./pages/customer/LabourSearchPage"));
@@ -61,20 +63,18 @@ function PageTracker() {
   return null;
 }
 
-/* ── Initialize Lenis Smooth Scroll — smooth but NOT slow ── */
 function useLenisScroll() {
   useEffect(() => {
     if (!window.Lenis || !window.gsap) return;
 
     const lenis = new window.Lenis({
-      lerp: 0.12,         // Higher = faster response (was 0.08, now 0.12)
-      duration: 1.0,      // Shorter scroll duration
+      lerp: 0.12,
+      duration: 1.0,
       smoothWheel: true,
-      wheelMultiplier: 1.2, // Slightly amplified wheel
+      wheelMultiplier: 1.2,
     });
 
-    // Sync with GSAP ScrollTrigger
-    lenis.on('scroll', window.ScrollTrigger?.update);
+    lenis.on("scroll", window.ScrollTrigger?.update);
 
     window.gsap.ticker.add((time) => {
       lenis.raf(time * 1000);
@@ -90,7 +90,6 @@ function useLenisScroll() {
   }, []);
 }
 
-/* ── Toaster theme-aware wrapper ── */
 function ThemedToaster() {
   const { isDark } = useTheme();
   return (
@@ -102,7 +101,7 @@ function ThemedToaster() {
           borderRadius: "14px",
           color: isDark ? "#ECEEF6" : "#0C0F1D",
           background: isDark ? "#1A1C28" : "#FFFFFF",
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#E8EAF2'}`,
+          border: `1px solid ${isDark ? "rgba(255,255,255,0.06)" : "#E8EAF2"}`,
           fontSize: "14px",
           fontFamily: "'Inter', sans-serif",
           boxShadow: isDark
@@ -129,10 +128,10 @@ function FooterWrapper() {
     "/search",
     "/select-service",
     "/project",
-    "/labour"
+    "/labour",
   ];
 
-  const shouldHide = hideFooterOn.some(path => location.pathname.includes(path));
+  const shouldHide = hideFooterOn.some((path) => location.pathname.includes(path));
 
   if (shouldHide) return null;
   return <Footer />;
@@ -140,12 +139,8 @@ function FooterWrapper() {
 
 function NavbarWrapper() {
   const location = useLocation();
-
-  const hideNavbarOn = [
-    "/admin"
-  ];
-
-  const shouldHide = hideNavbarOn.some(path => location.pathname.includes(path));
+  const hideNavbarOn = ["/admin"];
+  const shouldHide = hideNavbarOn.some((path) => location.pathname.includes(path));
 
   if (shouldHide) return null;
   return <Navbar />;
@@ -167,15 +162,9 @@ function AnimatedRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/search"
-          element={
-            <ProtectedRoute>
-              <PageWrapper><SearchPage /></PageWrapper>
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/search" element={<PageWrapper><SearchPage /></PageWrapper>} />
         <Route path="/contractor/:id" element={<PageWrapper><ContractorProfilePage /></PageWrapper>} />
+        <Route path="/master/:id" element={<PageWrapper><ContractorProfilePage /></PageWrapper>} />
         <Route
           path="/checkout/:id"
           element={
@@ -195,6 +184,7 @@ function AnimatedRoutes() {
         <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
         <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
         <Route path="/register/contractor" element={<PageWrapper><ContractorRegisterPage /></PageWrapper>} />
+        <Route path="/register/master" element={<PageWrapper><ContractorRegisterPage /></PageWrapper>} />
         <Route path="/forgot-password" element={<PageWrapper><ForgotPasswordPage /></PageWrapper>} />
         <Route path="/reset-password" element={<PageWrapper><ResetPasswordPage /></PageWrapper>} />
         <Route path="/privacy-policy" element={<PageWrapper><PrivacyPolicy /></PageWrapper>} />
@@ -270,7 +260,15 @@ function AnimatedRoutes() {
         <Route
           path="/contractor/dashboard"
           element={
-            <ProtectedRoute requiredRole="contractor">
+            <ProtectedRoute requiredRole={["contractor", "worker", "master"]}>
+              <PageWrapper><ContractorDashboard /></PageWrapper>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/master/dashboard"
+          element={
+            <ProtectedRoute requiredRole={["contractor", "worker", "master"]}>
               <PageWrapper><ContractorDashboard /></PageWrapper>
             </ProtectedRoute>
           }
@@ -278,7 +276,7 @@ function AnimatedRoutes() {
         <Route
           path="/contractor/edit"
           element={
-            <ProtectedRoute requiredRole="contractor">
+            <ProtectedRoute requiredRole={["contractor", "worker", "master"]}>
               <PageWrapper><ContractorEditPage /></PageWrapper>
             </ProtectedRoute>
           }
@@ -324,16 +322,17 @@ function AnimatedRoutes() {
           }
         />
 
+        {/* 404 Fallback Route */}
         <Route
           path="*"
           element={
             <PageWrapper>
-              <div className="min-h-[68vh] flex items-center justify-center px-4">
-                <div className="card p-10 md:p-14 border border-border bg-surface max-w-lg text-center shadow-sm">
-                  <div className="mb-5 flex justify-center text-primary">
-                    <Icon name="compass" className="w-12 h-12" />
+              <div className="min-h-[60vh] flex items-center justify-center p-4">
+                <div className="text-center max-w-md">
+                  <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon name="alert-triangle" size={32} />
                   </div>
-                  <h2 className="text-2xl font-extrabold text-heading mb-2">Page Not Found</h2>
+                  <h1 className="text-2xl font-bold font-display text-primary mb-2">Page Not Found</h1>
                   <p className="text-muted text-sm mb-6">This page does not exist or has been moved.</p>
                   <Link to="/" className="btn-primary py-2.5 px-6 inline-block rounded-lg font-semibold">
                     Return Home
@@ -349,9 +348,10 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
-  const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || "1091767343100-cdkm19c3r5fn3m6ha6nfqk38g16lj5cg.apps.googleusercontent.com";
+  const GOOGLE_CLIENT_ID =
+    process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+    "1091767343100-cdkm19c3r5fn3m6ha6nfqk38g16lj5cg.apps.googleusercontent.com";
 
-  // Initialize Lenis — smooth but fast
   useLenisScroll();
 
   return (
@@ -362,22 +362,26 @@ export default function App() {
           <ThemeProvider>
             <LanguageProvider>
               <AuthProvider>
-                <ThemedToaster />
+                <NotificationProvider>
+                  <LocationProvider>
+                    <ThemedToaster />
 
-                <div className="app-shell">
-                  <div className="content-layer">
-                    <LocationPromptModal />
-                    <NavbarWrapper />
+                    <div className="app-shell">
+                      <div className="content-layer">
+                        <LocationSelectorModal />
+                        <NavbarWrapper />
 
-                    <Suspense fallback={<PageFallback />}>
-                      <ErrorBoundary>
-                        <AnimatedRoutes />
-                      </ErrorBoundary>
-                    </Suspense>
+                        <Suspense fallback={<PageFallback />}>
+                          <ErrorBoundary>
+                            <AnimatedRoutes />
+                          </ErrorBoundary>
+                        </Suspense>
 
-                    <FooterWrapper />
-                  </div>
-                </div>
+                        <FooterWrapper />
+                      </div>
+                    </div>
+                  </LocationProvider>
+                </NotificationProvider>
               </AuthProvider>
             </LanguageProvider>
           </ThemeProvider>

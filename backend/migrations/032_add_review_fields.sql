@@ -1,0 +1,6 @@
+-- Add missing review columns safely
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS review_text TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS comment TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS booking_id UUID;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();

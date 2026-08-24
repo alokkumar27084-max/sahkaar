@@ -27,10 +27,39 @@ exports.getPublicStats = async (req, res, next) => {
   }
 };
 
-// Get featured contractors (Strictly admin-selected)
+// Get featured / recommended contractors (Hyper-local geo-aware & verified)
 exports.featured = async (req, res, next) => {
   try {
-    const result = await db.query(
+    const lat = req.query.lat ? Number(req.query.lat) : null;
+    const lng = req.query.lng ? Number(req.query.lng) : null;
+    const radiusMeters = req.query.radius_km ? Number(req.query.radius_km) * 1000 : 25000;
+
+    let distanceSql = "NULL::float8 AS distance_km";
+    let whereSql = `WHERE COALESCE(array_length(c.categories, 1), 0) > 0
+                    AND (c.is_verified = true OR c.verification_status = 'verified')`;
+    let orderBySql = "ORDER BY c.is_featured DESC, c.rating DESC, c.created_at DESC";
+    let params = [];
+
+    if (lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng)) {
+      params = [lat, lng, radiusMeters];
+      distanceSql = `
+        (earth_distance(
+          ll_to_earth($1, $2),
+          ll_to_earth(COALESCE(c.lat, c.latitude)::float8, COALESCE(c.lng, c.longitude)::float8)
+        ) / 1000.0) AS distance_km
+      `;
+      whereSql += ` AND COALESCE(c.lat, c.latitude) IS NOT NULL
+                    AND COALESCE(c.lng, c.longitude) IS NOT NULL
+                    AND earth_box(ll_to_earth($1, $2), $3) @>
+                        ll_to_earth(COALESCE(c.lat, c.latitude)::float8, COALESCE(c.lng, c.longitude)::float8)
+                    AND earth_distance(
+                        ll_to_earth($1, $2),
+                        ll_to_earth(COALESCE(c.lat, c.latitude)::float8, COALESCE(c.lng, c.longitude)::float8)
+                    ) <= $3`;
+      orderBySql = "ORDER BY distance_km ASC, c.is_featured DESC, c.rating DESC";
+    }
+
+    let result = await db.query(
       `SELECT c.*, u.name AS user_name, u.phone,
               COALESCE(c.business_name, u.name) AS name,
               COALESCE(c.category, c.categories[1], NULL) AS category,
@@ -39,16 +68,45 @@ exports.featured = async (req, res, next) => {
               s.name AS society_name,
               s.registration_no AS society_registration_no,
               s.district AS society_district,
-              f.name AS federation_name
+              f.name AS federation_name,
+              ${distanceSql}
        FROM contractors c
        JOIN users u ON u.id = c.user_id
        LEFT JOIN cooperative_societies s ON s.id = c.society_id
        LEFT JOIN federations f ON f.id = s.federation_id
-       WHERE COALESCE(array_length(c.categories, 1), 0) > 0
-         AND c.is_featured = true
-       ORDER BY c.rating DESC, c.created_at DESC
-       LIMIT 8`
+       ${whereSql}
+       ${orderBySql}
+       LIMIT 8`,
+      params
     );
+
+    // Fallback: If no hyper-local masters found in strict radius, return nearest verified masters
+    if (result.rows.length === 0 && params.length > 0) {
+      result = await db.query(
+        `SELECT c.*, u.name AS user_name, u.phone,
+                COALESCE(c.business_name, u.name) AS name,
+                COALESCE(c.category, c.categories[1], NULL) AS category,
+                COALESCE(c.review_count, c.reviews_count, 0) AS review_count,
+                COALESCE(c.portfolio_photos, c.portfolio_urls, '{}') AS portfolio_photos,
+                s.name AS society_name,
+                s.registration_no AS society_registration_no,
+                s.district AS society_district,
+                f.name AS federation_name,
+                (earth_distance(
+                  ll_to_earth($1, $2),
+                  ll_to_earth(COALESCE(c.lat, c.latitude, 23.2599)::float8, COALESCE(c.lng, c.longitude, 77.4126)::float8)
+                ) / 1000.0) AS distance_km
+         FROM contractors c
+         JOIN users u ON u.id = c.user_id
+         LEFT JOIN cooperative_societies s ON s.id = c.society_id
+         LEFT JOIN federations f ON f.id = s.federation_id
+         WHERE COALESCE(array_length(c.categories, 1), 0) > 0
+           AND (c.is_verified = true OR c.verification_status = 'verified')
+         ORDER BY distance_km ASC, c.rating DESC
+         LIMIT 8`,
+        [lat, lng]
+      );
+    }
 
     return res.json({ ok: true, contractors: result.rows });
   } catch (err) {
@@ -56,7 +114,7 @@ exports.featured = async (req, res, next) => {
   }
 };
 
-// List contractors (paginated)
+// List contractors (paginated - verified only)
 exports.list = async (req, res, next) => {
   try {
     const limit = Math.min(parseInt(req.query.limit || '20', 10), 100);
@@ -75,6 +133,7 @@ exports.list = async (req, res, next) => {
        LEFT JOIN cooperative_societies s ON s.id = c.society_id
        LEFT JOIN federations f ON f.id = s.federation_id
        WHERE COALESCE(array_length(c.categories, 1), 0) > 0
+         AND (c.is_verified = true OR c.verification_status = 'verified')
        ORDER BY c.created_at DESC
        LIMIT $1`,
       [limit]
@@ -100,6 +159,21 @@ exports.getById = async (req, res, next) => {
   try {
     const contractor = await Contractor.findById(req.params.id);
     if (!contractor) return res.status(404).json({ ok: false, message: 'Not found' });
+
+    // If not verified, only allow profile owner or federation/society admins to view
+    const isVerified = contractor.is_verified || contractor.verification_status === 'verified';
+    const isOwnerOrAdmin = req.user && (
+      req.user.id === contractor.user_id ||
+      ['admin', 'federation_admin', 'society_admin'].includes(req.user.role)
+    );
+
+    if (!isVerified && !isOwnerOrAdmin) {
+      return res.status(403).json({
+        ok: false,
+        message: 'This Master profile is currently undergoing verification by the Cooperative Federation and is not yet publicly visible.'
+      });
+    }
+
     await Contractor.incrementViews(req.params.id);
     return res.json({ ok: true, contractor });
   } catch (err) {

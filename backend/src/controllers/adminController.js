@@ -1279,3 +1279,374 @@ exports.cancelSubscription = async (req, res, next) => {
     client.release();
   }
 };
+
+// ── FEDERATIONS & SOCIETIES COMMAND (SUPER ADMIN) ──
+
+exports.listFederations = async (req, res, next) => {
+  try {
+    const query = `
+      SELECT f.*,
+        (SELECT COUNT(*) FROM cooperative_societies WHERE federation_id = f.id) AS total_societies,
+        (SELECT COUNT(*) FROM contractors c JOIN cooperative_societies cs ON c.society_id = cs.id WHERE cs.federation_id = f.id) AS total_masters
+      FROM federations f
+      ORDER BY f.is_national DESC, f.state ASC
+    `;
+    const { rows } = await db.query(query);
+    return res.json({ ok: true, federations: rows });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.createFederation = async (req, res, next) => {
+  try {
+    const { name, registration_no, state, region, jurisdiction_districts, contact_email, contact_phone, office_address, welfare_fund_balance } = req.body;
+    if (!name || !state) return res.status(400).json({ ok: false, message: 'Federation name and state required' });
+
+    const query = `
+      INSERT INTO federations (name, registration_no, state, jurisdiction_state, region, jurisdiction_districts, contact_email, contact_phone, office_address, welfare_fund_balance)
+      VALUES ($1, $2, $3, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `;
+    const { rows } = await db.query(query, [
+      sanitize(name),
+      sanitize(registration_no || `FED-${Date.now()}`),
+      sanitize(state),
+      sanitize(region || 'State Level'),
+      Array.isArray(jurisdiction_districts) ? jurisdiction_districts : [sanitize(state)],
+      contact_email ? sanitize(contact_email) : null,
+      contact_phone ? sanitize(contact_phone) : null,
+      office_address ? sanitize(office_address) : null,
+      Number(welfare_fund_balance) || 1000000.00
+    ]);
+
+    return res.json({ ok: true, federation: rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.updateFederation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, state, jurisdiction_districts, contact_email, contact_phone, office_address, welfare_fund_balance, is_active } = req.body;
+
+    const query = `
+      UPDATE federations
+      SET name = COALESCE($2, name),
+          state = COALESCE($3, state),
+          jurisdiction_state = COALESCE($3, jurisdiction_state),
+          jurisdiction_districts = COALESCE($4, jurisdiction_districts),
+          contact_email = COALESCE($5, contact_email),
+          contact_phone = COALESCE($6, contact_phone),
+          office_address = COALESCE($7, office_address),
+          welfare_fund_balance = COALESCE($8, welfare_fund_balance),
+          is_active = COALESCE($9, is_active),
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `;
+    const { rows } = await db.query(query, [
+      id,
+      name ? sanitize(name) : null,
+      state ? sanitize(state) : null,
+      Array.isArray(jurisdiction_districts) ? jurisdiction_districts : null,
+      contact_email ? sanitize(contact_email) : null,
+      contact_phone ? sanitize(contact_phone) : null,
+      office_address ? sanitize(office_address) : null,
+      welfare_fund_balance !== undefined ? Number(welfare_fund_balance) : null,
+      is_active !== undefined ? toBool(is_active) : null
+    ]);
+
+    if (!rows[0]) return res.status(404).json({ ok: false, message: 'Federation not found' });
+    return res.json({ ok: true, federation: rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.deleteFederation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM federations WHERE id = $1', [id]);
+    return res.json({ ok: true, message: 'Federation deleted successfully' });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.listSocieties = async (req, res, next) => {
+  try {
+    const query = `
+      SELECT cs.*, f.name AS federation_name, f.state AS federation_state,
+        (SELECT COUNT(*) FROM contractors WHERE society_id = cs.id) AS total_contractors,
+        (SELECT COUNT(*) FROM contractors WHERE society_id = cs.id AND (is_verified = true OR verification_status = 'verified')) AS verified_contractors
+      FROM cooperative_societies cs
+      LEFT JOIN federations f ON cs.federation_id = f.id
+      ORDER BY cs.jurisdiction_state ASC, cs.district ASC
+    `;
+    const { rows } = await db.query(query);
+    return res.json({ ok: true, societies: rows });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.createSociety = async (req, res, next) => {
+  try {
+    const { federation_id, name, registration_no, district, jurisdiction_districts, jurisdiction_state, contact_phone, contact_email, office_address, welfare_pool_balance } = req.body;
+    if (!name || !district) return res.status(400).json({ ok: false, message: 'Society name and district are required' });
+
+    const query = `
+      INSERT INTO cooperative_societies (federation_id, name, registration_no, district, jurisdiction_districts, jurisdiction_state, region, contact_phone, contact_email, office_address, welfare_pool_balance)
+      VALUES ($1, $2, $3, $4, $5, $6, $6, $7, $8, $9, $10)
+      RETURNING *
+    `;
+    const { rows } = await db.query(query, [
+      federation_id || null,
+      sanitize(name),
+      sanitize(registration_no || `SOC-${Date.now()}`),
+      sanitize(district),
+      Array.isArray(jurisdiction_districts) ? jurisdiction_districts : [sanitize(district)],
+      sanitize(jurisdiction_state || 'State'),
+      contact_phone ? sanitize(contact_phone) : null,
+      contact_email ? sanitize(contact_email) : null,
+      office_address ? sanitize(office_address) : null,
+      Number(welfare_pool_balance) || 500000.00
+    ]);
+
+    return res.json({ ok: true, society: rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.updateSociety = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { federation_id, name, district, jurisdiction_districts, jurisdiction_state, contact_phone, contact_email, office_address, is_active } = req.body;
+
+    const query = `
+      UPDATE cooperative_societies
+      SET federation_id = COALESCE($2, federation_id),
+          name = COALESCE($3, name),
+          district = COALESCE($4, district),
+          jurisdiction_districts = COALESCE($5, jurisdiction_districts),
+          jurisdiction_state = COALESCE($6, jurisdiction_state),
+          contact_phone = COALESCE($7, contact_phone),
+          contact_email = COALESCE($8, contact_email),
+          office_address = COALESCE($9, office_address),
+          is_active = COALESCE($10, is_active),
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `;
+    const { rows } = await db.query(query, [
+      id,
+      federation_id || null,
+      name ? sanitize(name) : null,
+      district ? sanitize(district) : null,
+      Array.isArray(jurisdiction_districts) ? jurisdiction_districts : null,
+      jurisdiction_state ? sanitize(jurisdiction_state) : null,
+      contact_phone ? sanitize(contact_phone) : null,
+      contact_email ? sanitize(contact_email) : null,
+      office_address ? sanitize(office_address) : null,
+      is_active !== undefined ? toBool(is_active) : null
+    ]);
+
+    if (!rows[0]) return res.status(404).json({ ok: false, message: 'Society not found' });
+    return res.json({ ok: true, society: rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.deleteSociety = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM cooperative_societies WHERE id = $1', [id]);
+    return res.json({ ok: true, message: 'Society deleted successfully' });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.reassignContractorSociety = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { society_id } = req.body;
+    if (!society_id) return res.status(400).json({ ok: false, message: 'society_id is required' });
+
+    const { rows } = await db.query(
+      `UPDATE contractors SET society_id = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [id, society_id]
+    );
+    if (!rows[0]) return res.status(404).json({ ok: false, message: 'Contractor not found' });
+
+    // Also sync user
+    await db.query('UPDATE users SET society_id = $2 WHERE id = $1', [rows[0].user_id, society_id]);
+
+    return res.json({ ok: true, contractor: rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// ── NATIONWIDE BOOKINGS & ESCROW COMMAND (SUPER ADMIN) ──
+
+exports.listAllBookings = async (req, res, next) => {
+  try {
+    // 1. Fetch quick bookings
+    const qbQuery = `
+      SELECT qb.id, 'quick_booking' AS booking_type, qb.service_name, qb.service_price AS amount,
+             qb.status, qb.booking_fee_status, qb.booking_fee_order_id, qb.booking_fee_payment_id,
+             qb.scheduled_date, qb.scheduled_time_slot, qb.customer_address, qb.created_at,
+             u.name AS customer_name, u.phone AS customer_phone, u.email AS customer_email,
+             c.business_name AS contractor_name, cu.phone AS contractor_phone,
+             cs.name AS society_name, f.name AS federation_name
+      FROM quick_bookings qb
+      JOIN users u ON qb.customer_id = u.id
+      JOIN contractors c ON qb.contractor_id = c.id
+      JOIN users cu ON c.user_id = cu.id
+      LEFT JOIN cooperative_societies cs ON c.society_id = cs.id
+      LEFT JOIN federations f ON cs.federation_id = f.id
+      ORDER BY qb.created_at DESC
+      LIMIT 100
+    `;
+    const qbRes = await db.query(qbQuery);
+
+    // 2. Fetch standard quote bookings
+    const stdQuery = `
+      SELECT b.id, 'standard_booking' AS booking_type, b.service_type AS service_name, b.total_price AS amount,
+             b.status, b.payment_status AS booking_fee_status, b.razorpay_order_id AS booking_fee_order_id,
+             b.razorpay_payment_id AS booking_fee_payment_id, b.start_date AS scheduled_date,
+             NULL AS scheduled_time_slot, b.address AS customer_address, b.created_at,
+             u.name AS customer_name, u.phone AS customer_phone, u.email AS customer_email,
+             c.business_name AS contractor_name, cu.phone AS contractor_phone,
+             cs.name AS society_name, f.name AS federation_name
+      FROM bookings b
+      JOIN users u ON b.customer_id = u.id
+      JOIN contractors c ON b.contractor_id = c.id
+      JOIN users cu ON c.user_id = cu.id
+      LEFT JOIN cooperative_societies cs ON c.society_id = cs.id
+      LEFT JOIN federations f ON cs.federation_id = f.id
+      ORDER BY b.created_at DESC
+      LIMIT 100
+    `;
+    const stdRes = await db.query(stdQuery).catch(() => ({ rows: [] }));
+
+    const combined = [...qbRes.rows, ...stdRes.rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return res.json({ ok: true, bookings: combined });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.updateBookingStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, booking_type } = req.body;
+
+    if (booking_type === 'quick_booking' || !booking_type) {
+      const { rows } = await db.query(
+        `UPDATE quick_bookings SET status = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+        [id, status]
+      );
+      if (rows[0]) return res.json({ ok: true, booking: rows[0] });
+    }
+
+    const { rows: bRows } = await db.query(
+      `UPDATE bookings SET status = $2, updated_at = NOW() WHERE id = $1 RETURNING *`,
+      [id, status]
+    );
+    if (!bRows[0]) return res.status(404).json({ ok: false, message: 'Booking not found' });
+    return res.json({ ok: true, booking: bRows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// ── USER ROLES & AUTHORITY ASSIGNMENT (SUPER ADMIN) ──
+
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+    const validRoles = ['customer', 'contractor', 'worker', 'society_admin', 'federation_admin', 'admin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ ok: false, message: 'Invalid role' });
+    }
+
+    const { rows } = await db.query(
+      `UPDATE users SET role = $2, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, phone, role`,
+      [id, role]
+    );
+    if (!rows[0]) return res.status(404).json({ ok: false, message: 'User not found' });
+    return res.json({ ok: true, user: rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+exports.assignUserAuthority = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { society_id, federation_id } = req.body;
+
+    const { rows } = await db.query(
+      `UPDATE users SET society_id = $2, federation_id = $3, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, phone, role, society_id, federation_id`,
+      [id, society_id || null, federation_id || null]
+    );
+    if (!rows[0]) return res.status(404).json({ ok: false, message: 'User not found' });
+    return res.json({ ok: true, user: rows[0] });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+// ── NATIONWIDE EMERGENCY BROADCAST (SUPER ADMIN) ──
+
+exports.emergencyBroadcast = async (req, res, next) => {
+  try {
+    const { message, type = 'broadcast', target_state, target_district } = req.body;
+    if (!message) return res.status(400).json({ ok: false, message: 'Broadcast message required' });
+
+    const notificationService = require('../services/notificationService');
+    const { getIo } = require('../config/socket');
+
+    // Store in all active users' notification boxes or broadcast to sockets
+    let userQuery = `SELECT id, email FROM users WHERE is_active = true`;
+    const params = [];
+    if (target_state) {
+      userQuery += ` AND (location_text ILIKE $1 OR state ILIKE $1)`;
+      params.push(`%${target_state}%`);
+    }
+
+    const { rows } = await db.query(userQuery, params);
+
+    // Send in-app notification to all users
+    for (const u of rows.slice(0, 500)) {
+      await db.query(
+        `INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)`,
+        [u.id, `📢 ANNOUNCEMENT: ${message}`, type]
+      );
+    }
+
+    // Push live WebSocket broadcast to all connected clients
+    try {
+      const io = getIo();
+      if (io) {
+        io.emit('notification:new', {
+          message: `📢 PLATFORM BROADCAST: ${message}`,
+          type: 'broadcast',
+          created_at: new Date().toISOString(),
+        });
+      }
+    } catch (e) {}
+
+    return res.json({ ok: true, recipient_count: rows.length, message: 'Broadcast dispatched successfully' });
+  } catch (err) {
+    return next(err);
+  }
+};
+

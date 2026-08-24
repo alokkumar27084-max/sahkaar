@@ -45,11 +45,14 @@ function initSocket(server) {
     io.on('connection', (socket) => {
         console.log(`Socket connected: ${socket.id} user=${socket.userId}`);
 
-        // Join personal notification room using server-derived user id only
+        // Automatically join personal notification room using server-verified user ID
+        if (socket.userId) {
+            socket.join(String(socket.userId));
+        }
+
         socket.on('join_own_room', () => {
             if (!socket.userId) return;
             socket.join(String(socket.userId));
-            console.log(`User ${socket.userId} joined their own room`);
         });
 
         socket.on('join_chat', async (rawChatId) => {

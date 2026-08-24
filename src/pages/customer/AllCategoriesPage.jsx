@@ -1,261 +1,244 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
-import { CATEGORIES } from "../../utils/constants";
-import { FiSearch, FiArrowLeft, FiGrid, FiList } from "react-icons/fi";
+import { useLocationContext } from "../../context/LocationContext";
+import { CATEGORIES, CATEGORY_GROUPS } from "../../utils/constants";
+import {
+  FiSearch,
+  FiMapPin,
+  FiShield,
+  FiCheckCircle,
+  FiArrowRight
+} from "react-icons/fi";
 import SEOHead from "../../components/common/SEOHead";
 
 export default function AllCategoriesPage() {
-  const { t } = useLanguage();
+  const { lang } = useLanguage();
+  const { location: userLoc, openLocationModal } = useLocationContext();
   const navigate = useNavigate();
+  const isHi = lang === "hi";
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState("grid"); // "grid" or "list"
+  const [selectedGroup, setSelectedGroup] = useState("all");
+
+  const filteredCategories = useMemo(() => {
+    return CATEGORIES.filter((cat) => {
+      if (selectedGroup !== "all" && cat.group !== selectedGroup) {
+        return false;
+      }
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      const matchName = cat.name.toLowerCase().includes(q);
+      const matchHindi = (cat.hindiName || "").toLowerCase().includes(q);
+      const matchServices = (cat.services || []).some((s) => s.toLowerCase().includes(q));
+      return matchName || matchHindi || matchServices;
+    });
+  }, [searchQuery, selectedGroup]);
 
   const handleCategoryClick = (categoryId) => {
-    if (categoryId === "labour_group") {
-      navigate(`/labour`);
-    } else {
-      navigate(`/search?category=${categoryId}&mode=project`);
+    const params = new URLSearchParams({ category: categoryId });
+    if (userLoc.lat && userLoc.lng) {
+      params.set("lat", userLoc.lat);
+      params.set("lng", userLoc.lng);
+      params.set("radius_km", userLoc.radius_km || 10);
     }
+    navigate(`/search?${params.toString()}`);
   };
 
-  const filteredCategories = CATEGORIES.filter((cat) => {
-    const label = t(cat.key).toLowerCase();
-    return label.includes(searchQuery.toLowerCase());
-  });
-
-  // Group categories for better visual organization
-  const categoryGroups = [
-    {
-      title: "Construction & Home Services",
-      emoji: "🏠",
-      ids: ["construction", "interior_finishing", "electrical", "plumbing", "painting", "real_estate", "renewable_energy"],
-    },
-    {
-      title: "Daily Hires & Maintenance",
-      emoji: "🔧",
-      ids: ["appliance_repair", "cleaning", "automobile", "labour_group", "waste_management"],
-    },
-    {
-      title: "Logistics & Agriculture",
-      emoji: "🚜",
-      ids: ["transport", "agriculture", "industrial", "food_processing"],
-    },
-    {
-      title: "Events & Hospitality",
-      emoji: "🎉",
-      ids: ["events_wedding", "event_management", "institutional_food", "tourism_hospitality", "seasonal_specialty"],
-    },
-    {
-      title: "Personal & Home Care",
-      emoji: "💆",
-      ids: ["healthcare", "personal_care", "education_tutoring", "tailoring_textile", "animal_veterinary", "spiritual_religious"],
-    },
-    {
-      title: "Business & Technology",
-      emoji: "💼",
-      ids: ["it_tech", "software_dev", "digital_marketing", "design_creative", "legal_compliance", "accounting_finance", "hr_staffing", "media_content", "printing_publishing", "retail_shop", "research_data"],
-    },
-    {
-      title: "Government & Security",
-      emoji: "🏛️",
-      ids: ["govt_municipal", "security_services"],
-    },
-  ];
-
-  const isSearching = searchQuery.trim().length > 0;
-
   return (
-    <main className="bg-[var(--color-bg)] min-h-screen pt-24 pb-16">
+    <main className="bg-slate-50 min-h-screen pb-20 text-slate-900 select-none">
       <SEOHead
-        title="All Cooperative Trades & Categories — SahKaari"
-        description="Browse certified trades and services on SahKaari. Find verified workers from Labour Cooperative Federations and Societies."
+        title="सभी सेवाएं व कारीगर — All Services | SahKaari"
+        description="Book verified Master Electricians, Plumbers, Carpenters, Painters & Home Services directly from Cooperative Federations."
       />
 
-      <div className="max-w-[var(--max-width)] mx-auto px-5 md:px-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] flex items-center justify-center text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)] transition-colors shrink-0"
-          >
-            <FiArrowLeft size={18} />
-          </button>
-          <div>
-            <h1 className="text-2xl md:text-4xl font-extrabold text-[var(--color-heading)] tracking-tight font-display">
-              All Categories
-            </h1>
-            <p className="text-sm text-[var(--color-muted)] mt-1 font-medium">
-              {CATEGORIES.length} professional service categories
-            </p>
-          </div>
-        </div>
-
-        {/* Search & View Controls */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-10">
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted)]" size={18} />
+      {/* ═══════ TOP SEARCH & LOCATION BAR ═══════ */}
+      <section className="bg-white border-b border-slate-200/80 sticky top-18 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-xl">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search categories... e.g. Plumbing, IT, Events"
-              className="w-full h-12 pl-11 pr-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-heading)] text-sm font-semibold placeholder:text-[var(--color-muted)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/10 transition-all"
+              placeholder={isHi ? "सेवा खोजें... (उदा: नल, बिजली, बढ़ई, पेंटर, सफाई)" : "Search service... (e.g. Electrician, Plumber, Painter)"}
+              className="w-full h-11 pl-11 pr-4 rounded-xl bg-slate-100 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 outline-none focus:bg-white focus:border-indigo-600 transition-all"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-700"
+              >
+                ✕
+              </button>
+            )}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`h-12 px-4 rounded-xl border text-sm font-semibold flex items-center gap-2 transition-all ${
-                viewMode === "grid"
-                  ? "bg-[var(--color-primary)] border-transparent text-white"
-                  : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)]"
-              }`}
-            >
-              <FiGrid size={16} /> Grid
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`h-12 px-4 rounded-xl border text-sm font-semibold flex items-center gap-2 transition-all ${
-                viewMode === "list"
-                  ? "bg-[var(--color-primary)] border-transparent text-white"
-                  : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-heading)] hover:bg-[var(--color-bg-elevated)]"
-              }`}
-            >
-              <FiList size={16} /> List
-            </button>
+
+          {/* Active Area Location Button */}
+          <button
+            type="button"
+            onClick={openLocationModal}
+            className="flex items-center justify-between sm:justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-xs font-bold text-slate-800 transition-all cursor-pointer shrink-0 group"
+          >
+            <div className="flex items-center gap-2">
+              <FiMapPin className="text-indigo-600 w-4 h-4 group-hover:scale-110 transition-transform" />
+              <span className="truncate max-w-[160px]">{userLoc.shortName || userLoc.name}</span>
+            </div>
+            <span className="text-[10px] text-indigo-600 font-extrabold bg-white px-2 py-0.5 rounded-md border border-indigo-100">
+              Change ▾
+            </span>
+          </button>
+
+        </div>
+
+        {/* Category Filter Pills */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 border-t border-slate-100 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {CATEGORY_GROUPS.map((group) => {
+            const isSelected = selectedGroup === group.id;
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => setSelectedGroup(group.id)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                  isSelected
+                    ? "bg-slate-950 text-white shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                <span>{group.emoji}</span>
+                <span>{group.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ═══════ VISUAL-FIRST SERVICE MARKETPLACE GRID ═══════ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        
+        {/* Header Title */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight flex items-center gap-2">
+              <span>{isHi ? "सभी मास्टर सेवाएं" : "All Services & Masters"}</span>
+              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                100% Verified
+              </span>
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {isHi ? "अपनी जरूरत की सेवा चुनें और सीधे नजदीकी मास्टर कारीगर से जुड़ें" : "Tap any service to view verified masters near you"}
+            </p>
           </div>
         </div>
 
-        {/* Search results mode */}
-        {isSearching ? (
-          <div>
-            <p className="text-sm font-semibold text-[var(--color-muted)] mb-4">
-              {filteredCategories.length} result{filteredCategories.length !== 1 ? "s" : ""} for "{searchQuery}"
+        {filteredCategories.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center max-w-sm mx-auto my-8 border border-slate-200 shadow-xs space-y-3">
+            <div className="text-4xl">🔍</div>
+            <h3 className="text-base font-bold text-slate-900">No Services Found</h3>
+            <p className="text-xs text-slate-500">
+              Try searching with another word or clear the filter.
             </p>
-            {filteredCategories.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="text-5xl mb-4">🔍</div>
-                <h3 className="text-lg font-bold text-[var(--color-heading)] mb-2">No categories found</h3>
-                <p className="text-sm text-[var(--color-muted)]">Try a different search term</p>
-              </div>
-            ) : viewMode === "grid" ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {filteredCategories.map((cat, i) => (
-                  <CategoryCard key={cat.id} cat={cat} t={t} onClick={handleCategoryClick} delay={i * 0.03} />
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredCategories.map((cat, i) => (
-                  <CategoryListItem key={cat.id} cat={cat} t={t} onClick={handleCategoryClick} delay={i * 0.03} />
-                ))}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setSelectedGroup("all");
+              }}
+              className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold"
+            >
+              Show All
+            </button>
           </div>
         ) : (
-          /* Grouped categories mode */
-          <div className="space-y-12">
-            {categoryGroups.map((group) => {
-              const groupCats = group.ids
-                .map((id) => CATEGORIES.find((c) => c.id === id))
-                .filter(Boolean);
-
-              if (groupCats.length === 0) return null;
-
-              return (
-                <section key={group.title}>
-                  <div className="flex items-center gap-3 mb-5">
-                    <span className="text-2xl">{group.emoji}</span>
-                    <h2 className="text-lg md:text-xl font-bold text-[var(--color-heading)] tracking-tight font-display">
-                      {group.title}
-                    </h2>
-                    <div className="h-px flex-1 bg-[var(--color-border)]" />
-                    <span className="text-xs font-bold text-[var(--color-muted)] uppercase tracking-wider">
-                      {groupCats.length} services
-                    </span>
+          /* High-Visual Touch Grid: 2 cols on mobile, 3 on tablet, 4 on desktop */
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+            {filteredCategories.map((cat, idx) => (
+              <motion.div
+                key={cat.id}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleCategoryClick(cat.id)}
+                className="group bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 hover:border-indigo-500 overflow-hidden shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between cursor-pointer"
+              >
+                {/* Visual Image / Photo */}
+                <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                  
+                  {/* Big Emoji Floating Icon */}
+                  <div className="absolute top-2.5 left-2.5 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/95 backdrop-blur-md shadow-md flex items-center justify-center text-xl sm:text-2xl border border-slate-100">
+                    {cat.emoji}
                   </div>
 
-                  {viewMode === "grid" ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                      {groupCats.map((cat, i) => (
-                        <CategoryCard key={cat.id} cat={cat} t={t} onClick={handleCategoryClick} delay={i * 0.04} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {groupCats.map((cat, i) => (
-                        <CategoryListItem key={cat.id} cat={cat} t={t} onClick={handleCategoryClick} delay={i * 0.04} />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
+                  {/* Price Tag */}
+                  <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-slate-950/85 backdrop-blur-md text-white text-[10px] sm:text-xs font-extrabold shadow-sm">
+                    {cat.basePrice}
+                  </div>
+                </div>
+
+                {/* Card Title & Trade Name */}
+                <div className="p-3 sm:p-4 space-y-1">
+                  <h3 className="text-xs sm:text-sm font-black text-slate-950 group-hover:text-indigo-600 transition-colors leading-tight line-clamp-1">
+                    {cat.name}
+                  </h3>
+                  <p className="text-[11px] sm:text-xs font-bold text-slate-500 line-clamp-1">
+                    {cat.hindiName}
+                  </p>
+                </div>
+
+                {/* Bottom One-Tap Action */}
+                <div className="px-3 pb-3 sm:px-4 sm:pb-4 pt-0 flex items-center justify-between text-[11px] font-extrabold text-indigo-600 group-hover:text-indigo-700">
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-700 font-bold">
+                    <FiCheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span>Verified</span>
+                  </span>
+
+                  <span className="flex items-center gap-0.5">
+                    <span>Book</span>
+                    <FiArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
+                </div>
+
+              </motion.div>
+            ))}
           </div>
         )}
-      </div>
+
+      </section>
+
+      {/* ═══════ TRUST ASSURANCE BANNER (CLEAN & SIMPLE) ═══════ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shrink-0">
+              🛡️
+            </div>
+            <div>
+              <h4 className="text-sm font-extrabold text-slate-900">100% Cooperative Verified Masters</h4>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Every worker is document-audited by the State Labour Cooperative Federation. Zero middleman commission.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/search"
+            className="px-5 py-2.5 rounded-xl bg-slate-950 hover:bg-indigo-600 text-white text-xs font-extrabold transition-colors shrink-0"
+          >
+            Explore All Masters
+          </Link>
+        </div>
+      </section>
+
     </main>
-  );
-}
-
-/* ─── Category Card (Grid View) ─── */
-function CategoryCard({ cat, t, onClick, delay = 0 }) {
-  return (
-    <motion.button
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay }}
-      onClick={() => onClick(cat.id)}
-      className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-[var(--color-border)]"
-    >
-      <img
-        src={cat.image}
-        alt={t(cat.key)}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        loading="lazy"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-        <h3 className="text-white font-bold text-sm md:text-base font-display line-clamp-2 leading-snug">
-          {t(cat.key)}
-        </h3>
-        <p className="text-white/60 text-[9px] uppercase font-bold mt-1 tracking-wider opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-          Browse →
-        </p>
-      </div>
-    </motion.button>
-  );
-}
-
-/* ─── Category List Item (List View) ─── */
-function CategoryListItem({ cat, t, onClick, delay = 0 }) {
-  return (
-    <motion.button
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay }}
-      onClick={() => onClick(cat.id)}
-      className="group w-full flex items-center gap-4 p-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-primary)]/50 hover:bg-[var(--color-bg-elevated)] transition-all duration-200 cursor-pointer text-left"
-    >
-      <img
-        src={cat.image}
-        alt={t(cat.key)}
-        className="w-12 h-12 rounded-xl object-cover shrink-0 border border-[var(--color-border)] group-hover:scale-105 transition-transform"
-        loading="lazy"
-      />
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-bold text-[var(--color-heading)] truncate font-display">
-          {t(cat.key)}
-        </h3>
-        <p className="text-xs text-[var(--color-muted)] mt-0.5 line-clamp-1">
-          {t(cat.subtitleKey)}
-        </p>
-      </div>
-      <span className="text-xs font-bold text-[var(--color-primary)] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-        Browse →
-      </span>
-    </motion.button>
   );
 }

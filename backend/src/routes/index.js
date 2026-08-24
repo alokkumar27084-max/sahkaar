@@ -10,6 +10,8 @@ router.get('/health', (req, res) => res.json({ ok: true, timestamp: new Date().t
 
 router.use('/auth', authRoutes);
 router.use('/contractors', contractorRoutes);
+router.use('/masters', contractorRoutes);
+router.use('/workers', contractorRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/admin', adminRoutes);
 router.use('/chat', require('./chat'));

@@ -240,7 +240,10 @@ exports.search = async ({
   const minRadiusMeters = minRadiusKmSafe * 1000;
 
   const params = [];
-  const where = ['COALESCE(array_length(c.categories, 1), 0) > 0'];
+  const where = [
+    'COALESCE(array_length(c.categories, 1), 0) > 0',
+    "(c.is_verified = true OR c.verification_status = 'verified')"
+  ];
 
   if (mode === 'quick') {
     where.push("c.service_type IN ('quick', 'both')");

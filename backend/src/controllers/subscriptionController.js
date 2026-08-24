@@ -5,7 +5,64 @@ const { isMockPaymentMode, verifyPaymentSignature } = require('../utils/razorpay
 const PLAN_PRICES = {
   verified_badge: 49900,
   priority_listing: 39900,
-  premium: 249900,
+  premium: 89900,
+};
+
+const PLAN_CATALOG = [
+  {
+    id: 'verified_badge',
+    title: 'Verified Master Badge Pro',
+    price: 499,
+    period: 'year',
+    popular: false,
+    badgeText: 'Trust Shield',
+    description: 'Build instant credibility with the official Cooperative Federation Verified Master Golden Badge.',
+    features: [
+      'Official Cooperative Verified Master Golden Badge',
+      'Expedited federation document verification',
+      'Trust score boost on search results',
+      'Verified Master digital certificate for customer trust',
+      'SMS & WhatsApp booking notifications',
+    ],
+  },
+  {
+    id: 'priority_listing',
+    title: 'Top Recommendation Boost',
+    price: 399,
+    period: 'month',
+    popular: true,
+    badgeText: 'Highest Leads',
+    description: 'Appear at the top of customer search results whenever customers search for your trade in your locality.',
+    features: [
+      'Rank #1 in customer search for your trade & location',
+      'Promoted "Featured Master" highlight ribbon',
+      'Up to 4x more customer direct booking requests',
+      'Direct customer call connect',
+      'Monthly analytics & performance report',
+    ],
+  },
+  {
+    id: 'premium',
+    title: 'Super Master All-Access',
+    price: 899,
+    period: 'month',
+    popular: false,
+    badgeText: 'Maximum Earnings',
+    description: 'The complete growth package: Verified Badge, Top Search Recommendation, and Unlimited Customer Leads.',
+    features: [
+      'Both Official Verified Master Badge + #1 Top Search Ranking',
+      'Unlimited direct customer bookings & enquiries',
+      'Cooperative Welfare Fund priority claim assistance',
+      'State Federation accidental & health insurance support',
+      'Dedicated cooperative artisan relationship manager',
+      'Priority emergency service dispatch invitations',
+    ],
+  },
+];
+
+// GET /api/subscriptions/plans — List all plans
+exports.getPlans = async (req, res) => {
+  return res.json({ ok: true, plans: PLAN_CATALOG });
 };
 
 // Helper: create Razorpay order

@@ -42,9 +42,11 @@ export default function UsersPanel({
           <AdminInput placeholder="Email Address" value={form.email} onChange={up("email")} />
           <AdminInput placeholder="Password (min 8 chars)" type="password" value={form.password} onChange={up("password")} required />
           <AdminSelect value={form.role} onChange={up("role")}>
-            <option value="customer">Customer Role</option>
-            <option value="contractor">Contractor Role</option>
-            <option value="admin">System Admin</option>
+            <option value="customer">Customer / Citizen</option>
+            <option value="contractor">Certified Master / Worker</option>
+            <option value="society_admin">Primary Society Secretary</option>
+            <option value="federation_admin">State Federation Director</option>
+            <option value="admin">System Super Admin</option>
           </AdminSelect>
           {form.role === "contractor" && (
             <>
@@ -66,7 +68,9 @@ export default function UsersPanel({
             <AdminInput className="!pl-10" placeholder="Search users by name, phone, email..." value={userQuery} onChange={(e) => setUserQuery(e.target.value)} />
           </div>
           <AdminSelect value={userRoleFilter} onChange={(e) => setUserRoleFilter(e.target.value)} className="capitalize">
-            {["all", "customer", "contractor", "admin"].map((r) => <option key={r} value={r}>{r} Role</option>)}
+            {["all", "customer", "contractor", "society_admin", "federation_admin", "admin"].map((r) => (
+              <option key={r} value={r}>{r.replace("_", " ")} Role</option>
+            ))}
           </AdminSelect>
         </div>
         <BtnOutline onClick={() => downloadCsv("users.csv", users)} className="flex items-center gap-1.5 font-bold">
@@ -84,7 +88,7 @@ export default function UsersPanel({
                 <th className="text-left p-3.5">Role</th>
                 <th className="text-left p-3.5">Phone</th>
                 <th className="text-left p-3.5">Email</th>
-                <th className="text-left p-3.5 pr-5">Actions</th>
+                <th className="text-left p-3.5 pr-5">Authority Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -94,32 +98,37 @@ export default function UsersPanel({
                   <td className="p-3.5">
                     <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border capitalize whitespace-nowrap ${
                       u.role === "admin" ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" : 
+                      u.role === "federation_admin" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" :
+                      u.role === "society_admin" ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20" :
                       u.role === "contractor" ? "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20" : 
                       "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20"
                     }`}>
-                      {u.role}
+                      {u.role?.replace("_", " ")}
                     </span>
                   </td>
                   <td className="p-3.5 text-body">{u.phone || "—"}</td>
                   <td className="p-3.5 text-body max-w-[180px] truncate">{u.email || "—"}</td>
                   <td className="p-3.5 pr-5">
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      <select
+                        value={u.role}
+                        onChange={(e) => onRoleChange(u, e.target.value)}
+                        disabled={busy}
+                        className="text-[11px] font-bold px-2 py-1 rounded-lg border border-border bg-bg text-heading outline-none cursor-pointer"
+                      >
+                        <option value="customer">Customer</option>
+                        <option value="contractor">Worker/Master</option>
+                        <option value="society_admin">Society Admin</option>
+                        <option value="federation_admin">Federation Admin</option>
+                        <option value="admin">Super Admin</option>
+                      </select>
+
                       <BtnOutline disabled={busy} onClick={() => onViewUser(u.id)} className="!py-1" title="View details">
                         <FiEye size={13} />
                       </BtnOutline>
                       <BtnOutline disabled={busy} onClick={() => onEditUser(u)} className="!py-1 !text-primary" title="Edit user account">
                         <FiEdit2 size={13} />
                       </BtnOutline>
-                      {u.role !== "admin" && (
-                        <BtnOutline disabled={busy} onClick={() => onRoleChange(u, "admin")} className="!py-1">
-                          → Admin
-                        </BtnOutline>
-                      )}
-                      {u.role !== "customer" && (
-                        <BtnOutline disabled={busy} onClick={() => onRoleChange(u, "customer")} className="!py-1">
-                          → Customer
-                        </BtnOutline>
-                      )}
                       <BtnDanger disabled={busy} onClick={() => onDeleteUser(u.id)} className="!py-1" title="Delete account">
                         <FiTrash2 size={13} />
                       </BtnDanger>

@@ -284,7 +284,6 @@ const bookingController = {
 
             const isMockMode = !process.env.RAZORPAY_KEY_SECRET || 
                                process.env.RAZORPAY_KEY_SECRET.includes("mock_") || 
-                               !razorpayInstance ||
                                razorpay_order_id.startsWith("mock_order_");
 
             if (isMockMode) {

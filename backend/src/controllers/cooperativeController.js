@@ -159,9 +159,40 @@ exports.getDemandForecast = async (req, res) => {
   }
 };
 
+exports.getPendingWorkers = async (req, res) => {
+  try {
+    const { federation_id, society_id } = req.query;
+    let query = `
+      SELECT c.*, u.name AS user_name, u.phone, u.email,
+             s.name AS society_name, s.registration_no AS society_registration_no, s.district AS society_district,
+             f.name AS federation_name, f.id AS federation_id
+      FROM contractors c
+      JOIN users u ON u.id = c.user_id
+      LEFT JOIN cooperative_societies s ON s.id = c.society_id
+      LEFT JOIN federations f ON f.id = s.federation_id
+      WHERE (c.verification_status = 'pending' OR c.is_verified = false)
+    `;
+    const params = [];
+    if (society_id) {
+      params.push(society_id);
+      query += ` AND c.society_id = $${params.length}`;
+    } else if (federation_id) {
+      params.push(federation_id);
+      query += ` AND f.id = $${params.length}`;
+    }
+    query += ` ORDER BY c.created_at DESC`;
+
+    const result = await db.query(query, params);
+    return res.json({ ok: true, data: result.rows, total: result.rows.length });
+  } catch (err) {
+    console.error('getPendingWorkers error:', err);
+    return res.status(500).json({ ok: false, message: 'Failed to fetch pending workers' });
+  }
+};
+
 exports.verifyWorker = async (req, res) => {
   try {
-    const { workerId, societyId, skillsCertified = true } = req.body;
+    const { workerId, societyId, skillsCertified = true, badgeType = 'Cooperative Verified Master' } = req.body;
     if (!workerId) return res.status(400).json({ ok: false, message: 'workerId required' });
 
     const updateRes = await db.query(
@@ -170,20 +201,35 @@ exports.verifyWorker = async (req, res) => {
            verification_status = 'verified',
            skills_certified = $1,
            society_id = COALESCE($2, society_id),
+           badge_type = $3,
+           rejection_reason = NULL,
+           verified_at = NOW(),
+           verified_by = $4,
            updated_at = NOW()
-       WHERE id = $3
+       WHERE id = $5
        RETURNING *`,
-      [skillsCertified, societyId || null, workerId]
+      [skillsCertified, societyId || null, badgeType, req.user?.id || null, workerId]
     );
 
     if (updateRes.rows.length === 0) {
       return res.status(404).json({ ok: false, message: 'Worker not found' });
     }
 
+    const worker = updateRes.rows[0];
+    // Send in-app notification
+    await db.query(
+      `INSERT INTO notifications (user_id, message, type)
+       VALUES ($1, $2, 'verification')`,
+      [
+        worker.user_id,
+        'Congratulations! Your Master profile has been verified by the Cooperative Federation with official Verified Shield.'
+      ]
+    ).catch(() => {});
+
     return res.json({
       ok: true,
-      message: 'Worker successfully verified under Cooperative Society',
-      data: updateRes.rows[0],
+      message: 'Master successfully verified under Cooperative Federation with Verified Badge',
+      data: worker,
     });
   } catch (err) {
     console.error('verifyWorker error:', err);
@@ -434,13 +480,30 @@ exports.approveWelfareClaim = async (req, res) => {
 exports.rejectWorker = async (req, res) => {
   try {
     const { workerId, reason } = req.body;
-    await db.query(
+    const resUpdate = await db.query(
       `UPDATE contractors 
-       SET is_verified = false, verification_status = 'rejected', description = description || ' [Verification Note: ' || $2 || ']'
-       WHERE id = $1`,
-      [workerId, reason || 'Incomplete certification documentation']
+       SET is_verified = false,
+           verification_status = 'rejected',
+           rejection_reason = $2,
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING *`,
+      [workerId, reason || 'Incomplete or unclear documentation submitted. Please re-upload verified documents.']
     );
-    return res.json({ ok: true, message: 'Worker verification rejected with feedback note.' });
+
+    const worker = resUpdate.rows[0];
+    if (worker) {
+      await db.query(
+        `INSERT INTO notifications (user_id, message, type)
+         VALUES ($1, $2, 'verification')`,
+        [
+          worker.user_id,
+          `Verification update: ${reason || 'Document verification could not be completed. Please review feedback in your Master dashboard.'}`
+        ]
+      ).catch(() => {});
+    }
+
+    return res.json({ ok: true, message: 'Master verification rejected with feedback note.', data: worker });
   } catch (err) {
     return res.status(500).json({ ok: false, message: 'Rejection failed' });
   }

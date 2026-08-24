@@ -20,6 +20,8 @@ import {
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
+import { useLocationContext } from "../../context/LocationContext";
+import { reverseGeocodeCoords } from "../../utils/googleMaps";
 import api from "../../services/api";
 import { contractorAPI } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -82,10 +84,16 @@ export default function QuickBookingPage() {
   const [contractor, setContractor] = useState(null);
   const [contractorLoading, setContractorLoading] = useState(true);
 
+  const { location: userLoc } = useLocationContext();
+
   // step 1 form
   const [preferredDate, setPreferredDate] = useState(getTomorrowDate());
   const [timeSlot, setTimeSlot] = useState("");
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(() => {
+    return userLoc?.name && !userLoc.name.startsWith("Location near") && !userLoc.name.startsWith("Bhopal, Madhya Pradesh (")
+      ? userLoc.name
+      : "";
+  });
   const [detectingLocation, setDetectingLocation] = useState(false);
 
   // payment
@@ -121,8 +129,8 @@ export default function QuickBookingPage() {
     [preferredDate, timeSlot, address]
   );
 
-  /* ── location detect ── */
-  function handleDetectLocation() {
+  /* ── location detect via multi-layer Google Maps & Geocoding ── */
+  async function handleDetectLocation() {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser.");
       return;
@@ -130,25 +138,18 @@ export default function QuickBookingPage() {
     setDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const resp = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-          );
-          const data = await resp.json();
-          setAddress(data.display_name || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-        } catch {
-          setAddress(`${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
-        } finally {
-          setDetectingLocation(false);
-          toast.success("Location detected!");
-        }
+        const { latitude, longitude } = pos.coords;
+        const geo = await reverseGeocodeCoords(latitude, longitude);
+        const resolvedAddress = geo?.formatted_address || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        setAddress(resolvedAddress);
+        setDetectingLocation(false);
+        toast.success("Service address detected & auto-filled!");
       },
-      () => {
-        toast.error("Could not detect location. Please enter manually.");
+      (err) => {
+        toast.error("Could not detect GPS location. Please enter manually.");
         setDetectingLocation(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }
 
@@ -171,25 +172,36 @@ export default function QuickBookingPage() {
     setLoading(true);
     try {
       const res = await api.post("/quick-bookings", {
+        contractor_id: contractorId,
         contractorId,
+        service_name: serviceName,
         serviceName,
+        service_price: servicePrice,
         servicePrice,
+        scheduled_date: preferredDate,
         preferredDate,
+        scheduled_time_slot: timeSlot,
         timeSlot,
+        customer_address: address,
         address,
       });
-      const orderData = res.data.data || res.data;
 
-      // mock mode
-      if (orderData.razorpayKey === "mock_key_only_for_dev") {
+      const resData = res.data;
+      const orderData = resData.data || resData;
+      const rzpKey = orderData.razorpayKey || resData.razorpay_order?.key || "rzp_live_SmDrCTE7HWJjUG";
+      const rzpOrderId = orderData.razorpayOrderId || resData.razorpay_order?.id;
+      const bookingId = orderData.booking?.id || resData.booking?.id;
+
+      // mock mode check
+      if (rzpKey.includes("mock_") || !rzpOrderId || rzpOrderId.startsWith("mock_order_")) {
         toast.loading("Simulating payment…", { id: "mock_pay" });
         setTimeout(async () => {
           try {
             const verifyRes = await api.post("/quick-bookings/verify", {
-              razorpay_order_id: orderData.razorpayOrderId,
+              razorpay_order_id: rzpOrderId || `mock_order_${Date.now()}`,
               razorpay_payment_id: `mock_payment_${Date.now()}`,
               razorpay_signature: "mock_signature",
-              booking_id: orderData.booking?.id,
+              booking_id: bookingId,
             });
             toast.success("Payment confirmed!", { id: "mock_pay" });
             setBookingResult(verifyRes.data.data || verifyRes.data || orderData);
@@ -203,7 +215,7 @@ export default function QuickBookingPage() {
         return;
       }
 
-      // real razorpay
+      // real razorpay flow
       const sdkLoaded = await loadRazorpayScript();
       if (!sdkLoaded) {
         toast.error("Could not load Razorpay. Please check your connection.");
@@ -213,18 +225,18 @@ export default function QuickBookingPage() {
 
       const amountPaise = Math.round(CONFIRMATION_FEE * 100);
       const rzp = new window.Razorpay({
-        key: orderData.razorpayKey,
+        key: rzpKey,
         amount: amountPaise,
         currency: "INR",
-        name: "Thekedaar",
-        description: `Quick Booking – ${serviceName}`,
-        order_id: orderData.razorpayOrderId,
+        name: "SahKaari (सहकारी)",
+        description: `Master Booking Fee – ${serviceName}`,
+        order_id: rzpOrderId,
         prefill: {
           name: user?.name || "",
           email: user?.email || "",
           contact: user?.phone || "",
         },
-        theme: { color: "#6366f1" },
+        theme: { color: "#4f46e5" },
         handler: async (response) => {
           setLoading(true);
           try {
@@ -232,18 +244,23 @@ export default function QuickBookingPage() {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              booking_id: orderData.booking?.id,
+              booking_id: bookingId,
             });
-            toast.success("Payment confirmed! Booking secured.");
+            toast.success("Payment confirmed! Master booking secured.");
             setBookingResult(verifyRes.data.data || verifyRes.data || orderData);
             goTo(3);
-          } catch {
-            toast.error("Payment verification failed. Contact support.");
+          } catch (err) {
+            toast.error(err.response?.data?.message || "Payment verification failed. Contact support.");
           } finally {
             setLoading(false);
           }
         },
-        modal: { ondismiss: () => setLoading(false) },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast("Payment cancelled.");
+          },
+        },
       });
 
       rzp.on("payment.failed", (response) => {
@@ -253,37 +270,6 @@ export default function QuickBookingPage() {
       rzp.open();
     } catch (err) {
       toast.error(err.response?.data?.message || "Booking failed. Please try again.");
-      setLoading(false);
-    }
-  }
-
-  /* ── simulate payment (fallback button) ── */
-  async function handleSimulatePayment() {
-    setLoading(true);
-    toast.loading("Simulating payment…", { id: "sim_pay" });
-    try {
-      const res = await api.post("/quick-bookings", {
-        contractorId,
-        serviceName,
-        servicePrice,
-        preferredDate,
-        timeSlot,
-        address,
-      });
-      const orderData = res.data.data || res.data;
-
-      const verifyRes = await api.post("/quick-bookings/verify", {
-        razorpay_order_id: orderData.razorpayOrderId || `sim_order_${Date.now()}`,
-        razorpay_payment_id: `sim_payment_${Date.now()}`,
-        razorpay_signature: "simulated_signature",
-        booking_id: orderData.booking?.id,
-      });
-      toast.success("Payment simulated successfully!", { id: "sim_pay" });
-      setBookingResult(verifyRes.data.data || verifyRes.data || orderData);
-      goTo(3);
-    } catch {
-      toast.error("Simulated payment failed.", { id: "sim_pay" });
-    } finally {
       setLoading(false);
     }
   }
@@ -634,13 +620,13 @@ export default function QuickBookingPage() {
                   <div className="flex gap-2.5 rounded-[var(--radius-sm)] border border-[var(--color-divider)] bg-[var(--color-bg)] p-3">
                     <FiShield className="mt-0.5 shrink-0 text-[var(--color-primary)]" size={15} />
                     <p className="text-xs leading-relaxed text-[var(--color-body)]">
-                      <strong className="text-[var(--color-heading)]">Verified professional.</strong> All Thekedaar contractors are background-checked and reviewed.
+                      <strong className="text-[var(--color-heading)]">Cooperative Verified Master.</strong> Certified artisan background-verified by Primary Labour Cooperative Federation.
                     </p>
                   </div>
                   <div className="flex gap-2.5 rounded-[var(--radius-sm)] border border-[var(--color-divider)] bg-[var(--color-bg)] p-3">
                     <FiShield className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" size={15} />
                     <p className="text-xs leading-relaxed text-[var(--color-body)]">
-                      Secure checkout via Razorpay. Your card details are never saved or stored.
+                      Secure checkout via Razorpay. 100% encrypted & protected.
                     </p>
                   </div>
                 </div>
@@ -650,7 +636,7 @@ export default function QuickBookingPage() {
                   type="button"
                   onClick={handlePayment}
                   disabled={loading}
-                  className="btn-primary flex h-12 w-full items-center justify-center gap-2 text-sm font-semibold tracking-wide disabled:opacity-50"
+                  className="btn-primary flex h-12 w-full items-center justify-center gap-2 text-sm font-semibold tracking-wide disabled:opacity-50 cursor-pointer shadow-md"
                 >
                   {loading ? (
                     <LoadingSpinner size="sm" color="white" />
@@ -662,20 +648,8 @@ export default function QuickBookingPage() {
                   )}
                 </button>
 
-                {/* simulate button */}
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleSimulatePayment}
-                    disabled={loading}
-                    className="text-xs font-bold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] underline transition-colors"
-                  >
-                    Simulate Payment (Dev Mode)
-                  </button>
-                </div>
-
-                <p className="text-center text-[9px] font-bold uppercase tracking-wider text-[var(--color-subtle)]">
-                  Secure checkout &bull; Powered by Razorpay
+                <p className="text-center text-[10px] font-bold uppercase tracking-wider text-[var(--color-subtle)] pt-1">
+                  Secure Checkout &bull; Official Razorpay Gateway
                 </p>
               </div>
             </motion.div>

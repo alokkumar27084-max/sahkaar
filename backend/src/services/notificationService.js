@@ -1,13 +1,13 @@
 const pool = require("../config/db");
 const nodemailer = require("nodemailer");
 const templates = require("../utils/emailTemplates");
+const { getIo } = require("../config/socket");
 
 // Create a transporter using environment variables
-// Fallback to a "Log Transporter" for development
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || "smtp.ethereal.email",
     port: process.env.SMTP_PORT || 587,
-    secure: false, // true for 465, false for other ports
+    secure: false,
     auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -16,25 +16,85 @@ const transporter = nodemailer.createTransport({
 
 const notificationService = {
     /**
-     * Send a notification through multiple channels (In-app, Email, SMS)
+     * Send a notification through multiple channels (In-app WebSocket, Database, Email, SMS)
+     * Handles both notify({ userId, message, ... }) and notify(userIdOrContractorId, { message, ... })
      */
-    notify: async ({ userId, message, type, email, subject, templateName, templateData }) => {
+    notify: async (param1, param2) => {
         try {
-            // 1. Save In-App Notification (Always)
-            if (userId) {
-                await pool.query(
-                    "INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3)",
-                    [userId, message, type]
-                );
+            let opts = {};
+            if (typeof param1 === "object" && param1 !== null) {
+                opts = { ...param1 };
+            } else {
+                opts = { userId: param1, ...(param2 || {}) };
             }
 
-            // 2. Send Email if provided
+            let { userId, contractorId, message, type, data, email, subject, templateName, templateData } = opts;
+            if (!message) return;
+
+            // Resolve target user_id if a contractor ID was supplied or passed as userId
+            let targetUserId = userId;
+            if (!targetUserId && contractorId) {
+                const cRes = await pool.query("SELECT user_id FROM contractors WHERE id = $1", [contractorId]);
+                if (cRes.rows[0]) targetUserId = cRes.rows[0].user_id;
+            } else if (targetUserId) {
+                // If targetUserId is not directly in users, check if it's a contractor id
+                const uRes = await pool.query("SELECT id, email, name FROM users WHERE id = $1", [targetUserId]);
+                if (!uRes.rows[0]) {
+                    const cRes = await pool.query("SELECT user_id FROM contractors WHERE id = $1", [targetUserId]);
+                    if (cRes.rows[0]) {
+                        targetUserId = cRes.rows[0].user_id;
+                    }
+                } else if (!email && uRes.rows[0].email) {
+                    email = uRes.rows[0].email;
+                }
+            }
+
+            let savedNotification = null;
+
+            // 1. Save In-App Notification in DB
+            if (targetUserId) {
+                const insertRes = await pool.query(
+                    "INSERT INTO notifications (user_id, message, type) VALUES ($1, $2, $3) RETURNING *",
+                    [targetUserId, message, type || "general"]
+                );
+                savedNotification = insertRes.rows[0];
+            }
+
+            // 2. Real-Time WebSocket Push via Socket.IO
+            if (targetUserId) {
+                try {
+                    const io = getIo();
+                    if (io) {
+                        const payload = {
+                            notification: savedNotification,
+                            id: savedNotification?.id || `notif_${Date.now()}`,
+                            message,
+                            type: type || "general",
+                            data: data || {},
+                            created_at: new Date().toISOString(),
+                        };
+
+                        io.to(String(targetUserId)).emit("notification:new", payload);
+                        io.to(String(targetUserId)).emit("notification", payload);
+
+                        if (type?.includes("booking") || type?.includes("quick_booking")) {
+                            io.to(String(targetUserId)).emit("booking:new", payload);
+                        }
+
+                        console.log(`[REALTIME PUSH] Emitted notification to User ${targetUserId}: ${message}`);
+                    }
+                } catch (socketErr) {
+                    // Socket not initialized or offline, non-blocking
+                }
+            }
+
+            // 3. Send Email if SMTP configured
             if (email && process.env.SMTP_USER) {
                 let htmlContent = `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                            <h2 style="color: #6366f1;">Thekedaar</h2>
+                            <h2 style="color: #6366f1;">SahKaari</h2>
                             <p>${message}</p>
                             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-                            <small style="color: #999;">This is an automated notification. Please do not reply.</small>
+                            <small style="color: #999;">Cooperative Labour Federation Automated Notification</small>
                            </div>`;
 
                 if (templateName && templates[templateName]) {
@@ -42,33 +102,29 @@ const notificationService = {
                 }
 
                 const mailOptions = {
-                    from: `"Thekedaar" <${process.env.SMTP_USER}>`,
+                    from: `"SahKaari" <${process.env.SMTP_USER}>`,
                     to: email,
-                    subject: subject || "Update from Thekedaar",
+                    subject: subject || "SahKaari Notification",
                     text: message,
                     html: htmlContent,
                 };
 
-                await transporter.sendMail(mailOptions);
+                await transporter.sendMail(mailOptions).catch((e) => console.warn("Email send failed:", e.message));
             }
 
-            // 3. Send SMS (Placeholder for Twilio/MSG91)
-            // if (phone) { ... }
-
-            console.log(`Notification sent to User ${userId}: ${message}`);
+            console.log(`Notification dispatched to User ${targetUserId}: ${message}`);
+            return savedNotification;
         } catch (error) {
             console.error("Notification Service Error:", error);
-            // We don't throw here to avoid breaking the main request flow
         }
     },
 
     sendOTP: async (phoneOrEmail, otp) => {
         console.log(`[SECURE] Sending OTP ${otp} to ${phoneOrEmail}`);
-        // If email, send via SMTP
         if (phoneOrEmail.includes("@") && process.env.SMTP_USER) {
             await notificationService.notify({
                 email: phoneOrEmail,
-                subject: "Your Thekedaar OTP",
+                subject: "Your SahKaari OTP",
                 message: `Your one-time password (OTP) is: ${otp}.`,
                 templateName: "otpTemplate",
                 templateData: [otp]

@@ -3,6 +3,9 @@ const router = express.Router();
 const controller = require('../controllers/subscriptionController');
 const { requireAuth } = require('../middleware/authMiddleware');
 
+// Public catalog of subscription plans
+router.get('/plans', controller.getPlans);
+
 router.use(requireAuth);
 
 router.post('/purchase', controller.purchaseSubscription);

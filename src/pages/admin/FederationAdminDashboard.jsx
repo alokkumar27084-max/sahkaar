@@ -15,13 +15,18 @@ import {
   FiSend,
   FiShield,
   FiCheck,
-  FiX
+  FiX,
+  FiFileText,
+  FiEye,
+  FiAward,
+  FiUserCheck
 } from "react-icons/fi";
 import { cooperativeAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { SahKaariLogo } from "../../components/common/SahKaariLogo";
+import { getAvatarUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
 
 export default function FederationAdminDashboard() {
@@ -33,7 +38,14 @@ export default function FederationAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [societies, setSocieties] = useState([]);
-  const [activeTab, setActiveTab] = useState("forecasting");
+  const [activeTab, setActiveTab] = useState("verification"); // 'verification', 'forecasting', 'disputes', 'welfare', 'societies'
+
+  // Document Verification Queue State
+  const [pendingWorkers, setPendingWorkers] = useState([]);
+  const [verifyingWorkerId, setVerifyingWorkerId] = useState(null);
+  const [inspectingDoc, setInspectingDoc] = useState(null); // { title, url, workerName }
+  const [rejectModalWorker, setRejectModalWorker] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // Forecasting Filter State
   const [forecastLocality, setForecastLocality] = useState("MP Nagar");
@@ -65,13 +77,27 @@ export default function FederationAdminDashboard() {
     { id: "masonry", label: "Masonry" },
   ];
 
+  const loadPendingWorkers = useCallback(async () => {
+    try {
+      const res = await cooperativeAPI.getPendingWorkers();
+      if (res.data?.ok) {
+        setPendingWorkers(res.data.data || []);
+      }
+    } catch (err) {
+      console.error("Pending workers fetch error:", err);
+    }
+  }, []);
+
   const loadFederationData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await cooperativeAPI.getFederationStats();
-      if (res.data?.ok) {
-        setStats(res.data.data.summary);
-        setSocieties(res.data.data.societies || []);
+      const [statsRes, _] = await Promise.all([
+        cooperativeAPI.getFederationStats(),
+        loadPendingWorkers(),
+      ]);
+      if (statsRes.data?.ok) {
+        setStats(statsRes.data.data.summary);
+        setSocieties(statsRes.data.data.societies || []);
       }
     } catch (err) {
       console.error("Federation data fetch error:", err);
@@ -79,7 +105,7 @@ export default function FederationAdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadPendingWorkers]);
 
   const loadForecast = useCallback(async (loc, cat) => {
     setForecastLoading(true);
@@ -130,6 +156,45 @@ export default function FederationAdminDashboard() {
     loadWelfareClaims();
   }, [loadFederationData, loadForecast, forecastLocality, forecastCategory, loadDisputes, loadWelfareClaims]);
 
+  const handleVerifyMaster = async (workerId) => {
+    setVerifyingWorkerId(workerId);
+    try {
+      const res = await cooperativeAPI.verifyWorker({
+        workerId,
+        skillsCertified: true,
+        badgeType: "Cooperative Verified Master",
+      });
+      if (res.data?.ok) {
+        toast.success("Master verified successfully with Golden Verified Shield!");
+        loadPendingWorkers();
+        loadFederationData();
+      }
+    } catch (err) {
+      toast.error("Verification failed. Please try again.");
+    } finally {
+      setVerifyingWorkerId(null);
+    }
+  };
+
+  const handleRejectMaster = async () => {
+    if (!rejectModalWorker) return;
+    try {
+      const res = await cooperativeAPI.rejectWorker({
+        workerId: rejectModalWorker.id,
+        reason: rejectionReason || "Incomplete documentation submitted. Please re-upload verified documents.",
+      });
+      if (res.data?.ok) {
+        toast.success("Master applicant rejected with feedback note.");
+        setRejectModalWorker(null);
+        setRejectionReason("");
+        loadPendingWorkers();
+        loadFederationData();
+      }
+    } catch (err) {
+      toast.error("Rejection action failed.");
+    }
+  };
+
   async function handleDeployCapacity() {
     setDeploying(true);
     try {
@@ -137,7 +202,7 @@ export default function FederationAdminDashboard() {
         locality: forecastLocality,
         category: forecastCategory,
         workersNeeded: Number(deployCount),
-        notes: `Apex Federation mobilization dispatch to ${forecastLocality}`
+        notes: `Apex Federation mobilization dispatch to ${forecastLocality}`,
       });
       if (res.data?.ok) {
         toast.success(res.data.message);
@@ -156,7 +221,7 @@ export default function FederationAdminDashboard() {
       const res = await cooperativeAPI.resolveDispute({
         bookingId,
         decision,
-        resolutionNotes: "Resolved via Federation Arbitration Panel"
+        resolutionNotes: "Resolved via Federation Arbitration Panel",
       });
       if (res.data?.ok) {
         toast.success(res.data.message);
@@ -197,7 +262,7 @@ export default function FederationAdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
 
         {/* ── FEDERATION HEADER ── */}
-        <header className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <SahKaariLogo className="w-14 h-14" />
             <div>
@@ -216,8 +281,8 @@ export default function FederationAdminDashboard() {
               </h1>
               <p className="text-xs text-slate-600 mt-0.5">
                 {isHi
-                  ? "सहकारिता मंत्रालय के अधीन पंजीकृत 34 प्राथमिक श्रम सहकारी समितियों का केंद्रीय प्रशासनिक व एआई नियंत्रण केंद्र।"
-                  : "Apex governing federation coordinating 34 primary district labour cooperatives & 4,800+ certified artisans."}
+                  ? "सहकारिता मंत्रालय के अधीन पंजीकृत 34 प्राथमिक श्रम सहकारी समितियों का केंद्रीय प्रशासनिक व सत्यापन नियंत्रण केंद्र।"
+                  : "Apex governing federation coordinating 34 primary district labour cooperatives & verified artisan audit."}
               </p>
             </div>
           </div>
@@ -248,60 +313,41 @@ export default function FederationAdminDashboard() {
         </header>
 
         {/* ── APEX FEDERATION STATS CARDS ── */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
-              {isHi ? "संबद्ध प्राथमिक समितियाँ" : "Affiliated Societies"}
-            </div>
-            <div className="text-2xl font-extrabold text-[#0B3C5D] mt-1">
-              {stats?.total_societies || 34}
-            </div>
-            <div className="text-[11px] text-emerald-700 font-semibold mt-1 flex items-center gap-1">
-              <FiCheckCircle size={12} /> 100% Verified
-            </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-1">
+            <div className="text-[11px] font-bold text-slate-500 uppercase">Pending Document Verifications</div>
+            <div className="text-2xl font-extrabold text-amber-600">{pendingWorkers.length}</div>
+            <span className="text-[10px] text-slate-400 font-semibold">Awaiting Federation Audit</span>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
-              {isHi ? "प्रमाणित कारीगर सदस्य" : "Certified Artisans"}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-1">
+            <div className="text-[11px] font-bold text-slate-500 uppercase">Verified Master Artisans</div>
+            <div className="text-2xl font-extrabold text-[#138808]">
+              {stats?.verified_workers || 48}
             </div>
-            <div className="text-2xl font-extrabold text-[#0B3C5D] mt-1">
-              {stats?.verified_workers || 4850}
-            </div>
-            <div className="text-[11px] text-emerald-700 font-semibold mt-1">
-              Covered under PM Suraksha Bima
-            </div>
+            <span className="text-[10px] text-emerald-600 font-bold">100% Document Verified</span>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
-              {isHi ? "राज्य कल्याण कोष कॉर्पस" : "State Welfare Corpus"}
-            </div>
-            <div className="text-2xl font-extrabold text-[#D35400] mt-1 font-mono">
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-1">
+            <div className="text-[11px] font-bold text-slate-500 uppercase">Primary Societies</div>
+            <div className="text-2xl font-extrabold text-[#0B3C5D]">{societies.length || 34}</div>
+            <span className="text-[10px] text-slate-400 font-semibold">Across 52 MP Districts</span>
+          </div>
+
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-1">
+            <div className="text-[11px] font-bold text-slate-500 uppercase">Welfare Corpus Fund</div>
+            <div className="text-2xl font-extrabold text-[#D35400] font-mono">
               {formatRupees(stats?.federation_welfare_corpus || 13750000)}
             </div>
-            <div className="text-[11px] text-[#D35400] font-semibold mt-1">
-              + ₹25 from every booking
-            </div>
+            <span className="text-[10px] text-slate-400 font-semibold">Social Security Reserve</span>
           </div>
-
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="text-[11px] font-extrabold text-slate-500 uppercase">
-              {isHi ? "कुल सेवा बुकिंग्स" : "Completed Bookings"}
-            </div>
-            <div className="text-2xl font-extrabold text-[#0B3C5D] mt-1">
-              {stats?.total_bookings || 1420}
-            </div>
-            <div className="text-[11px] text-blue-700 font-semibold mt-1">
-              {stats?.emergency_bookings || 84} Emergency Dispatches
-            </div>
-          </div>
-        </section>
+        </div>
 
         {/* ── TABS NAVIGATION ── */}
         <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
           {[
-            { id: "forecasting", label: isHi ? "एआई मांग पूर्वानुमान व क्षमता आवंटन" : "AI Demand Intelligence & Allocation", icon: FiTrendingUp },
+            { id: "verification", label: isHi ? "मास्टर दस्तावेज़ सत्यापन" : "Master Document Verification Queue", icon: FiShield, badge: pendingWorkers.length },
+            { id: "forecasting", label: isHi ? "एआई मांग पूर्वानुमान" : "AI Demand Intelligence & Allocation", icon: FiTrendingUp },
             { id: "disputes", label: isHi ? "विवाद निवारण एवं मध्यस्थता" : "Dispute Arbitration Console", icon: FiAlertTriangle, badge: disputes.length },
             { id: "welfare", label: isHi ? "कल्याण कोष व क्लेम स्वीकृति" : "Welfare Corpus & Claims", icon: FiHeart, badge: claims.filter(c => c.status === 'PENDING_APPROVAL').length },
             { id: "societies", label: isHi ? "प्राथमिक सहकारी समितियाँ" : "Primary Societies Registry", icon: FiLayers },
@@ -312,7 +358,7 @@ export default function FederationAdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2.5 rounded-lg font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all shrink-0 ${
                   active
                     ? "bg-[#0B3C5D] text-white shadow-sm"
                     : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
@@ -330,26 +376,150 @@ export default function FederationAdminDashboard() {
           })}
         </div>
 
-        {/* ── TAB 1: AI DEMAND FORECASTING & ALLOCATION ── */}
+        {/* ═══════ TAB 1: MASTER DOCUMENT VERIFICATION QUEUE ═══════ */}
+        {activeTab === "verification" && (
+          <section className="space-y-4">
+            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                  <h2 className="text-base font-extrabold text-[#0B3C5D] flex items-center gap-2">
+                    <FiShield className="text-[#0B3C5D] w-5 h-5" />
+                    <span>Master Document Verification & Credential Audit</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Review submitted government ID cards, skill certificates, and society membership before issuing the official Verified Master Shield.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={loadPendingWorkers}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1"
+                >
+                  <FiRefreshCw className="w-3 h-3" /> Refresh Queue
+                </button>
+              </div>
+
+              {pendingWorkers.length === 0 ? (
+                <div className="text-center py-16 text-slate-400 text-xs font-semibold space-y-2">
+                  <FiCheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
+                  <p className="text-sm font-bold text-slate-800">All Master applications are verified!</p>
+                  <p className="text-xs text-slate-500">New self-registered workers will appear here for document verification.</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {pendingWorkers.map((worker) => (
+                    <div
+                      key={worker.id}
+                      className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                    >
+                      {/* Master Info */}
+                      <div className="flex items-start gap-4">
+                        <img
+                          src={getAvatarUrl(worker.photo_url || worker.image_url)}
+                          alt={worker.business_name || worker.user_name}
+                          className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shrink-0"
+                        />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-extrabold text-slate-900">
+                              {worker.business_name || worker.user_name}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                              Master {worker.category?.replace(/_/g, " ")}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800">
+                              Pending Audit
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-600">
+                            📞 {worker.phone} • 🏛️ {worker.society_name || "Bhopal Society"} • Reg: {worker.member_registration_no || "SK-MST-NEW"}
+                          </p>
+
+                          <p className="text-[11px] text-slate-500">
+                            Cert Body: <span className="font-semibold text-slate-700">{worker.skill_certification_body || "NCCT / Skill Mission"}</span> • Exp: {worker.experience_years || 2} yrs
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Submitted Document Action Buttons */}
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        {/* ID Proof Button */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setInspectingDoc({
+                              title: "Aadhaar / National ID Proof",
+                              url: worker.id_proof_url || "https://images.unsplash.com/photo-1633409381658-a0c3099d3e5e?auto=format&fit=crop&w=800&q=80",
+                              workerName: worker.business_name || worker.user_name,
+                            })
+                          }
+                          className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center gap-1"
+                        >
+                          <FiEye className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>View ID Proof</span>
+                        </button>
+
+                        {/* Certificate Button */}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setInspectingDoc({
+                              title: "Trade Skill Certificate",
+                              url: worker.certificate_url || "https://images.unsplash.com/photo-1589330694653-ded6df03f754?auto=format&fit=crop&w=800&q=80",
+                              workerName: worker.business_name || worker.user_name,
+                            })
+                          }
+                          className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center gap-1"
+                        >
+                          <FiAward className="w-3.5 h-3.5 text-amber-600" />
+                          <span>View Certificate</span>
+                        </button>
+
+                        {/* Approve Button */}
+                        <button
+                          type="button"
+                          disabled={verifyingWorkerId === worker.id}
+                          onClick={() => handleVerifyMaster(worker.id)}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
+                        >
+                          <FiCheck className="w-4 h-4" />
+                          <span>{verifyingWorkerId === worker.id ? "Auditing..." : "Verify & Issue Badge"}</span>
+                        </button>
+
+                        {/* Reject Button */}
+                        <button
+                          type="button"
+                          onClick={() => setRejectModalWorker(worker)}
+                          className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-all"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ── TAB 2: AI DEMAND FORECASTING & ALLOCATION ── */}
         {activeTab === "forecasting" && (
           <section className="space-y-6">
-            
-            {/* Filter & Action Toolbar */}
-            <div className="p-5 rounded-xl border border-slate-200 bg-white shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="text-base font-extrabold text-[#0B3C5D] flex items-center gap-2">
                   <FiTrendingUp className="text-[#0B3C5D] w-5 h-5" />
                   <span>{isHi ? "क्षेत्रीय मांग पूर्वानुमान मॉडल (एआई इंजन)" : "Localized Predictive Demand & Resource Allocation"}</span>
                 </h2>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  {isHi
-                    ? "ऐतिहासिक बुकिंग डेटा व मौसमी मांग के आधार पर आगामी 10 दिनों का अग्रिम श्रम अनुमान।"
-                    : "Ensemble statistical moving average & seasonal regression engine predicting trade demand by ward."}
+                  Predicting high seasonal demand localities across Bhopal to mobilize reserved cooperative capacity.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                {/* Locality Selector */}
                 <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <FiMapPin className="text-[#0B3C5D] w-4 h-4" />
                   <select
@@ -363,7 +533,6 @@ export default function FederationAdminDashboard() {
                   </select>
                 </div>
 
-                {/* Trade Category Selector */}
                 <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
                   <FiFilter className="text-amber-600 w-4 h-4" />
                   <select
@@ -377,7 +546,6 @@ export default function FederationAdminDashboard() {
                   </select>
                 </div>
 
-                {/* Action: Deploy Workforce */}
                 <button
                   onClick={() => setDeployModal(true)}
                   className="bg-[#138808] hover:bg-[#0E6806] text-white text-xs font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-xs transition-colors"
@@ -388,8 +556,8 @@ export default function FederationAdminDashboard() {
               </div>
             </div>
 
-            {/* Visual Forecast Chart */}
-            <div className="p-6 rounded-xl border border-slate-200 bg-white shadow-xs">
+            {/* Forecast Chart */}
+            <div className="p-6 rounded-2xl border border-slate-200 bg-white shadow-xs">
               <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                 <div className="text-xs font-bold text-slate-900">
                   10-Day Horizon: <span className="text-[#0B3C5D] font-extrabold">{forecastLocality}</span> ({forecastCategory.toUpperCase()})
@@ -445,63 +613,17 @@ export default function FederationAdminDashboard() {
                 </div>
               )}
             </div>
-
-            {/* Modal: Mobilize Capacity */}
-            {deployModal && (
-              <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-                <div className="bg-white rounded-xl max-w-md w-full p-6 border border-slate-200 shadow-xl space-y-4">
-                  <h3 className="font-extrabold text-[#0B3C5D] text-base">
-                    Mobilize Cooperative Capacity: {forecastLocality}
-                  </h3>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Broadcast priority allocation notices to certified <strong className="text-[#0B3C5D]">{forecastCategory}</strong> artisans affiliated with nearby Primary Societies.
-                  </p>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-500 mb-1">
-                      Artisans to Mobilize
-                    </label>
-                    <input
-                      type="number"
-                      value={deployCount}
-                      onChange={(e) => setDeployCount(e.target.value)}
-                      className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 outline-none"
-                    />
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      onClick={() => setDeployModal(false)}
-                      className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleDeployCapacity}
-                      disabled={deploying}
-                      className="px-4 py-2 text-xs font-bold text-white bg-[#138808] hover:bg-[#0E6806] rounded-lg shadow-xs"
-                    >
-                      {deploying ? "Mobilizing..." : "Confirm & Broadcast"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </section>
         )}
 
-        {/* ── TAB 2: DISPUTE & GRIEVANCE ARBITRATION ── */}
+        {/* ── TAB 3: DISPUTES ── */}
         {activeTab === "disputes" && (
           <section className="space-y-4">
-            <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-xs">
-              <h2 className="text-base font-extrabold text-[#0B3C5D] mb-1">
-                Cooperative Grievance & Escrow Settlement Panel
+            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs">
+              <h2 className="text-base font-extrabold text-[#0B3C5D] mb-4">
+                Cooperative Dispute Arbitration Console
               </h2>
-              <p className="text-xs text-slate-600 mb-4">
-                Apex federation dispute arbitrations with legal escrow lock resolution.
-              </p>
-
-              {disputesLoading ? (
-                <LoadingSpinner />
-              ) : disputes.length === 0 ? (
+              {disputes.length === 0 ? (
                 <div className="p-8 text-center text-slate-500 text-xs">
                   No active disputes. All bookings settled in accordance with Cooperative Service Charters.
                 </div>
@@ -519,22 +641,19 @@ export default function FederationAdminDashboard() {
                           </span>
                         </div>
                         <p className="text-slate-600 text-[11px]">{d.reason || "Customer service clarification dispute pending arbitration."}</p>
-                        <div className="text-[10px] text-slate-500 font-mono">
-                          Escrow Amount: <strong className="text-slate-800">₹{d.amount}</strong> | Society: {d.society_name}
-                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => handleResolveDispute(d.booking_id, "RELEASE_TO_WORKER")}
-                          className="bg-[#138808] hover:bg-[#0E6806] text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-xs"
+                          className="bg-[#138808] hover:bg-[#0E6806] text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
                         >
                           <FiCheck size={12} />
                           <span>Release to Worker</span>
                         </button>
                         <button
                           onClick={() => handleResolveDispute(d.booking_id, "REFUND_TO_CUSTOMER")}
-                          className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-xs"
+                          className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1"
                         >
                           <FiX size={12} />
                           <span>Refund Customer</span>
@@ -548,83 +667,52 @@ export default function FederationAdminDashboard() {
           </section>
         )}
 
-        {/* ── TAB 3: WELFARE CORPUS & CLAIMS ── */}
+        {/* ── TAB 4: WELFARE CLAIMS ── */}
         {activeTab === "welfare" && (
           <section className="space-y-4">
-            <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-xs">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-base font-extrabold text-[#0B3C5D]">
-                    Artisan Welfare Corpus & Medical Assistance Claims
-                  </h2>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Disbursements funded by the ₹25 per-booking contribution pool and Pradhan Mantri Suraksha Bima.
-                  </p>
-                </div>
-                <div className="text-right font-mono">
-                  <div className="text-[10px] uppercase text-slate-500 font-bold">Total Corpus Balance</div>
-                  <div className="text-xl font-extrabold text-[#D35400]">
-                    {formatRupees(stats?.federation_welfare_corpus || 13750000)}
-                  </div>
-                </div>
-              </div>
-
-              {claimsLoading ? (
-                <LoadingSpinner />
-              ) : (
-                <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs">
-                  {claims.map((c) => (
-                    <div key={c.id} className="p-4 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-slate-900 text-sm">{c.worker_name}</span>
-                          <span className="text-slate-500 font-medium">({c.trade})</span>
-                          <span
-                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
-                              c.status === "APPROVED"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-amber-100 text-amber-800"
-                            }`}
-                          >
-                            {c.status}
-                          </span>
-                        </div>
-                        <p className="text-slate-700 font-semibold">{c.claim_type}</p>
-                        <div className="text-[10px] text-slate-500 font-mono">
-                          Claim ID: {c.id} | Policy Ref: {c.insurance_ref} | Society: {c.society_name}
-                        </div>
+            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
+              <h2 className="text-base font-extrabold text-[#0B3C5D]">
+                Artisan Welfare Corpus & Medical Assistance Claims
+              </h2>
+              <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs">
+                {claims.map((c) => (
+                  <div key={c.id} className="p-4 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-slate-900 text-sm">{c.worker_name}</span>
+                        <span className="text-slate-500 font-medium">({c.trade})</span>
                       </div>
-
-                      <div className="flex items-center gap-4 shrink-0">
-                        <div className="text-right">
-                          <div className="text-base font-extrabold text-[#0B3C5D] font-mono">
-                            ₹{Number(c.amount).toLocaleString("en-IN")}
-                          </div>
-                          <div className="text-[10px] text-slate-500">Requested Amount</div>
-                        </div>
-
-                        {c.status === "PENDING_APPROVAL" && (
-                          <button
-                            onClick={() => handleApproveClaim(c.id, c.amount)}
-                            className="bg-[#138808] hover:bg-[#0E6806] text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1.5"
-                          >
-                            <FiCheck size={14} />
-                            <span>Approve & Disburse</span>
-                          </button>
-                        )}
-                      </div>
+                      <p className="text-slate-700 font-semibold">{c.claim_type}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right">
+                        <div className="text-base font-extrabold text-[#0B3C5D] font-mono">
+                          ₹{Number(c.amount).toLocaleString("en-IN")}
+                        </div>
+                      </div>
+
+                      {c.status === "PENDING_APPROVAL" && (
+                        <button
+                          onClick={() => handleApproveClaim(c.id, c.amount)}
+                          className="bg-[#138808] hover:bg-[#0E6806] text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1.5"
+                        >
+                          <FiCheck size={14} />
+                          <span>Approve & Disburse</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
         )}
 
-        {/* ── TAB 4: PRIMARY SOCIETIES REGISTRY ── */}
+        {/* ── TAB 5: SOCIETIES ── */}
         {activeTab === "societies" && (
           <section className="space-y-4">
-            <div className="p-5 bg-white rounded-xl border border-slate-200 shadow-xs">
+            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs">
               <h2 className="text-base font-extrabold text-[#0B3C5D] mb-4">
                 Affiliated District Cooperative Societies Roster
               </h2>
@@ -634,14 +722,6 @@ export default function FederationAdminDashboard() {
                     <div className="font-extrabold text-[#0B3C5D] text-sm leading-snug">{s.name}</div>
                     <div className="font-mono text-[10px] text-slate-600">Reg: {s.registration_no}</div>
                     <div className="text-slate-600 font-medium">District: <strong className="text-slate-800">{s.district}</strong></div>
-                    <div className="pt-2 border-t border-slate-200 flex justify-between font-bold">
-                      <span className="text-slate-600">Welfare Balance</span>
-                      <span className="font-mono text-[#D35400]">₹{Number(s.welfare_pool_balance).toLocaleString("en-IN")}</span>
-                    </div>
-                    <div className="flex justify-between text-[11px] text-slate-500">
-                      <span>Registered Workers</span>
-                      <span className="font-bold text-slate-800">{s.worker_count || 12}</span>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -650,6 +730,80 @@ export default function FederationAdminDashboard() {
         )}
 
       </div>
+
+      {/* Document Inspection Modal */}
+      {inspectingDoc && (
+        <div
+          onClick={() => setInspectingDoc(null)}
+          className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl p-6 max-w-2xl w-full shadow-2xl space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">{inspectingDoc.title}</h3>
+                <p className="text-xs text-slate-500">Applicant: {inspectingDoc.workerName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInspectingDoc(null)}
+                className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="h-96 rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center border border-slate-200">
+              <img
+                src={inspectingDoc.url}
+                alt={inspectingDoc.title}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Modal */}
+      {rejectModalWorker && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 className="text-base font-extrabold text-slate-900">
+              Reject Verification for {rejectModalWorker.business_name || rejectModalWorker.user_name}
+            </h3>
+            <p className="text-xs text-slate-500">
+              Please enter the specific reason so the Master artisan can correct their document upload:
+            </p>
+
+            <textarea
+              rows={3}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="e.g. Aadhaar card photo was blurry, or ITI certificate number did not match records."
+              className="w-full p-3 rounded-xl border border-slate-200 text-xs font-semibold outline-none focus:border-rose-600"
+            />
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRejectModalWorker(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectMaster}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm"
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

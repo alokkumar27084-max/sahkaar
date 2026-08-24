@@ -6,6 +6,7 @@ const { verifyIdToken } = require('../config/firebaseAdmin');
 const crypto = require('crypto');
 const User = require('../models/userModel');
 const Contractor = require('../models/contractorModel');
+const { resolveJurisdiction } = require('../services/jurisdictionService');
 
 const { getJwtSecret } = require('../config/jwt');
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -44,11 +45,14 @@ exports.register = async (req, res, next) => {
     const { name, phone, password, role } = req.body;
     if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
 
-    const ALLOWED_REGISTER_ROLES = new Set(['customer', 'contractor', 'society_admin', 'federation_admin', 'admin']);
+    const ALLOWED_REGISTER_ROLES = new Set(['customer', 'worker', 'master', 'contractor']);
     const requestedRole = String(role || 'customer').toLowerCase();
     if (!ALLOWED_REGISTER_ROLES.has(requestedRole)) {
-      return res.status(400).json({ ok: false, message: 'Invalid role. Allowed: customer, contractor' });
+      return res.status(400).json({ ok: false, message: 'Invalid role. Allowed: customer, worker, master' });
     }
+
+    // Normalize stored role: worker/master -> worker (or contractor for DB compatibility)
+    const normalizedRole = (requestedRole === 'master' || requestedRole === 'worker' || requestedRole === 'contractor') ? 'contractor' : 'customer';
 
     const { sanitize, sanitizeObject } = require('../utils/sanitizers');
     const hashed = password ? await bcrypt.hash(password, 10) : null;
@@ -69,15 +73,15 @@ exports.register = async (req, res, next) => {
     }
 
     const userRes = await client.query(
-      `INSERT INTO users (name, phone, email, password_hash, role)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, name, phone, email, role`,
-      [cleanName, cleanPhone, cleanEmail, hashed, requestedRole]
+      `INSERT INTO users (name, phone, email, password_hash, role, society_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, phone, email, role, society_id`,
+      [cleanName, cleanPhone, cleanEmail, hashed, normalizedRole, req.body.society_id || null]
     );
     const user = userRes.rows[0];
     let contractor = null;
 
-    if (requestedRole === 'contractor') {
+    if (requestedRole === 'contractor' || requestedRole === 'worker' || requestedRole === 'master') {
       const {
         business_name,
         category,
@@ -99,87 +103,129 @@ exports.register = async (req, res, next) => {
         service_type,
         quick_services,
         tier,
+        society_id,
+        member_registration_no,
+        welfare_id,
+        id_document_type,
+        skill_certification_body,
+        id_proof_url,
+        certificate_url,
+        cooperative_card_url,
+        photo_url,
+        image_url,
       } = req.body;
-      const hasProfilePayload =
-        business_name !== undefined ||
-        category !== undefined ||
-        description !== undefined ||
-        categories !== undefined ||
-        services !== undefined ||
-        daily_rate !== undefined ||
-        location_text !== undefined ||
-        latitude !== undefined ||
-        longitude !== undefined ||
-        lat !== undefined ||
-        lng !== undefined;
 
-      if (hasProfilePayload) {
-        const cleanProfile = sanitizeObject({
-          business_name,
-          category,
-          categories,
-          description,
-          services,
-          daily_rate,
-          experience_years,
-          team_size,
-          is_labour_group,
-          is_responsibility_model,
-          location_text,
-          latitude,
-          longitude,
-          lat,
-          lng,
-          onboarding_data,
-          labour_crew,
-          service_type,
-          quick_services,
-          tier,
+      const cleanProfile = sanitizeObject({
+        business_name,
+        category,
+        categories,
+        description,
+        services,
+        daily_rate,
+        experience_years,
+        team_size,
+        is_labour_group,
+        is_responsibility_model,
+        location_text,
+        latitude,
+        longitude,
+        lat,
+        lng,
+        onboarding_data,
+        labour_crew,
+        service_type,
+        quick_services,
+        tier,
+        member_registration_no,
+        welfare_id,
+        id_document_type,
+        skill_certification_body,
+        id_proof_url,
+        certificate_url,
+        cooperative_card_url,
+        photo_url: photo_url || image_url,
+      });
+
+      const profileCategories = Array.isArray(cleanProfile.categories)
+        ? cleanProfile.categories
+        : cleanProfile.category
+          ? [cleanProfile.category]
+          : [];
+      const profileCategory = cleanProfile.category || profileCategories[0] || 'General Maintenance';
+      const profileLat = toFiniteNumber(cleanProfile.lat ?? cleanProfile.latitude);
+      const profileLng = toFiniteNumber(cleanProfile.lng ?? cleanProfile.longitude);
+      const profilePhoto = photo_url || image_url || null;
+
+      // Auto-route artisan to local Primary Society & State Federation by location
+      let resolvedSocietyId = cleanProfile.society_id;
+      let resolvedFederationId = cleanProfile.federation_id;
+      if (!resolvedSocietyId) {
+        const juris = await resolveJurisdiction({
+          locationText: cleanProfile.location_text || cleanName,
+          lat: profileLat,
+          lng: profileLng,
         });
-        const profileCategories = Array.isArray(cleanProfile.categories)
-          ? cleanProfile.categories
-          : cleanProfile.category
-            ? [cleanProfile.category]
-            : [];
-        const profileCategory = cleanProfile.category || profileCategories[0] || null;
-        const profileLat = toFiniteNumber(cleanProfile.lat ?? cleanProfile.latitude);
-        const profileLng = toFiniteNumber(cleanProfile.lng ?? cleanProfile.longitude);
-
-        const contractorRes = await client.query(
-          `INSERT INTO contractors (
-            user_id, business_name, category, categories, description, services,
-            daily_rate, experience_years, team_size, is_labour_group,
-            is_responsibility_model, location_text, lat, lng, latitude, longitude,
-            onboarding_data, labour_crew, service_type, quick_services, tier
-          )
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
-           RETURNING *`,
-          [
-            user.id,
-            cleanProfile.business_name || cleanName,
-            profileCategory,
-            profileCategories,
-            cleanProfile.description || null,
-            Array.isArray(cleanProfile.services) ? cleanProfile.services : [],
-            cleanProfile.daily_rate || null,
-            cleanProfile.experience_years || 0,
-            cleanProfile.team_size || 1,
-            !!cleanProfile.is_labour_group,
-            !!cleanProfile.is_responsibility_model,
-            cleanProfile.location_text || null,
-            profileLat,
-            profileLng,
-            profileLat,
-            profileLng,
-            cleanProfile.onboarding_data ? JSON.stringify(cleanProfile.onboarding_data) : '{}',
-            cleanProfile.labour_crew ? JSON.stringify(cleanProfile.labour_crew) : '[]',
-            cleanProfile.service_type || 'project',
-            cleanProfile.quick_services ? JSON.stringify(cleanProfile.quick_services) : '[]',
-            cleanProfile.tier || 'standard',
-          ]
-        );
-        contractor = contractorRes.rows[0];
+        resolvedSocietyId = juris.society_id;
+        resolvedFederationId = juris.federation_id;
       }
+
+      if (resolvedSocietyId) {
+        await client.query("UPDATE users SET society_id = $1, federation_id = $2 WHERE id = $3", [
+          resolvedSocietyId,
+          resolvedFederationId,
+          user.id,
+        ]);
+      }
+
+      const contractorRes = await client.query(
+        `INSERT INTO contractors (
+          user_id, business_name, category, categories, description, services,
+          daily_rate, experience_years, team_size, is_labour_group,
+          is_responsibility_model, location_text, lat, lng, latitude, longitude,
+          onboarding_data, labour_crew, service_type, quick_services, tier,
+          society_id, member_registration_no, welfare_id, id_document_type,
+          skill_certification_body, id_proof_url, certificate_url, cooperative_card_url,
+          photo_url, image_url, verification_status, is_verified
+        )
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)
+         RETURNING *`,
+        [
+          user.id,
+          cleanProfile.business_name || cleanName,
+          profileCategory,
+          profileCategories.length > 0 ? profileCategories : [profileCategory],
+          cleanProfile.description || `Verified Master specializing in ${profileCategory}`,
+          Array.isArray(cleanProfile.services) && cleanProfile.services.length > 0 ? cleanProfile.services : [profileCategory],
+          cleanProfile.daily_rate || 500,
+          cleanProfile.experience_years || 2,
+          cleanProfile.team_size || 1,
+          !!cleanProfile.is_labour_group,
+          !!cleanProfile.is_responsibility_model,
+          cleanProfile.location_text || "Bhopal, Madhya Pradesh",
+          profileLat || 23.2599,
+          profileLng || 77.4126,
+          profileLat || 23.2599,
+          profileLng || 77.4126,
+          cleanProfile.onboarding_data ? JSON.stringify(cleanProfile.onboarding_data) : null,
+          cleanProfile.labour_crew ? JSON.stringify(cleanProfile.labour_crew) : null,
+          cleanProfile.service_type || "both",
+          cleanProfile.quick_services ? JSON.stringify(cleanProfile.quick_services) : null,
+          cleanProfile.tier || "tier_1",
+          resolvedSocietyId || null,
+          cleanProfile.member_registration_no || `SK-MST-${Math.floor(100000 + Math.random() * 900000)}`,
+          cleanProfile.welfare_id || `WLF-${Math.floor(10000 + Math.random() * 90000)}`,
+          cleanProfile.id_document_type || 'Aadhaar / Cooperative Card',
+          cleanProfile.skill_certification_body || 'State Cooperative Skill Mission',
+          cleanProfile.id_proof_url || null,
+          cleanProfile.certificate_url || null,
+          cleanProfile.cooperative_card_url || null,
+          profilePhoto,
+          profilePhoto,
+          'pending',
+          false,
+        ]
+      );
+      contractor = contractorRes.rows[0];
     }
 
     await client.query('COMMIT');

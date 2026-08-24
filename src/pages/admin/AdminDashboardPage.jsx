@@ -8,28 +8,33 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FiUsers, FiUserCheck, FiTrendingUp, FiSettings, FiStar,
   FiAlertTriangle, FiActivity, FiRefreshCw, FiBarChart2, FiMenu, FiLogOut,
+  FiLayers, FiShoppingBag, FiRadio
 } from "react-icons/fi";
 
 // Panels
 import OverviewPanel from "./panels/OverviewPanel";
+import FederationsSocietiesPanel from "./panels/FederationsSocietiesPanel";
+import BookingsEscrowPanel from "./panels/BookingsEscrowPanel";
 import UsersPanel from "./panels/UsersPanel";
 import ContractorsPanel from "./panels/ContractorsPanel";
 import ReviewsPanel from "./panels/ReviewsPanel";
 import ModerationPanel from "./panels/ModerationPanel";
 import AnalyticsPanel from "./panels/AnalyticsPanel";
 import SettingsPanel from "./panels/SettingsPanel";
+import BroadcastModal from "./panels/BroadcastModal";
 import { DetailModal, EditContractorModal, EditUserModal } from "./panels/AdminShared";
 
 /* ──────────── Sidebar config ──────────── */
 const SIDEBAR = [
   { id: "overview", label: "Overview", icon: FiBarChart2 },
-  { id: "users", label: "Users", icon: FiUsers },
-  { id: "contractors", label: "Contractors", icon: FiUserCheck },
+  { id: "federations", label: "Federations & Societies", icon: FiLayers },
+  { id: "contractors", label: "Artisans & Verification", icon: FiUserCheck },
+  { id: "bookings", label: "Bookings & Escrow", icon: FiShoppingBag },
+  { id: "users", label: "Users & Authority", icon: FiUsers },
   { id: "reviews", label: "Reviews", icon: FiStar },
   { id: "moderation", label: "Moderation", icon: FiAlertTriangle },
-  { id: "analytics", label: "Analytics", icon: FiTrendingUp },
-  { id: "activity", label: "Activity", icon: FiActivity },
-  { id: "settings", label: "Settings", icon: FiSettings },
+  { id: "analytics", label: "Analytics & Growth", icon: FiTrendingUp },
+  { id: "settings", label: "Platform Settings", icon: FiSettings },
 ];
 
 export default function AdminDashboardPage() {
@@ -75,6 +80,7 @@ export default function AdminDashboardPage() {
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [editingContractor, setEditingContractor] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
 
   // ── Specific Loaders ─────────────────────────────────────────
   const loadOverview = useCallback(async () => {
@@ -413,6 +419,16 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowBroadcastModal(true)}
+                className="px-3.5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                title="Nationwide Emergency Broadcast"
+              >
+                <FiRadio className="w-4 h-4 animate-pulse" />
+                <span className="hidden sm:inline">📢 Broadcast Alert</span>
+              </button>
+
               <button 
                 onClick={loadAll} 
                 disabled={busy} 
@@ -439,6 +455,14 @@ export default function AdminDashboardPage() {
                   stats={stats} contractors={contractors} reports={reports} busy={busy}
                   onVerify={handleVerifyRequest} onResolve={handleResolveReport} onViewContractor={showContractorDetail}
                 />
+              )}
+
+              {tab === "federations" && (
+                <FederationsSocietiesPanel />
+              )}
+
+              {tab === "bookings" && (
+                <BookingsEscrowPanel />
               )}
 
               {tab === "users" && (
@@ -501,6 +525,7 @@ export default function AdminDashboardPage() {
       <DetailModal data={selectedDetail} onClose={() => setSelectedDetail(null)} />
       <EditContractorModal contractor={editingContractor} onClose={() => setEditingContractor(null)} onSave={handleUpdateContractor} busy={busy} />
       <EditUserModal user={editingUser} onClose={() => setEditingUser(null)} onSave={handleUpdateUser} busy={busy} />
+      <BroadcastModal isOpen={showBroadcastModal} onClose={() => setShowBroadcastModal(false)} />
     </main>
   );
 }

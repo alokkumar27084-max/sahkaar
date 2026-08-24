@@ -17,6 +17,7 @@ router.post('/verify-worker', optionalAuth, controller.verifyWorker);
 router.post('/reject-worker', optionalAuth, controller.rejectWorker);
 
 // Federation Admin & Control Endpoints
+router.get('/federation/pending-workers', optionalAuth, controller.getPendingWorkers);
 router.get('/stats/federation', optionalAuth, controller.getFederationAdminStats);
 router.post('/allocate-workforce', optionalAuth, controller.allocateWorkforce);
 router.get('/disputes', optionalAuth, controller.getDisputes);
