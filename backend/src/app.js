@@ -11,6 +11,7 @@ const swaggerUi = require('swagger-ui-express');
 const fs = require('fs');
 const path = require('path');
 const { bookingController } = require('./controllers/bookingController');
+const { getCorsOrigins, isCorsOriginAllowed } = require('./config/cors');
 
 // ── PRODUCTION READINESS CHECKS ──
 const CRITICAL_KEYS = [
@@ -44,10 +45,10 @@ app.use(helmet({
 
 // CORS - restrict to configured frontend URL(s)
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-const corsOrigins = frontendUrl.split(',').map((x) => x.trim()).filter(Boolean);
+const corsOrigins = getCorsOrigins(frontendUrl);
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || corsOrigins.includes(origin)) return callback(null, true);
+    if (isCorsOriginAllowed(origin, corsOrigins)) return callback(null, true);
     return callback(new Error('CORS blocked'));
   },
   credentials: true,

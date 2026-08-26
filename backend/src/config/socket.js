@@ -2,16 +2,17 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const { getJwtSecret } = require('./jwt');
 const { assertUserIsChatParticipant } = require('../utils/chatAccess');
+const { getCorsOrigins, isCorsOriginAllowed } = require('./cors');
 
 let io;
 
 function initSocket(server) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const corsOrigins = frontendUrl.split(',').map((x) => x.trim()).filter(Boolean);
+    const corsOrigins = getCorsOrigins(frontendUrl);
     io = new Server(server, {
         cors: {
             origin: (origin, callback) => {
-                if (!origin || corsOrigins.includes(origin)) return callback(null, true);
+                if (isCorsOriginAllowed(origin, corsOrigins)) return callback(null, true);
                 return callback(new Error('CORS blocked'));
             },
             methods: ['GET', 'POST'],
