@@ -44,6 +44,9 @@ exports.register = async (req, res, next) => {
   try {
     const { name, phone, password, role } = req.body;
     if (!phone) return res.status(400).json({ ok: false, message: 'phone required' });
+    if (password !== undefined && password !== null && (!password || String(password).length < 4)) {
+      return res.status(400).json({ ok: false, message: 'Password must be at least 4 characters' });
+    }
 
     const ALLOWED_REGISTER_ROLES = new Set(['customer', 'worker', 'master', 'contractor']);
     const requestedRole = String(role || 'customer').toLowerCase();
@@ -489,7 +492,7 @@ exports.resetPassword = async (req, res, next) => {
 
     const { isValidPassword } = require('../utils/validators');
     if (!isValidPassword(newPassword)) {
-      return res.status(400).json({ ok: false, message: 'Password must be at least 8 characters' });
+      return res.status(400).json({ ok: false, message: 'Password must be at least 4 characters' });
     }
 
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');

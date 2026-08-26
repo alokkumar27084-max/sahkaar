@@ -6,5 +6,5 @@ exports.require = (obj, fields) => {
 };
 
 exports.isValidPassword = (password) => {
-  return typeof password === 'string' && password.length >= 8;
+  return typeof password === 'string' && password.length >= 4;
 };

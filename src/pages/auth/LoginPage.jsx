@@ -8,7 +8,7 @@ import { authAPI } from "../../services/api";
 import { isValidPhone, isValidEmail, isValidPassword, sanitize } from "../../utils/validators";
 import { OTP_RESEND_SECONDS } from "../../utils/constants";
 import toast from "react-hot-toast";
-import { FiMail, FiLock, FiArrowRight, FiChevronLeft } from "react-icons/fi";
+import { FiMail, FiLock, FiArrowRight, FiChevronLeft, FiEye, FiEyeOff, FiShield, FiCheckCircle } from "react-icons/fi";
 import { ThekedaarLogo } from "../../components/common/ThekedaarLogo";
 import {
   auth as firebaseAuth,
@@ -66,6 +66,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [emailForOtp, setEmailForOtp] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [errors, setErrors] = useState({});
@@ -280,27 +281,39 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg-elevated)] flex items-center justify-center px-4 py-16 relative overflow-hidden">
+    <div className="min-h-screen bg-[#f5f7fb] flex items-center justify-center px-4 py-10 sm:py-16 relative overflow-hidden">
       
       {/* Decorative clean background highlights (subtle) */}
-      <div className="absolute top-1/4 left-1/4 w-[350px] h-[350px] rounded-full bg-indigo-500/5 blur-[80px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full bg-indigo-500/5 blur-[80px] pointer-events-none" />
+      <div className="absolute -top-32 -left-24 w-[520px] h-[520px] rounded-full bg-indigo-200/40 blur-[110px] pointer-events-none" />
+      <div className="absolute -bottom-48 -right-24 w-[520px] h-[520px] rounded-full bg-emerald-100/70 blur-[110px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="w-full max-w-[460px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl shadow-xl p-8 relative z-10"
+        className="w-full max-w-5xl grid lg:grid-cols-[0.92fr_1.08fr] bg-white border border-slate-200 rounded-[28px] shadow-[0_30px_100px_rgba(30,41,59,0.16)] overflow-hidden relative z-10"
       >
+        <div className="hidden lg:flex flex-col justify-between p-12 bg-[radial-gradient(circle_at_20%_10%,rgba(129,140,248,0.24),transparent_36%),linear-gradient(145deg,#eef2ff,#f8fafc)] border-r border-slate-200">
+          <Link to="/" className="inline-flex w-fit"><ThekedaarLogo className="h-16 w-16" showText textClassName="text-3xl" /></Link>
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-indigo-300 font-bold mb-5">Trusted work. Shared prosperity.</p>
+            <h1 className="text-5xl font-black leading-[1.05] text-slate-950 tracking-tight">Your trusted<br /><span className="text-indigo-600">home partner</span><br />is one step away.</h1>
+            <p className="mt-6 max-w-sm text-sm leading-7 text-slate-600">Find verified local Masters, book with confidence, and grow with a cooperative community built for Bharat.</p>
+            <div className="mt-9 space-y-4 text-sm text-slate-700">
+              <div className="flex items-center gap-3"><FiShield className="text-emerald-600" /> Verified cooperative professionals</div>
+              <div className="flex items-center gap-3"><FiCheckCircle className="text-emerald-600" /> Transparent pricing and secure bookings</div>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500">SahKaar Cooperative Marketplace</p>
+        </div>
+        <div className="p-6 sm:p-10 lg:p-12">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <ThekedaarLogo className="h-9 w-9" />
-          </Link>
-          <h1 className="text-2xl font-bold text-[var(--color-heading)] tracking-tight">
-            {step === 1 ? "Welcome to SahKaar" : "Verify code"}
+          <Link to="/" className="inline-flex lg:hidden items-center gap-2 mb-4"><ThekedaarLogo className="h-11 w-11" showText textClassName="text-2xl" /></Link>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
+            {step === 1 ? "Welcome back" : "Verify code"}
           </h1>
-          <p className="text-sm text-[var(--color-muted)] mt-1">
+          <p className="text-sm text-slate-500 mt-2">
             {step === 1 
               ? "Bharat's Cooperative-Owned Worker Marketplace"
               : `We sent a 6-digit OTP code to +91 ${phone}`}
@@ -503,14 +516,22 @@ export default function LoginPage() {
                   <div className="relative">
                     <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className={`w-full h-11 pl-10 pr-4 rounded-xl bg-[var(--color-bg-elevated)] border text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors ${
+                      className={`w-full h-12 pl-10 pr-12 rounded-xl bg-slate-50 border text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 transition-colors ${
                         errors.password ? "border-red-500" : "border-[var(--color-border)]"
                       }`}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((visible) => !visible)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+                    </button>
                   </div>
                   {errors.password && (
                     <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.password}</p>
@@ -656,6 +677,7 @@ export default function LoginPage() {
             {lang === "hi" ? "यहाँ पंजीकरण करें" : "Register here"}
           </Link>
         </p>
+        </div>
       </motion.div>
 
       {/* Invisible reCAPTCHA container for Firebase Phone Auth */}

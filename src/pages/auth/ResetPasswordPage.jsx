@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { FiLock, FiCheckCircle } from "react-icons/fi";
+import { FiLock, FiCheckCircle, FiEye, FiEyeOff } from "react-icons/fi";
 import { authAPI } from "../../services/api";
 import { isValidPassword } from "../../utils/validators";
 import toast from "react-hot-toast";
@@ -14,6 +14,7 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -67,7 +68,7 @@ export default function ResetPasswordPage() {
                 Reset Password
               </h1>
               <p className="text-sm text-[var(--color-muted)] mt-1">
-                Enter your new password below. Must be at least 8 characters.
+                Enter your new password below. Must be at least 4 characters.
               </p>
             </div>
 
@@ -79,14 +80,17 @@ export default function ResetPasswordPage() {
                 <div className="relative">
                   <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)] w-4 h-4" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-11 pl-10 pr-4 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
+                    className="w-full h-11 pl-10 pr-12 rounded-xl bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors"
                     required
-                    minLength={8}
+                    minLength={4}
                   />
+                  <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--color-muted)] hover:text-[var(--color-primary)]" aria-label={showPassword ? "Hide password" : "Show password"}>
+                    {showPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+                  </button>
                 </div>
               </div>
 

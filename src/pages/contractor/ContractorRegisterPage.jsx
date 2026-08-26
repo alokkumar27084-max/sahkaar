@@ -18,7 +18,9 @@ import {
   FiZap,
   FiAward,
   FiLock,
-  FiDollarSign
+  FiDollarSign,
+  FiEye,
+  FiEyeOff
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
@@ -41,6 +43,7 @@ export default function ContractorRegisterPage() {
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [societies, setSocieties] = useState([]);
 
   // Form State
@@ -105,7 +108,7 @@ export default function ContractorRegisterPage() {
     if (step === 1) {
       if (!formData.name.trim()) return toast.error("Please enter your full name");
       if (!formData.phone.trim() || formData.phone.length < 10) return toast.error("Please enter a valid 10-digit phone number");
-      if (!formData.password || formData.password.length < 6) return toast.error("Password must be at least 6 characters");
+      if (!formData.password || formData.password.length < 4) return toast.error("Password must be at least 4 characters");
     } else if (step === 2) {
       if (!formData.member_registration_no.trim()) {
         // Auto generate if worker doesn't remember their cooperative ID right away
@@ -278,13 +281,17 @@ export default function ContractorRegisterPage() {
                   <div className="relative">
                     <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder="Minimum 6 characters"
-                      className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
+                      placeholder="Minimum 4 characters"
+                      minLength={4}
+                      className="w-full h-11 pl-10 pr-11 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
                     />
+                    <button type="button" onClick={() => setShowPassword((visible) => !visible)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600" aria-label={showPassword ? "Hide password" : "Show password"}>
+                      {showPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+                    </button>
                   </div>
                 </div>
               </div>

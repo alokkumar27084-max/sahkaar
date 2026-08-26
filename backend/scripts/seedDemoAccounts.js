@@ -2,7 +2,24 @@ const db = require('../src/config/db');
 const bcrypt = require('bcrypt');
 
 async function seedDemoUsers() {
-  const hash = await bcrypt.hash('Password@123', 10);
+  const isProduction = process.env.NODE_ENV === 'production';
+  const adminEmail = process.env.ADMIN_EMAIL || (isProduction ? '' : 'admin@sahkaar.in');
+  const adminPassword = process.env.ADMIN_PASSWORD || (isProduction ? '' : 'Password@123');
+
+  if (isProduction && (!adminEmail || !adminPassword)) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD are required in production');
+  }
+
+  const hash = await bcrypt.hash(adminPassword, 12);
+
+  if (isProduction) {
+    await db.query(
+      'INSERT INTO users (id, name, email, phone, role, password_hash) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO UPDATE SET name = $2, email = $3, phone = $4, role = $5, password_hash = $6',
+      ['00000000-0000-0000-0000-000000000004', process.env.ADMIN_NAME || 'National Cooperative Admin', adminEmail, process.env.ADMIN_PHONE || null, 'admin', hash]
+    );
+    console.log(`Production admin account seeded for ${adminEmail}`);
+    return;
+  }
   
   // 1. Customer
   await db.query(

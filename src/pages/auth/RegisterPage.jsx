@@ -214,7 +214,8 @@ export default function RegisterPage() {
               type="password"
               value={form.password}
               onChange={update("password")}
-              placeholder="Minimum 6 characters"
+              placeholder="Minimum 4 characters"
+              minLength={4}
               className={`w-full h-11 px-4 rounded-xl bg-[var(--color-bg-elevated)] border text-sm text-[var(--color-heading)] focus:outline-none focus:border-[var(--color-primary)] transition-colors ${
                 errors.password ? "border-red-500" : "border-[var(--color-border)]"
               }`}

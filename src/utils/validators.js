@@ -22,9 +22,9 @@ export function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email?.trim());
 }
 
-// Password: min 8 chars. Backend uses the same rule.
+// Password: minimum 4 characters. Backend uses the same rule.
 export function isValidPassword(pw) {
-  return typeof pw === "string" && pw.length >= 8;
+  return typeof pw === "string" && pw.length >= 4;
 }
 
 // OTP: exactly 6 digits
