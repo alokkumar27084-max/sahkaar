@@ -128,24 +128,33 @@ export default function HomePage() {
         
         {/* Infinite Looping Multi-Video Background */}
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none z-0">
-          {HERO_VIDEOS.map((src, index) => (
-            <video
-              key={src}
-              ref={(el) => (videoRefs.current[index] = el)}
-              src={src}
-              autoPlay
-              muted
-              playsInline
-              onLoadedMetadata={(e) => {
-                e.currentTarget.playbackRate = 0.65;
-              }}
-              onEnded={handleVideoEnded}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${
-                index === currentVideoIdx ? "opacity-85 scale-100" : "opacity-0 scale-105 pointer-events-none"
-              }`}
-              style={{ filter: "brightness(1.05) contrast(1.02)" }}
-            />
-          ))}
+          {HERO_VIDEOS.map((src, index) => {
+            const isActive = index === currentVideoIdx;
+            const isNext = index === (currentVideoIdx + 1) % HERO_VIDEOS.length;
+            if (!isActive && !isNext) return null;
+            return (
+              <video
+                key={src}
+                ref={(el) => (videoRefs.current[index] = el)}
+                src={src}
+                autoPlay={isActive}
+                muted
+                playsInline
+                preload={isActive ? "auto" : "metadata"}
+                onCanPlay={(e) => {
+                  if (isActive) e.currentTarget.play().catch(() => {});
+                }}
+                onLoadedMetadata={(e) => {
+                  e.currentTarget.playbackRate = 0.65;
+                }}
+                onEnded={isActive ? handleVideoEnded : undefined}
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ease-in-out ${
+                  isActive ? "opacity-85 scale-100" : "opacity-0 scale-105 pointer-events-none"
+                }`}
+                style={{ filter: "brightness(1.05) contrast(1.02)" }}
+              />
+            );
+          })}
 
           {/* Lighter, Crisp Neutral Dark Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/35 to-black/75" />
@@ -191,7 +200,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={openLocationModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 my-auto border-r border-slate-200 text-slate-700 hover:text-slate-950 text-xs font-bold shrink-0 hidden sm:flex cursor-pointer transition-colors"
+                className="items-center gap-1.5 px-3 py-1.5 my-auto border-r border-slate-200 text-slate-700 hover:text-slate-950 text-xs font-bold shrink-0 hidden sm:flex cursor-pointer transition-colors"
                 title="Change location"
               >
                 <FiMapPin className="w-3.5 h-3.5 text-rose-500" />

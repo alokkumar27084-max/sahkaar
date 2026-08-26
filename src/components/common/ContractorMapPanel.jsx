@@ -1,12 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { hasGoogleMapsKey, loadGoogleMaps, calculateHaversineDistanceKm, formatDistance } from "../../utils/googleMaps";
-import { getAvatarUrl } from "../../utils/imageUtils";
+import { loadGoogleMaps, calculateHaversineDistanceKm, formatDistance } from "../../utils/googleMaps";
 
 const MAP_STYLES = [
-  { "featureType": "administrative", "elementType": "geometry", "stylers": [{ "visibility": "off" }] },
-  { "featureType": "poi", "stylers": [{ "visibility": "simplified" }] },
-  { "featureType": "road", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
-  { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
+  { featureType: "all", elementType: "geometry", stylers: [{ color: "#18222f" }] },
+  { featureType: "all", elementType: "labels.text.fill", stylers: [{ color: "#b7c5d6" }] },
+  { featureType: "all", elementType: "labels.text.stroke", stylers: [{ color: "#18222f" }, { weight: 2 }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#435466" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#1b2735" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#223142" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#93a8bd" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#34475a" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#273747" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#4b6175" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#667d92" }] },
+  { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e4057" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#75b7ca" }] },
 ];
 
 const DEFAULT_LAT = 23.2599; // Bhopal, MP
@@ -22,6 +32,7 @@ export default function ContractorMapPanel({
 }) {
   const mapContainerRef = useRef(null);
   const [mapsReady, setMapsReady] = useState(false);
+  const [mapsError, setMapsError] = useState(null);
   const markersRef = useRef({});
   const mapInstanceRef = useRef(null);
   const activeInfoWindowRef = useRef(null);
@@ -45,11 +56,17 @@ export default function ContractorMapPanel({
     let mounted = true;
     loadGoogleMaps(["places", "geometry"])
       .then(() => {
-        if (mounted) setMapsReady(true);
+        if (mounted) {
+          setMapsReady(true);
+          setMapsError(null);
+        }
       })
       .catch((err) => {
         console.warn("Google Maps panel load warning:", err);
-        if (mounted) setMapsReady(false);
+        if (mounted) {
+          setMapsReady(false);
+          setMapsError("Map could not load. Check the Google Maps key or your connection.");
+        }
       });
 
     return () => {
@@ -180,8 +197,17 @@ export default function ContractorMapPanel({
   }, [activeHighlightId]);
 
   return (
-    <div className="w-full h-full relative rounded-3xl overflow-hidden shadow-xs border border-slate-200">
+    <div className="w-full h-full min-h-[400px] relative rounded-3xl overflow-hidden shadow-2xl border border-slate-700 bg-[#18222f]">
       <div ref={mapContainerRef} className="w-full h-full min-h-[400px]" />
+      {!mapsReady && (
+        <div className="absolute inset-0 flex items-center justify-center bg-[#18222f] px-6 text-center text-slate-200">
+          <div>
+            <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-cyan-200">⌖</div>
+            <p className="text-sm font-bold">{mapsError || "Loading nearby masters..."}</p>
+            {!mapsError && <p className="mt-1 text-xs text-slate-400">Preparing the live service map</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

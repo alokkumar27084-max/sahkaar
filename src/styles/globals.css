@@ -131,7 +131,7 @@
 }
 
 html {
-  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', Inter, system-ui, sans-serif;
   scroll-padding-top: calc(var(--header-height) + 16px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -145,6 +145,27 @@ body {
   background: var(--color-bg);
   transition: background-color 0.3s var(--ease-in-out), color 0.3s var(--ease-in-out);
   overflow-x: hidden;
+}
+
+input,
+textarea,
+select {
+  color: var(--color-heading);
+  background-color: var(--color-surface);
+  caret-color: var(--color-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-subtle);
+  opacity: 1;
+}
+
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-heading);
+  box-shadow: 0 0 0 1000px var(--color-surface) inset;
 }
 
 /* ─── Scrollbar ─── */
@@ -249,7 +270,7 @@ select:focus-visible {
    ═══════════════════════════════════════════ */
 
 .font-display {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -257,7 +278,7 @@ select:focus-visible {
 .section-title {
   margin: 0;
   color: var(--color-heading);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
   font-weight: 800;
   font-size: clamp(1.5rem, 4vw, 2.25rem);
   line-height: 1.2;

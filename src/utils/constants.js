@@ -257,7 +257,7 @@ export const CATEGORIES = [
     subtitleKey: "cat.transport.subtitle",
     group: "personal_care",
     groupLabel: "Personal & Home Care",
-    image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80",
+    image: "https://media.istockphoto.com/id/1756244713/photo/young-handsome-man-working-in-towing-service-and-driving-his-truck.webp?a=1&b=1&s=612x612&w=0&k=20&c=yTB3eSJfSs5aSiTiqObNNkTcpxFlxQFzT_A51mUcYvw=",
     description: "Verified drivers for city commute, outstation journeys, hourly chauffeuring & commercial vehicle transport.",
     basePrice: "₹349",
     services: [
@@ -281,7 +281,7 @@ export const CATEGORIES = [
     subtitleKey: "cat.healthcare.subtitle",
     group: "personal_care",
     groupLabel: "Personal & Home Care",
-    image: "https://images.unsplash.com/photo-1584515901187-60f4e353f57f?auto=format&fit=crop&w=600&q=80",
+    image: "https://plus.unsplash.com/premium_photo-1664475811964-75af7d90ee4b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Y2FyZSUyMGdpdmVyfGVufDB8fDB8fHww",
     description: "Compassionate, trained cooperative attendants for elderly support, bedridden patient assistance & post-op recovery.",
     basePrice: "₹599",
     services: [

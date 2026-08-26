@@ -68,22 +68,24 @@ function useLenisScroll() {
     if (!window.Lenis || !window.gsap) return;
 
     const lenis = new window.Lenis({
-      lerp: 0.12,
-      duration: 1.0,
+      lerp: 0.09,
+      duration: 0.7,
       smoothWheel: true,
-      wheelMultiplier: 1.2,
+      wheelMultiplier: 1,
     });
 
     lenis.on("scroll", window.ScrollTrigger?.update);
 
-    window.gsap.ticker.add((time) => {
+    const handleTick = (time) => {
       lenis.raf(time * 1000);
-    });
+    };
+    window.gsap.ticker.add(handleTick);
 
     window.gsap.ticker.lagSmoothing(0);
     window.__lenis = lenis;
 
     return () => {
+      window.gsap.ticker.remove(handleTick);
       lenis.destroy();
       window.__lenis = null;
     };
