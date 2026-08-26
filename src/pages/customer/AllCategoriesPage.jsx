@@ -49,7 +49,7 @@ export default function AllCategoriesPage() {
   return (
     <main className="bg-slate-50 min-h-screen pb-20 text-slate-900 select-none">
       <SEOHead
-        title="सभी सेवाएं व कारीगर — All Services | SahKaari"
+        title="सभी सेवाएं व कारीगर — All Services | SahKaar"
         description="Book verified Master Electricians, Plumbers, Carpenters, Painters & Home Services directly from Cooperative Federations."
       />
 

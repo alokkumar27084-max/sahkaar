@@ -102,7 +102,7 @@ export default function ContractorMapPanel({
       const cLng = Number(c.lng ?? c.longitude);
       const position = { lat: cLat, lng: cLng };
 
-      const cName = c.name || c.business_name || "SahKaari Master";
+      const cName = c.name || c.business_name || "SahKaar Master";
       const cCat = (c.category || "Service").replace(/_/g, " ");
       const dist = calculateHaversineDistanceKm(centerLat, centerLng, cLat, cLng) ?? c.distance_km;
       const distFormatted = formatDistance(dist) || "Nearby";

@@ -1,5 +1,5 @@
 {
-  "name": "sahkaari-backend",
+  "name": "sahkaar-backend",
   "version": "1.0.0",
   "private": true,
   "main": "src/index.js",

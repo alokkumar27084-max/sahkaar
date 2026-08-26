@@ -31,7 +31,7 @@ export default function ContractorCard({
     contractor?.name ||
     contractor?.business_name ||
     contractor?.user_name ||
-    "SahKaari Master";
+    "SahKaar Master";
   const rawCategory = (
     contractor?.category ||
     contractor?.categories?.[0] ||
@@ -65,7 +65,7 @@ export default function ContractorCard({
 
   const waPhone = cleanPhone.startsWith("91") ? cleanPhone : cleanPhone.length === 10 ? "91" + cleanPhone : cleanPhone;
   const waText = encodeURIComponent(
-    `नमस्ते Master ${resolvedName}! I found your profile on SahKaari Cooperative Marketplace and would like to hire your ${resolvedCategory} service.`
+    `नमस्ते Master ${resolvedName}! I found your profile on SahKaar Cooperative Marketplace and would like to hire your ${resolvedCategory} service.`
   );
   const waHref = cleanPhone ? `https://wa.me/${waPhone}?text=${waText}` : "#";
 

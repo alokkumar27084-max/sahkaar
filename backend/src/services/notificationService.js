@@ -91,7 +91,7 @@ const notificationService = {
             // 3. Send Email if SMTP configured
             if (email && process.env.SMTP_USER) {
                 let htmlContent = `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                            <h2 style="color: #6366f1;">SahKaari</h2>
+                            <h2 style="color: #6366f1;">SahKaar</h2>
                             <p>${message}</p>
                             <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
                             <small style="color: #999;">Cooperative Labour Federation Automated Notification</small>
@@ -102,9 +102,9 @@ const notificationService = {
                 }
 
                 const mailOptions = {
-                    from: `"SahKaari" <${process.env.SMTP_USER}>`,
+                    from: `"SahKaar" <${process.env.SMTP_USER}>`,
                     to: email,
-                    subject: subject || "SahKaari Notification",
+                    subject: subject || "SahKaar Notification",
                     text: message,
                     html: htmlContent,
                 };
@@ -124,7 +124,7 @@ const notificationService = {
         if (phoneOrEmail.includes("@") && process.env.SMTP_USER) {
             await notificationService.notify({
                 email: phoneOrEmail,
-                subject: "Your SahKaari OTP",
+                subject: "Your SahKaar OTP",
                 message: `Your one-time password (OTP) is: ${otp}.`,
                 templateName: "otpTemplate",
                 templateData: [otp]

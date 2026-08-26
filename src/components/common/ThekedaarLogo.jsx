@@ -1,8 +1,9 @@
 import React from "react";
-import { SahKaariLogo } from "./SahKaariLogo";
+import { SahKaarLogo, SahKaariLogo } from "./SahKaariLogo";
 
 export function ThekedaarLogo(props) {
-  return <SahKaariLogo {...props} />;
+  return <SahKaarLogo {...props} />;
 }
 
-export { SahKaariLogo };
+export { SahKaarLogo, SahKaariLogo };
+

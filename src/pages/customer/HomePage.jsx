@@ -119,7 +119,7 @@ export default function HomePage() {
   return (
     <main className="bg-slate-50 min-h-screen text-slate-800">
       <SEOHead
-        title="सहकारी — Verified Masters for Home Services | SahKaari"
+        title="सहकार — Verified Masters for Home Services | SahKaar"
         description="Book verified Master Electricians, Plumbers, Carpenters, Painters & Technicians directly from Labour Cooperative Societies. 100% verified documents, fair pricing, zero middlemen."
       />
 
@@ -353,15 +353,15 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* ═══════ THE SAHKAARI COOPERATIVE GUARANTEE ═══════ */}
+      {/* ═══════ THE SAHKAAR COOPERATIVE GUARANTEE ═══════ */}
       <section className="bg-slate-900 text-white py-16 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-              {isHi ? "सहकारी सुरक्षा भरोसा" : "The SahKaari Trust Guarantee"}
+              {isHi ? "सहकार सुरक्षा भरोसा" : "The SahKaar Trust Guarantee"}
             </span>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-white">
-              {isHi ? "सहकारी मंच से मास्टर बुक क्यों करें?" : "Why Book a SahKaari Master?"}
+              {isHi ? "सहकार मंच से मास्टर बुक क्यों करें?" : "Why Book a SahKaar Master?"}
             </h2>
             <p className="text-sm text-slate-300">
               {isHi
@@ -425,7 +425,7 @@ export default function HomePage() {
               <span>{isHi ? "मास्टर कारीगरों के लिए विशेष" : "For Skilled Artisans & Pros"}</span>
             </div>
             <h2 className="text-2xl sm:text-4xl font-extrabold leading-tight">
-              {isHi ? "सहकारी मास्टर बनें और अपनी कमाई बढ़ाएं" : "Join as a SahKaari Master & Grow Your Business"}
+              {isHi ? "सहकार मास्टर बनें और अपनी कमाई बढ़ाएं" : "Join as a SahKaar Master & Grow Your Business"}
             </h2>
             <p className="text-xs sm:text-sm text-indigo-200 leading-relaxed">
               {isHi

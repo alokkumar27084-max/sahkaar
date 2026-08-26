@@ -372,7 +372,7 @@ export default function FederationsSocietiesPanel() {
                   </p>
                   <p className="flex items-center gap-1.5 font-medium">
                     <FiMail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{fed.contact_email || "contact@sahkaari.in"} • {fed.contact_phone || "+91 11 2334 5678"}</span>
+                    <span>{fed.contact_email || "contact@sahkaar.in"} • {fed.contact_phone || "+91 11 2334 5678"}</span>
                   </p>
                 </div>
               </div>

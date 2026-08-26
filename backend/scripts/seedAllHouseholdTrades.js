@@ -23,7 +23,7 @@ async function seedAllTrades() {
     const t = trades[i];
     const padded = String(i + 1).padStart(12, '0');
     const userId = `00000000-0000-4000-b000-${padded}`;
-    const email = `worker.${t.cat}@sahkaari.in`;
+    const email = `worker.${t.cat}@sahkaar.in`;
     const regNo = `MEM-BPL-2026-${String(i + 100).padStart(4, '0')}`;
     const welfareId = `WLF-2026-${String(i + 8000).padStart(5, '0')}`;
     const desc = `${t.title} affiliated with Bhopal Primary Labour Cooperative. Government verified and covered under Pradhan Mantri Suraksha Bima Yojana.`;

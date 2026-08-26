@@ -1,8 +1,8 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiX, FiPrinter, FiCheckCircle, FiShield, FiFileText, FiDownload } from "react-icons/fi";
 import { cooperativeAPI } from "../../services/api";
-import { SahKaariLogo } from "./SahKaariLogo";
+import { SahKaarLogo } from "./SahKaariLogo";
 import LoadingSpinner from "./LoadingSpinner";
 import toast from "react-hot-toast";
 
@@ -82,7 +82,7 @@ export default function CooperativeInvoiceModal({ bookingId, isOpen, onClose }) 
               {/* Header: Cooperative Federation & Government Stamp */}
               <div className="flex items-start justify-between border-b-2 border-[#0B3C5D] pb-5">
                 <div className="flex items-center gap-3">
-                  <SahKaariLogo className="w-12 h-12" />
+                  <SahKaarLogo className="w-12 h-12" />
                   <div>
                     <div className="text-base font-extrabold text-[#0B3C5D]">
                       {invoice.society.name}

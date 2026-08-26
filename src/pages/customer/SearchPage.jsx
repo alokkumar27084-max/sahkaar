@@ -127,7 +127,7 @@ export default function SearchPage() {
   return (
     <main className="bg-slate-50 min-h-screen pb-16">
       <SEOHead
-        title="खोजें और बुक करें — Verified Cooperative Masters | SahKaari"
+        title="खोजें और बुक करें — Verified Cooperative Masters | SahKaar"
         description="Search nearest verified Master Electricians, Plumbers, Carpenters and Painters. Filter by rating, distance, and official Cooperative verification."
       />
 

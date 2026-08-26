@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { FiPhone, FiGlobe, FiShield, FiUser, FiLogOut, FiLayers, FiUsers, FiLock } from "react-icons/fi";
-import { SahKaariLogo } from "./SahKaariLogo";
+import { SahKaarLogo } from "./SahKaariLogo";
 
 export default function GovHeader() {
   const { lang, setLang } = useLanguage();

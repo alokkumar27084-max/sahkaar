@@ -10,7 +10,7 @@ export const translations = {
   en: {
     translation: {
       // App
-      appName: "SahKaari",
+      appName: "SahKaar",
       tagline: "Cooperative-Owned Worker Marketplace",
       subTagline: "India's Digital Platform for Verified Labour Cooperative Societies & Skilled Tradesmen",
 
@@ -206,7 +206,7 @@ export const translations = {
   // ── HINDI ────────────────────────────────────────────────
   hi: {
     translation: {
-      appName: "सहकारी",
+      appName: "सहकार",
       tagline: "सहकारी स्वामित्व वाला डिजिटल श्रम बाज़ार",
       subTagline: "प्रमाणित श्रम सहकारी समितियों और कुशल कारीगरों का राष्ट्रीय मंच",
 

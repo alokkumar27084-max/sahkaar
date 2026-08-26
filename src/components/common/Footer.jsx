@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FiPhone, FiMail, FiMapPin, FiShield, FiCheckCircle, FiAward } from "react-icons/fi";
-import { SahKaariLogo } from "./SahKaariLogo";
+import { SahKaarLogo } from "./SahKaariLogo";
 
 export default function Footer() {
   return (
@@ -14,7 +14,7 @@ export default function Footer() {
           {/* Col 1: Brand & Guarantee */}
           <div className="space-y-3">
             <Link to="/" className="inline-block">
-              <SahKaariLogo className="w-10 h-10" showText={true} textClassName="text-xl text-white" animated={false} />
+              <SahKaarLogo className="w-10 h-10" showText={true} textClassName="text-xl text-white" animated={false} />
             </Link>
 
             <p className="text-slate-400 leading-relaxed text-xs">
@@ -48,7 +48,7 @@ export default function Footer() {
               For Masters & Societies
             </h4>
             <ul className="space-y-2 text-slate-400">
-              <li><Link to="/register/contractor" className="hover:text-indigo-400 font-bold transition-colors">Register as a SahKaari Master</Link></li>
+              <li><Link to="/register/contractor" className="hover:text-indigo-400 font-bold transition-colors">Register as a SahKaar Master</Link></li>
               <li><Link to="/federation/dashboard" className="hover:text-white transition-colors">State Federation Verification Portal</Link></li>
               <li><Link to="/society/dashboard" className="hover:text-white transition-colors">Primary Society Admin Console</Link></li>
               <li><Link to="/terms" className="hover:text-white transition-colors">Artisan Welfare & ₹5L Insurance</Link></li>
@@ -68,7 +68,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2">
                 <FiMail className="text-indigo-400 shrink-0" />
-                <span>support@sahkaari.gov.in</span>
+                <span>support@sahkaar.gov.in</span>
               </div>
               <div className="flex items-start gap-2">
                 <FiMapPin className="text-indigo-400 shrink-0 mt-0.5" />
@@ -82,7 +82,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            © {new Date().getFullYear()} SahKaari (सहकारी) • Cooperative Master Marketplace. All rights reserved.
+            © {new Date().getFullYear()} SahKaar (सहकार) • Cooperative Master Marketplace. All rights reserved.
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">

@@ -19,7 +19,7 @@ import { cooperativeAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import { SahKaariLogo } from "../../components/common/SahKaariLogo";
+import { SahKaarLogo } from "../../components/common/SahKaariLogo";
 import toast from "react-hot-toast";
 
 export default function SocietyAdminDashboard() {
@@ -115,7 +115,7 @@ export default function SocietyAdminDashboard() {
         {/* ── SOCIETY HEADER ── */}
         <header className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <SahKaariLogo className="w-14 h-14" />
+            <SahKaarLogo className="w-14 h-14" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="bg-[#D35400] text-white text-[10px] font-extrabold px-2 py-0.5 rounded tracking-wide uppercase">

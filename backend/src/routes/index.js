@@ -6,7 +6,7 @@ const contractorRoutes = require('./contractors');
 const reviewRoutes = require('./reviews');
 const adminRoutes = require('./admin');
 
-router.get('/health', (req, res) => res.json({ ok: true, timestamp: new Date().toISOString(), platform: 'SahKaari' }));
+router.get('/health', (req, res) => res.json({ ok: true, timestamp: new Date().toISOString(), platform: 'SahKaar' }));
 
 router.use('/auth', authRoutes);
 router.use('/contractors', contractorRoutes);

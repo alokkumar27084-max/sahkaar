@@ -298,7 +298,7 @@ export default function LoginPage() {
             <ThekedaarLogo className="h-9 w-9" />
           </Link>
           <h1 className="text-2xl font-bold text-[var(--color-heading)] tracking-tight">
-            {step === 1 ? "Welcome to SahKaari" : "Verify code"}
+            {step === 1 ? "Welcome to SahKaar" : "Verify code"}
           </h1>
           <p className="text-sm text-[var(--color-muted)] mt-1">
             {step === 1 
@@ -648,7 +648,7 @@ export default function LoginPage() {
 
         {/* Footer info link */}
         <p className="text-center text-xs text-[var(--color-muted)] mt-6 pt-3 border-t border-[var(--color-border)]">
-          {lang === "hi" ? "सहकारी मंच पर नए हैं?" : "New to SahKaari?"}{" "}
+          {lang === "hi" ? "सहकार मंच पर नए हैं?" : "New to SahKaar?"}{" "}
           <Link
             to={customerNext !== "/" ? `/register?next=${encodeURIComponent(customerNext)}` : "/register"}
             className="text-[#0B3C5D] font-bold hover:underline"

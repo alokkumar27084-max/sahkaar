@@ -397,7 +397,7 @@ export const MAX_PORTFOLIO_PHOTOS = 5;
 // WhatsApp deep-link base
 export const WHATSAPP_URL = (phone, name) =>
   `https://wa.me/91${phone}?text=${encodeURIComponent(
-    `Hello Master ${name || ''}! I found you on SahKaari Cooperative Marketplace. I would like to book your service.`
+    `Hello Master ${name || ''}! I found you on SahKaar Cooperative Marketplace. I would like to book your service.`
   )}`;
 
 // Star rating options

@@ -1,16 +1,16 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 
-const SITE_NAME = "SahKaari";
-const SITE_URL = "https://sahkaari.in";
+const SITE_NAME = "SahKaar";
+const SITE_URL = "https://sahkaar.in";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.jpg`;
-const DEFAULT_DESCRIPTION = "SahKaari connects households and institutions with verified skilled workers from registered Labour Cooperative Federations and Societies. 100% verified, welfare protected, transparent escrow.";
+const DEFAULT_DESCRIPTION = "SahKaar connects households and institutions with verified skilled workers from registered Labour Cooperative Federations and Societies. 100% verified, welfare protected, transparent escrow.";
 
 /**
  * SEOHead — Drop this into any page for full SEO coverage.
  *
  * Props:
- *   title      — Tab title (will append " | Thekedaar" automatically)
+ *   title      — Tab title (will append " | SahKaar" automatically)
  *   description — Meta description
  *   ogImage    — Open Graph image URL
  *   canonical  — Canonical URL (defaults to window.location.href)
@@ -25,7 +25,7 @@ export default function SEOHead({
   structuredData,
   noIndex = false,
 }) {
-  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Premium Contractors in India`;
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Bharat's Cooperative Marketplace for Verified Trades`;
   const canonicalUrl = canonical || (typeof window !== "undefined" ? window.location.href : SITE_URL);
   const structuredArray = structuredData
     ? Array.isArray(structuredData)

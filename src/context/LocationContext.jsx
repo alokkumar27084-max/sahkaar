@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { loadGoogleMaps } from "../utils/googleMapsLoader";
 import { reverseGeocodeCoords } from "../utils/googleMaps";
 
-const LOCATION_STORAGE_KEY = "sahkaari:user-location";
+const LOCATION_STORAGE_KEY = "sahkaar:user-location";
 
 export const POPULAR_LOCALITIES = [
   { id: "arera_colony", name: "Arera Colony, Bhopal", shortName: "Arera Colony", lat: 23.2156, lng: 77.4305, district: "Bhopal" },

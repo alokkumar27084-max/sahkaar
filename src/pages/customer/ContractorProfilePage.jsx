@@ -75,7 +75,7 @@ export default function ContractorProfilePage() {
     contractor?.name ||
     contractor?.business_name ||
     contractor?.user_name ||
-    "SahKaari Master";
+    "SahKaar Master";
   const cleanName = rawName
     .replace(/^Master\s+/i, "")
     .replace(/\s*\([^)]*\)$/, "")
@@ -102,7 +102,7 @@ export default function ContractorProfilePage() {
 
   const waPhone = cleanPhone.startsWith("91") ? cleanPhone : cleanPhone.length === 10 ? "91" + cleanPhone : cleanPhone;
   const waText = encodeURIComponent(
-    `नमस्ते Master ${cleanName}! I saw your profile on SahKaari and would like to hire your ${resolvedCategory} service.`
+    `नमस्ते Master ${cleanName}! I saw your profile on SahKaar and would like to hire your ${resolvedCategory} service.`
   );
   const waHref = cleanPhone ? `https://wa.me/${waPhone}?text=${waText}` : "#";
 
@@ -194,7 +194,7 @@ export default function ContractorProfilePage() {
   return (
     <main className="bg-slate-50 min-h-screen pb-28 text-slate-900">
       <SEOHead
-        title={`Master ${cleanName} — ${resolvedCategory} | SahKaari`}
+        title={`Master ${cleanName} — ${resolvedCategory} | SahKaar`}
         description={`Book Master ${cleanName}. Certified ${resolvedCategory} from ${societyName}.`}
       />
 

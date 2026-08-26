@@ -176,7 +176,7 @@ export default function ContractorRegisterPage() {
   return (
     <main className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6">
       <SEOHead
-        title="सहकारी मास्टर रजिस्ट्रेशन — Join as a Verified Master | SahKaari"
+        title="सहकार मास्टर रजिस्ट्रेशन — Join as a Verified Master | SahKaar"
         description="Register as a Master Artisan with your Cooperative Federation. Submit documents for official verification, get recommended to customers, and keep 100% of your earnings."
       />
 
@@ -186,10 +186,10 @@ export default function ContractorRegisterPage() {
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-extrabold">
             <FiAward className="w-3.5 h-3.5" />
-            <span>{isHi ? "सहकारी मास्टर कारीगर मंच" : "SahKaari Master Partner Portal"}</span>
+            <span>{isHi ? "सहकार मास्टर कारीगर मंच" : "SahKaar Master Partner Portal"}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            {isHi ? "मास्टर कारीगर के रूप में रजिस्टर करें" : "Register as a SahKaari Master"}
+            {isHi ? "मास्टर कारीगर के रूप में रजिस्टर करें" : "Register as a SahKaar Master"}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto">
             {isHi
@@ -348,7 +348,7 @@ export default function ContractorRegisterPage() {
               <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-start gap-3">
                 <FiShield className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-indigo-900 leading-relaxed font-medium">
-                  SahKaari is 100% cooperative-owned. Affiliating with a registered Primary Labour Cooperative Society grants you the Official Verified Master Shield, legal protection, and ₹5,00,000 welfare insurance.
+                  SahKaar is 100% cooperative-owned. Affiliating with a registered Primary Labour Cooperative Society grants you the Official Verified Master Shield, legal protection, and ₹5,00,000 welfare insurance.
                 </p>
               </div>
 

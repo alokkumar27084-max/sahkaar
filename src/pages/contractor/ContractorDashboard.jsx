@@ -62,8 +62,12 @@ export default function ContractorDashboard() {
         .catch(() => {});
     };
 
+    window.addEventListener("sahkaar:booking_update", handleRealtimeUpdate);
     window.addEventListener("sahkaari:booking_update", handleRealtimeUpdate);
-    return () => window.removeEventListener("sahkaari:booking_update", handleRealtimeUpdate);
+    return () => {
+      window.removeEventListener("sahkaar:booking_update", handleRealtimeUpdate);
+      window.removeEventListener("sahkaari:booking_update", handleRealtimeUpdate);
+    };
   }, []);
 
   const loadDashboard = async () => {
@@ -141,7 +145,7 @@ export default function ContractorDashboard() {
   return (
     <main className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6">
       <SEOHead
-        title="मास्टर डैशबोर्ड — SahKaari Master Partner Portal"
+        title="मास्टर डैशबोर्ड — SahKaar Master Partner Portal"
         description="Manage your verified Master profile, incoming customer bookings, Federation verification status, and subscription rankings."
       />
 
@@ -284,7 +288,7 @@ export default function ContractorDashboard() {
               {bookings.map((booking) => {
                 const cleanPhone = (booking.customer_phone || "").replace(/\D/g, "");
                 const waText = encodeURIComponent(
-                  `Namaste ${booking.customer_name || ""}, I am Master ${profile?.business_name || user?.name} from SahKaari regarding your booking for ${booking.service_name || "service"}.`
+                  `Namaste ${booking.customer_name || ""}, I am Master ${profile?.business_name || user?.name} from SahKaar regarding your booking for ${booking.service_name || "service"}.`
                 );
 
                 return (

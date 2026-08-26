@@ -85,7 +85,7 @@ export default function BroadcastModal({ isOpen, onClose }) {
             <textarea
               rows={4}
               required
-              placeholder="e.g. SahKaari Cooperative Alert: Verification drives are live in Bhopal and Indore. Please keep your Aadhaar cards updated."
+              placeholder="e.g. SahKaar Cooperative Alert: Verification drives are live in Bhopal and Indore. Please keep your Aadhaar cards updated."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-medium text-slate-900 dark:text-white focus:border-red-500 outline-none"

@@ -1,14 +1,14 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-export function SahKaariLogo({
+export function SahKaarLogo({
   className = "w-11 h-11",
   showText = false,
   textClassName = "text-2xl",
   animated = true,
 }) {
   return (
-    <span className="inline-flex items-center gap-3 select-none" aria-label="SahKaari Cooperative Marketplace Logo">
+    <span className="inline-flex items-center gap-3 select-none" aria-label="SahKaar Cooperative Marketplace Logo">
       <div className={`relative inline-flex items-center justify-center group ${className}`}>
         
         {/* Animated Glow Halo */}
@@ -183,7 +183,7 @@ export function SahKaariLogo({
         <div className="flex flex-col leading-none">
           <div className="flex items-center gap-1.5">
             <span className={`font-black tracking-tight text-slate-950 font-display ${textClassName}`}>
-              Sah<span className="text-indigo-600">Kaari</span>
+              Sah<span className="text-indigo-600">Kaar</span>
             </span>
           </div>
         </div>
@@ -192,4 +192,5 @@ export function SahKaariLogo({
   );
 }
 
-export const ThekedaarLogo = SahKaariLogo;
+export const SahKaariLogo = SahKaarLogo;
+export const ThekedaarLogo = SahKaarLogo;

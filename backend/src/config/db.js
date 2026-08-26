@@ -2,7 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const { Pool } = require('pg');
 
-const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/sahkaari';
+const dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/sahkaar';
 const isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('sslmode=require');
 const useSsl = isNeon || process.env.DB_SSL === 'true';
 

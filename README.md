@@ -1,11 +1,11 @@
-# SahKaari (सहकारी)
+# SahKaar (सहकार)
 **Bharat's Cooperative-Owned Digital Marketplace for Verified Labour Cooperative Societies & Skilled Tradesmen**
 
 ---
 
 ## 🏛️ Vision & Mission
 
-**SahKaari** bridges India's informal skilled trade economy with structured cooperative governance. By linking **State Labour Cooperative Federations**, **Primary Cooperative Societies**, and verified artisans, SahKaari eliminates exploitative middlemen, guarantees social security (PM Suraksha Bima + Welfare Fund Pool), and provides households and institutions with 100% verified, reliable services.
+**SahKaar** bridges India's informal skilled trade economy with structured cooperative governance. By linking **State Labour Cooperative Federations**, **Primary Cooperative Societies**, and verified artisans, SahKaar eliminates exploitative middlemen, guarantees social security (PM Suraksha Bima + Welfare Fund Pool), and provides households and institutions with 100% verified, reliable services.
 
 ---
 
@@ -92,4 +92,4 @@ npm start
 
 ---
 
-*© SahKaari Cooperative Marketplace. Built for Bharat.*
+*© SahKaar Cooperative Marketplace. Built for Bharat.*

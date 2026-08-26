@@ -51,7 +51,7 @@ export function NotificationProvider({ children }) {
     }
 
     const socketUrl = process.env.REACT_APP_API_URL?.replace("/api", "") || window.location.origin;
-    const token = localStorage.getItem("sahkaari_token") || localStorage.getItem("token");
+    const token = localStorage.getItem("sahkaar_token") || localStorage.getItem("sahkaari_token") || localStorage.getItem("token");
 
     const socket = io(socketUrl, {
       auth: { token },
@@ -89,7 +89,7 @@ export function NotificationProvider({ children }) {
                 </div>
                 <div className="ml-3 flex-1">
                   <p className="text-xs font-black text-amber-400 uppercase tracking-wider">
-                    {isBooking ? "New Master Booking Alert" : "SahKaari Update"}
+                    {isBooking ? "New Master Booking Alert" : "SahKaar Update"}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-white leading-snug">
                     {data.message || data.notification?.message}
@@ -116,6 +116,9 @@ export function NotificationProvider({ children }) {
       );
 
       // 3. Dispatch window broadcast event for live dashboard auto-refresh
+      window.dispatchEvent(
+        new CustomEvent("sahkaar:booking_update", { detail: data })
+      );
       window.dispatchEvent(
         new CustomEvent("sahkaari:booking_update", { detail: data })
       );

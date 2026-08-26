@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 /**
- * SahKaari AI Demand Forecasting Service
+ * SahKaar AI Demand Forecasting Service
  * Statistical & Weighted Moving Average + Linear Trend Forecasting Engine
  * Analyzes localized booking patterns by ward/locality & trade category.
  */

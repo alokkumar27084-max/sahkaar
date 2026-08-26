@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { useLocationContext } from "../../context/LocationContext";
-import { SahKaariLogo } from "./SahKaariLogo";
+import { SahKaarLogo } from "./SahKaariLogo";
 import {
   FiMenu,
   FiX,
@@ -84,7 +84,7 @@ export default function Navbar() {
           {/* ═══════ LEFT: BRAND & LOCATION PILL ═══════ */}
           <div className="flex items-center gap-6 shrink-0">
             <Link to="/" className="flex items-center gap-3 group select-none shrink-0">
-              <SahKaariLogo className="w-11 h-11" showText={true} textClassName="text-2xl" animated={true} />
+              <SahKaarLogo className="w-11 h-11" showText={true} textClassName="text-2xl" animated={true} />
             </Link>
 
             {/* Desktop Location Pill (Opens Interactive Selector Modal) */}
@@ -280,7 +280,7 @@ export default function Navbar() {
                 
                 {/* Logo & Close Button */}
                 <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                  <SahKaariLogo className="w-9 h-9" showText={true} textClassName="text-xl" animated={true} />
+                  <SahKaarLogo className="w-9 h-9" showText={true} textClassName="text-xl" animated={true} />
 
                   <button
                     type="button"
@@ -324,7 +324,7 @@ export default function Navbar() {
                 ) : (
                   <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 space-y-3">
                     <div className="space-y-1">
-                      <h4 className="text-xs font-extrabold text-indigo-950">Welcome to SahKaari</h4>
+                      <h4 className="text-xs font-extrabold text-indigo-950">Welcome to SahKaar</h4>
                       <p className="text-[11px] text-indigo-700">Book verified Master artisans directly from cooperatives.</p>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -418,7 +418,7 @@ export default function Navbar() {
                       <span>For Artisans & Pros</span>
                     </div>
                     <h4 className="text-sm font-extrabold leading-snug">
-                      Join as a Verified SahKaari Master
+                      Join as a Verified SahKaar Master
                     </h4>
                     <p className="text-[11px] text-slate-300">
                       Zero platform commissions, direct bookings, and ₹5 Lakh government welfare cover.
@@ -456,7 +456,7 @@ export default function Navbar() {
                 )}
 
                 <div className="text-[10px] text-slate-400 text-center">
-                  SahKaari (सहकारी) • Cooperative Services Marketplace
+                  SahKaar (सहकार) • Cooperative Services Marketplace
                 </div>
               </div>
 

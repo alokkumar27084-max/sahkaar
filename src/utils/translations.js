@@ -13,7 +13,7 @@ const translations = {
   // ── English ──────────────────────────────
   en: {
     // App-wide
-    "app.name":        "SahKaari",
+    "app.name":        "SahKaar",
     "app.tagline":     "Cooperative-Owned Worker Marketplace",
     "app.subtitle":    "India's Digital Platform for Verified Labour Cooperative Societies & Skilled Tradesmen",
     "app.loading":     "Loading...",
@@ -46,8 +46,8 @@ const translations = {
     "home.search_placeholder": "What service do you need (Electrician, Plumber, Mason)?",
     "home.near_you":      "Near You",
     "home.categories":    "Browse Cooperative Trades",
-    "home.how_it_works":  "How SahKaari Works",
-    "home.why_us":        "Why SahKaari Cooperative?",
+    "home.how_it_works":  "How SahKaar Works",
+    "home.why_us":        "Why SahKaar Cooperative?",
     "home.featured":      "Featured Cooperative Workers",
 
     // Categories
@@ -247,7 +247,7 @@ const translations = {
   // ── Hindi ─────────────────────────────────
   hi: {
     // App-wide
-    "app.name":        "सहकारी",
+    "app.name":        "सहकार",
     "app.tagline":     "सहकारी स्वामित्व वाला डिजिटल श्रम बाज़ार",
     "app.subtitle":    "प्रमाणित श्रम सहकारी समितियों और कुशल कारीगरों का राष्ट्रीय मंच",
     "app.loading":     "लोड हो रहा है...",
@@ -280,8 +280,8 @@ const translations = {
     "home.search_placeholder": "आपको किस कार्य के लिए कारीगर चाहिए (इलेक्ट्रीशियन, प्लंबर, राजमिस्त्री)?",
     "home.near_you":      "आपके निकटतम",
     "home.categories":    "सहकारी कार्य श्रेणियाँ",
-    "home.how_it_works":  "सहकारी कैसे काम करता है",
-    "home.why_us":        "सहकारी बाज़ार ही क्यों?",
+    "home.how_it_works":  "सहकार कैसे काम करता है",
+    "home.why_us":        "सहकार बाज़ार ही क्यों?",
     "home.featured":      "सत्यापित सहकारी कारीगर",
 
     // Categories
