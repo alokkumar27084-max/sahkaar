@@ -5,7 +5,69 @@ const db = require('../config/db');
 
 const TABLE = 'quick_bookings';
 
+async function ensureQuickBookingsSchema() {
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS ${TABLE} (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      customer_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+      contractor_id UUID REFERENCES contractors(id) ON DELETE CASCADE NOT NULL,
+      service_name VARCHAR(255) NOT NULL,
+      service_details JSONB,
+      booking_fee_order_id VARCHAR(255),
+      booking_fee_payment_id VARCHAR(255),
+      booking_fee_status VARCHAR(20) DEFAULT 'UNPAID'
+        CHECK (booking_fee_status IN ('UNPAID','PAID','REFUNDED')),
+      scheduled_date DATE NOT NULL,
+      scheduled_time_slot VARCHAR(50),
+      status VARCHAR(20) DEFAULT 'PENDING'
+        CHECK (status IN ('PENDING','CONFIRMED','IN_PROGRESS',
+                          'COMPLETED','CANCELLED_BY_CUSTOMER',
+                          'CANCELLED_BY_CONTRACTOR','DISPUTED')),
+      service_price NUMERIC(10,2),
+      final_price NUMERIC(10,2),
+      payment_method VARCHAR(20) DEFAULT 'CASH'
+        CHECK (payment_method IN ('CASH','ONLINE','UPI')),
+      customer_address TEXT,
+      customer_lat DOUBLE PRECISION,
+      customer_lng DOUBLE PRECISION,
+      rating INT CHECK (rating BETWEEN 1 AND 5),
+      review_text TEXT,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  `).catch(() => {});
+
+  await db.query(`
+    ALTER TABLE ${TABLE}
+      ADD COLUMN IF NOT EXISTS service_details JSONB,
+      ADD COLUMN IF NOT EXISTS booking_fee_order_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS booking_fee_payment_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS booking_fee_status VARCHAR(20) DEFAULT 'UNPAID',
+      ADD COLUMN IF NOT EXISTS scheduled_date DATE,
+      ADD COLUMN IF NOT EXISTS scheduled_time_slot VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'PENDING',
+      ADD COLUMN IF NOT EXISTS service_price NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS final_price NUMERIC(10,2),
+      ADD COLUMN IF NOT EXISTS payment_method VARCHAR(20) DEFAULT 'CASH',
+      ADD COLUMN IF NOT EXISTS customer_address TEXT,
+      ADD COLUMN IF NOT EXISTS customer_lat DOUBLE PRECISION,
+      ADD COLUMN IF NOT EXISTS customer_lng DOUBLE PRECISION,
+      ADD COLUMN IF NOT EXISTS rating INT,
+      ADD COLUMN IF NOT EXISTS review_text TEXT,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+  `).catch(() => {});
+
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_quick_bookings_customer ON ${TABLE}(customer_id);`).catch(() => {});
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_quick_bookings_contractor ON ${TABLE}(contractor_id);`).catch(() => {});
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_quick_bookings_status ON ${TABLE}(status);`).catch(() => {});
+}
+
+exports.ensureQuickBookingsSchema = ensureQuickBookingsSchema;
+
 exports.create = async ({ customer_id, contractor_id, service_name, service_details, scheduled_date, scheduled_time_slot, service_price, customer_address, customer_lat, customer_lng, booking_fee_order_id }) => {
+  await ensureQuickBookingsSchema();
+
   const { rows } = await db.query(
     `INSERT INTO ${TABLE}
        (customer_id, contractor_id, service_name, service_details,
