@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FiPhone, FiMail, FiMapPin, FiShield, FiCheckCircle, FiAward } from "react-icons/fi";
+import { FiPhone, FiMail, FiMapPin, FiShield } from "react-icons/fi";
 import { SahKaarLogo } from "./SahKaariLogo";
 
 export default function Footer() {

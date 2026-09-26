@@ -14,6 +14,7 @@ router.get('/analytics', controller.analytics);
 // Federations Management
 router.get('/federations', controller.listFederations);
 router.post('/federations', controller.createFederation);
+router.post('/federations/:id/owner', controller.createFederationOwner);
 router.patch('/federations/:id', controller.updateFederation);
 router.delete('/federations/:id', controller.deleteFederation);
 

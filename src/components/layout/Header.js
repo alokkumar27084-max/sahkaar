@@ -85,7 +85,7 @@ export default function Header() {
                   <div className="dropdown-header">
                     <p className="dropdown-name">{user?.name}</p>
                     <p className="dropdown-role">
-                      {isContractor ? 'Contractor' : 'Customer'}
+                      {isContractor ? 'Cooperative Worker' : 'Customer'}
                     </p>
                   </div>
                   <div className="dropdown-divider" />

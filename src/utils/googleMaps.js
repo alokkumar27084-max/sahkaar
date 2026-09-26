@@ -128,8 +128,8 @@ export async function reverseGeocodeCoords(lat, lng) {
         const landmark = addr.amenity || addr.building || addr.shop || "";
         const road = addr.road || addr.street || "";
         const locality = addr.suburb || addr.neighbourhood || addr.residential || addr.city_district || "";
-        const city = addr.city || addr.town || addr.county || "Bhopal";
-        const state = addr.state || "Madhya Pradesh";
+        const city = addr.city || addr.town || addr.county || "";
+        const state = addr.state || "";
         const pin = addr.postcode || "";
 
         const parts = [landmark, road, locality, city, state, pin].filter(Boolean);
@@ -172,8 +172,8 @@ export async function reverseGeocodeCoords(lat, lng) {
   }
 
   return {
-    formatted_address: `Bhopal, Madhya Pradesh (${nLat.toFixed(4)}, ${nLng.toFixed(4)})`,
-    short_name: "Bhopal",
+    formatted_address: `Selected location (${nLat.toFixed(4)}, ${nLng.toFixed(4)})`,
+    short_name: "Selected location",
     lat: nLat,
     lng: nLng,
   };
@@ -235,8 +235,8 @@ export async function geocodePlaceSelection(selection) {
 
   return {
     address: selection.description || selection.name || "Selected Location",
-    lat: Number(selection.lat || 23.2599),
-    lng: Number(selection.lng || 77.4126),
+    lat: Number(selection.lat),
+    lng: Number(selection.lng),
   };
 }
 

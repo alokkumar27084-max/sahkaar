@@ -15,6 +15,7 @@ import {
   FiMessageCircle,
   FiExternalLink,
   FiFileText
+  ,FiShield
 } from "react-icons/fi";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -38,6 +39,7 @@ export default function CustomerDashboard() {
 
   const [activeTab, setActiveTab] = useState("quick_bookings");
   const [quickBookings, setQuickBookings] = useState([]);
+  const [cooperativeBookings, setCooperativeBookings] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [projects, setProjects] = useState([]);
   const [disputes, setDisputes] = useState([]);
@@ -66,14 +68,16 @@ export default function CustomerDashboard() {
     setLoading(true);
     const results = await Promise.allSettled([
       quickBookingAPI.getMyBookings(),
+      bookingAPI.getMyBookings(),
       meetingAPI.getMyMeetings("customer"),
       projectAPI.getMyProjects("customer"),
       subscriptionAPI.getMyDisputes(),
       notificationAPI.getMine()
     ]);
 
-    const [qbRes, meetRes, projRes, dispRes, notifRes] = results;
+    const [qbRes, coopRes, meetRes, projRes, dispRes, notifRes] = results;
     if (qbRes.status === "fulfilled") setQuickBookings(qbRes.value.data.bookings || []);
+    if (coopRes.status === "fulfilled") setCooperativeBookings(coopRes.value.data.bookings || []);
     if (meetRes.status === "fulfilled") setMeetings(meetRes.value.data.meetings || []);
     if (projRes.status === "fulfilled") setProjects(projRes.value.data.projects || []);
     if (dispRes.status === "fulfilled") setDisputes(dispRes.value.data.disputes || []);
@@ -225,6 +229,7 @@ export default function CustomerDashboard() {
         <div className="flex border-b border-[var(--color-border)] mb-8 overflow-x-auto no-scrollbar gap-6">
           {[
             { id: "quick_bookings", label: "Quick Bookings", icon: FiZap, count: quickBookings.length },
+            { id: "cooperative_bookings", label: "Cooperative Services", icon: FiShield, count: cooperativeBookings.length },
             { id: "meetings", label: "Consultation Visits", icon: FiCalendar, count: meetings.length },
             { id: "projects", label: "Milestone Projects", icon: FiBriefcase, count: projects.length },
             { id: "disputes", label: "Dispute Tickets", icon: FiAlertTriangle, count: disputes.length }
@@ -500,6 +505,37 @@ export default function CustomerDashboard() {
                         </motion.div>
                       ))
                     )}
+                  </motion.div>
+                )}
+
+                {activeTab === "cooperative_bookings" && (
+                  <motion.div key="cooperative" initial="hidden" animate="show" exit="hidden" variants={stagger} className="space-y-5">
+                    {cooperativeBookings.length === 0 ? (
+                      <div className="text-center py-16 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-8 shadow-card">
+                        <FiShield size={24} className="mx-auto mb-4 text-[var(--color-primary)]" />
+                        <h3 className="text-lg font-bold">No cooperative service bookings</h3>
+                        <p className="mt-2 text-xs font-semibold text-[var(--color-muted)]">Book a verified worker from a local primary cooperative society.</p>
+                      </div>
+                    ) : cooperativeBookings.map((booking) => (
+                      <motion.div key={booking.id} variants={fadeUp} className="bg-[var(--color-surface)] border border-[var(--color-border)] p-6 rounded-2xl shadow-card">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--color-primary)]">{booking.service_category || "Service"}</span>
+                            <h3 className="text-lg font-extrabold mt-1">{booking.contractor_name || "Verified cooperative worker"}</h3>
+                            <p className="text-xs text-[var(--color-muted)] mt-1">{booking.location_address || "Service location saved"}</p>
+                          </div>
+                          <span className="px-3 py-1 rounded-full bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-[10px] font-extrabold uppercase">{booking.workflow_status || booking.status}</span>
+                        </div>
+                        <div className="mt-5 flex flex-wrap items-center gap-3 text-xs font-bold text-[var(--color-muted)]">
+                          <span>₹{Number(booking.amount || 0).toLocaleString("en-IN")}</span>
+                          {booking.scheduled_for && <span>Scheduled: {new Date(booking.scheduled_for).toLocaleString()}</span>}
+                          <button onClick={() => setInvoiceModalId(booking.id)} className="ml-auto inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline"><FiFileText /> Invoice</button>
+                        </div>
+                        {booking.workflow_status === "in_progress" && (
+                          <button onClick={async () => { await bookingAPI.updateWorkflowStatus(booking.id, "completed"); toast.success("Service completion confirmed. Federation transfer release has been requested."); fetchDashboardData(); }} className="mt-4 px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Confirm service completion</button>
+                        )}
+                      </motion.div>
+                    ))}
                   </motion.div>
                 )}
 

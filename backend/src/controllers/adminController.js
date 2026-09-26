@@ -23,10 +23,11 @@ function parseIdParam(rawId) {
 exports.pendingContractors = async (req, res, next) => {
   try {
     const result = await db.query(
-      `SELECT c.*, u.name AS user_name, u.phone, u.email
+      `SELECT c.*, u.name AS user_name, u.phone, u.email, s.name AS society_name
        FROM contractors c
        JOIN users u ON u.id = c.user_id
-       WHERE c.is_verified = false
+       LEFT JOIN cooperative_societies s ON s.id = c.society_id
+       WHERE c.is_verified = false AND c.society_id IS NOT NULL
        ORDER BY c.id ASC`
     );
     return res.json({ ok: true, contractors: result.rows });
@@ -48,6 +49,11 @@ exports.verifyContractor = async (req, res, next) => {
       message = 'Your profile verification has been rejected. Please update your details and try again.';
     }
 
+    const docRes = await db.query('SELECT society_id, member_registration_no, id_proof_url, cooperative_card_url FROM contractors WHERE id=$1', [req.params.id]);
+    const docs = docRes.rows[0];
+    if (is_verified && (!docs?.society_id || !docs.member_registration_no || !docs.id_proof_url || !docs.cooperative_card_url)) {
+      return res.status(400).json({ ok: false, message: 'Identity document, cooperative membership card, society affiliation, and member number are required before approval.' });
+    }
     const result = await db.query(
       `UPDATE contractors
        SET is_verified = $2, verification_status = $3, updated_at = now()
@@ -1222,10 +1228,8 @@ exports.createManualSubscription = async (req, res, next) => {
       [contractor_id, plan_type, expiresAt]
     );
 
-    // Sync contractor flags
-    if (plan_type === 'verified_badge' || plan_type === 'premium') {
-      await client.query(`UPDATE contractors SET is_verified = true WHERE id = $1`, [contractor_id]);
-    }
+    // Paid plans can control promotion only; verification is reserved for
+    // cooperative reviewers and cannot be purchased.
     if (plan_type === 'priority_listing' || plan_type === 'premium') {
       await client.query(`UPDATE contractors SET is_featured = true WHERE id = $1`, [contractor_id]);
     }
@@ -1286,9 +1290,12 @@ exports.listFederations = async (req, res, next) => {
   try {
     const query = `
       SELECT f.*,
+        u.name AS owner_name, u.phone AS owner_phone, u.email AS owner_email,
+        COALESCE((SELECT SUM(le.amount) FROM cooperative_ledger_entries le WHERE le.federation_id=f.id AND le.entry_type='federation_share'),0)::numeric AS recorded_federation_share,
         (SELECT COUNT(*) FROM cooperative_societies WHERE federation_id = f.id) AS total_societies,
-        (SELECT COUNT(*) FROM contractors c JOIN cooperative_societies cs ON c.society_id = cs.id WHERE cs.federation_id = f.id) AS total_masters
+        (SELECT COUNT(*) FROM contractors c JOIN cooperative_societies cs ON c.society_id = cs.id WHERE cs.federation_id = f.id) AS total_workers
       FROM federations f
+      LEFT JOIN users u ON u.id = f.owner_user_id
       ORDER BY f.is_national DESC, f.state ASC
     `;
     const { rows } = await db.query(query);
@@ -1299,37 +1306,134 @@ exports.listFederations = async (req, res, next) => {
 };
 
 exports.createFederation = async (req, res, next) => {
+  const client = await db.pool.connect();
   try {
-    const { name, registration_no, state, region, jurisdiction_districts, contact_email, contact_phone, office_address, welfare_fund_balance } = req.body;
-    if (!name || !state) return res.status(400).json({ ok: false, message: 'Federation name and state required' });
-
-    const query = `
-      INSERT INTO federations (name, registration_no, state, jurisdiction_state, region, jurisdiction_districts, contact_email, contact_phone, office_address, welfare_fund_balance)
-      VALUES ($1, $2, $3, $3, $4, $5, $6, $7, $8, $9)
-      RETURNING *
-    `;
-    const { rows } = await db.query(query, [
-      sanitize(name),
-      sanitize(registration_no || `FED-${Date.now()}`),
-      sanitize(state),
-      sanitize(region || 'State Level'),
-      Array.isArray(jurisdiction_districts) ? jurisdiction_districts : [sanitize(state)],
-      contact_email ? sanitize(contact_email) : null,
-      contact_phone ? sanitize(contact_phone) : null,
-      office_address ? sanitize(office_address) : null,
-      Number(welfare_fund_balance) || 1000000.00
+    const {
+      name, registration_no, state, region, jurisdiction_districts, contact_email,
+      contact_phone, office_address, latitude, longitude, owner_name, owner_phone,
+      owner_email, owner_password,
+    } = req.body;
+    if (!name || !state || !owner_name || !owner_phone || !owner_password || latitude === '' || latitude === undefined || longitude === '' || longitude === undefined) {
+      return res.status(400).json({ ok: false, message: 'Federation name, state, real latitude and longitude, and owner name, phone and initial password are required' });
+    }
+    if (String(owner_password).length < 10) {
+      return res.status(400).json({ ok: false, message: 'Federation owner initial password must be at least 10 characters' });
+    }
+    if (owner_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(owner_email))) {
+      return res.status(400).json({ ok: false, message: 'Provide a valid owner email address' });
+    }
+    if (!/^[+0-9()\-\s]{8,20}$/.test(String(owner_phone))) {
+      return res.status(400).json({ ok: false, message: 'Provide a valid federation owner phone number' });
+    }
+    const lat = latitude === '' || latitude === undefined ? null : Number(latitude);
+    const lng = longitude === '' || longitude === undefined ? null : Number(longitude);
+    if ((lat === null) !== (lng === null) || (lat !== null && (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180))) {
+      return res.status(400).json({ ok: false, message: 'Provide valid latitude and longitude together' });
+    }
+    await client.query('BEGIN');
+    const duplicate = await client.query('SELECT id FROM users WHERE phone = $1 OR ($2::text IS NOT NULL AND email = $2) LIMIT 1', [sanitize(owner_phone), owner_email ? sanitize(owner_email) : null]);
+    if (duplicate.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ ok: false, message: 'Federation owner phone or email is already registered' });
+    }
+    const passwordHash = await bcrypt.hash(String(owner_password), 12);
+    const ownerRes = await client.query(
+      `INSERT INTO users (name, phone, email, password_hash, role)
+       VALUES ($1,$2,$3,$4,'federation_admin')
+       RETURNING id, name, phone, email, role`,
+      [sanitize(owner_name), sanitize(owner_phone), owner_email ? sanitize(owner_email) : null, passwordHash]
+    );
+    const owner = ownerRes.rows[0];
+    const fedRes = await client.query(`
+      INSERT INTO federations
+        (name, registration_no, state, jurisdiction_state, region, jurisdiction_districts,
+         contact_email, contact_phone, office_address, latitude, longitude, owner_user_id, welfare_fund_balance)
+      VALUES ($1,$2,$3,$3,$4,$5,$6,$7,$8,$9,$10,$11,0)
+      RETURNING *`, [
+      sanitize(name), sanitize(registration_no || `FED-${Date.now()}`), sanitize(state),
+      sanitize(region || 'State Level'), Array.isArray(jurisdiction_districts) ? jurisdiction_districts.map(sanitize) : [sanitize(state)],
+      contact_email ? sanitize(contact_email) : null, contact_phone ? sanitize(contact_phone) : null,
+      office_address ? sanitize(office_address) : null, lat, lng, owner.id,
     ]);
-
-    return res.json({ ok: true, federation: rows[0] });
+    await client.query('UPDATE users SET federation_id = $1 WHERE id = $2', [fedRes.rows[0].id, owner.id]);
+    await client.query('COMMIT');
+    return res.status(201).json({ ok: true, federation: fedRes.rows[0], owner });
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
     return next(err);
+  } finally {
+    client.release();
+  }
+};
+
+exports.createFederationOwner = async (req, res, next) => {
+  const client = await db.pool.connect();
+  try {
+    const { id } = req.params;
+    const { name, phone, email, password } = req.body || {};
+    if (!name || !phone || !password || String(password).length < 10) {
+      return res.status(400).json({ ok: false, message: 'Owner name and phone are required; password must be at least 10 characters' });
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))) {
+      return res.status(400).json({ ok: false, message: 'Provide a valid owner email address' });
+    }
+    if (!/^[+0-9()\-\s]{8,20}$/.test(String(phone))) {
+      return res.status(400).json({ ok: false, message: 'Provide a valid federation owner phone number' });
+    }
+    await client.query('BEGIN');
+    const fedRes = await client.query('SELECT id, owner_user_id FROM federations WHERE id = $1 FOR UPDATE', [id]);
+    if (!fedRes.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ ok: false, message: 'Federation not found' });
+    }
+    if (fedRes.rows[0].owner_user_id) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ ok: false, message: 'This federation already has an owner account' });
+    }
+    const duplicate = await client.query('SELECT id FROM users WHERE phone = $1 OR ($2::text IS NOT NULL AND email = $2) LIMIT 1', [sanitize(phone), email ? sanitize(email) : null]);
+    if (duplicate.rows[0]) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ ok: false, message: 'Owner phone or email is already registered' });
+    }
+    const hash = await bcrypt.hash(String(password), 12);
+    const ownerRes = await client.query(`INSERT INTO users (name, phone, email, password_hash, role, federation_id)
+      VALUES ($1,$2,$3,$4,'federation_admin',$5) RETURNING id,name,phone,email,role,federation_id`,
+      [sanitize(name), sanitize(phone), email ? sanitize(email) : null, hash, id]);
+    await client.query('UPDATE federations SET owner_user_id = $1, updated_at = NOW() WHERE id = $2', [ownerRes.rows[0].id, id]);
+    await client.query('COMMIT');
+    return res.status(201).json({ ok: true, owner: ownerRes.rows[0] });
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    return next(err);
+  } finally {
+    client.release();
   }
 };
 
 exports.updateFederation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, state, jurisdiction_districts, contact_email, contact_phone, office_address, welfare_fund_balance, is_active } = req.body;
+    const { name, state, jurisdiction_districts, contact_email, contact_phone, office_address, latitude, longitude, is_active, razorpay_linked_account_id, payout_onboarding_status } = req.body;
+    const nextLat = latitude === undefined || latitude === '' ? null : Number(latitude);
+    const nextLng = longitude === undefined || longitude === '' ? null : Number(longitude);
+    if ((nextLat !== null && (!Number.isFinite(nextLat) || nextLat < -90 || nextLat > 90)) || (nextLng !== null && (!Number.isFinite(nextLng) || nextLng < -180 || nextLng > 180))) {
+      return res.status(400).json({ ok: false, message: 'Federation location coordinates are invalid' });
+    }
+    if ((latitude === '' && nextLng !== null) || (longitude === '' && nextLat !== null)) {
+      return res.status(400).json({ ok: false, message: 'Clear both federation coordinates together or provide both values' });
+    }
+    if (contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(contact_email))) {
+      return res.status(400).json({ ok: false, message: 'Provide a valid public federation email address' });
+    }
+    if (payout_onboarding_status && !['not_configured', 'pending_kyc', 'active', 'suspended'].includes(payout_onboarding_status)) {
+      return res.status(400).json({ ok: false, message: 'Invalid federation payment onboarding status' });
+    }
+    if (payout_onboarding_status === 'active') {
+      const existing = await db.query('SELECT razorpay_linked_account_id FROM federations WHERE id = $1', [id]);
+      if (!razorpay_linked_account_id && !existing.rows[0]?.razorpay_linked_account_id) {
+        return res.status(400).json({ ok: false, message: 'Set the provider linked-account id before activating federation payouts' });
+      }
+    }
 
     const query = `
       UPDATE federations
@@ -1340,8 +1444,11 @@ exports.updateFederation = async (req, res, next) => {
           contact_email = COALESCE($5, contact_email),
           contact_phone = COALESCE($6, contact_phone),
           office_address = COALESCE($7, office_address),
-          welfare_fund_balance = COALESCE($8, welfare_fund_balance),
-          is_active = COALESCE($9, is_active),
+          latitude = CASE WHEN $8::text = '__CLEAR__' THEN NULL ELSE COALESCE(NULLIF($8::text,'')::numeric, latitude) END,
+          longitude = CASE WHEN $9::text = '__CLEAR__' THEN NULL ELSE COALESCE(NULLIF($9::text,'')::numeric, longitude) END,
+          is_active = COALESCE($10, is_active),
+          razorpay_linked_account_id = COALESCE($11, razorpay_linked_account_id),
+          payout_onboarding_status = COALESCE($12, payout_onboarding_status),
           updated_at = NOW()
       WHERE id = $1
       RETURNING *
@@ -1354,8 +1461,11 @@ exports.updateFederation = async (req, res, next) => {
       contact_email ? sanitize(contact_email) : null,
       contact_phone ? sanitize(contact_phone) : null,
       office_address ? sanitize(office_address) : null,
-      welfare_fund_balance !== undefined ? Number(welfare_fund_balance) : null,
-      is_active !== undefined ? toBool(is_active) : null
+      latitude === '' ? '__CLEAR__' : latitude !== undefined ? String(latitude) : null,
+      longitude === '' ? '__CLEAR__' : longitude !== undefined ? String(longitude) : null,
+      is_active !== undefined ? toBool(is_active) : null,
+      razorpay_linked_account_id ? sanitize(razorpay_linked_account_id) : null,
+      payout_onboarding_status ? sanitize(payout_onboarding_status) : null
     ]);
 
     if (!rows[0]) return res.status(404).json({ ok: false, message: 'Federation not found' });
@@ -1368,8 +1478,9 @@ exports.updateFederation = async (req, res, next) => {
 exports.deleteFederation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await db.query('DELETE FROM federations WHERE id = $1', [id]);
-    return res.json({ ok: true, message: 'Federation deleted successfully' });
+    const result = await db.query('UPDATE federations SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id', [id]);
+    if (!result.rows[0]) return res.status(404).json({ ok: false, message: 'Federation not found' });
+    return res.json({ ok: true, message: 'Federation deactivated; its territory and booking history were retained.' });
   } catch (err) {
     return next(err);
   }
@@ -1396,6 +1507,10 @@ exports.createSociety = async (req, res, next) => {
   try {
     const { federation_id, name, registration_no, district, jurisdiction_districts, jurisdiction_state, contact_phone, contact_email, office_address, welfare_pool_balance } = req.body;
     if (!name || !district) return res.status(400).json({ ok: false, message: 'Society name and district are required' });
+    if (federation_id) {
+      const federation = await db.query('SELECT id FROM federations WHERE id=$1 AND is_active=true', [federation_id]);
+      if (!federation.rows[0]) return res.status(400).json({ ok: false, message: 'Select an active federation' });
+    }
 
     const query = `
       INSERT INTO cooperative_societies (federation_id, name, registration_no, district, jurisdiction_districts, jurisdiction_state, region, contact_phone, contact_email, office_address, welfare_pool_balance)
@@ -1412,7 +1527,7 @@ exports.createSociety = async (req, res, next) => {
       contact_phone ? sanitize(contact_phone) : null,
       contact_email ? sanitize(contact_email) : null,
       office_address ? sanitize(office_address) : null,
-      Number(welfare_pool_balance) || 500000.00
+      0
     ]);
 
     return res.json({ ok: true, society: rows[0] });
@@ -1464,8 +1579,9 @@ exports.updateSociety = async (req, res, next) => {
 exports.deleteSociety = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await db.query('DELETE FROM cooperative_societies WHERE id = $1', [id]);
-    return res.json({ ok: true, message: 'Society deleted successfully' });
+    const result = await db.query('UPDATE cooperative_societies SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id', [id]);
+    if (!result.rows[0]) return res.status(404).json({ ok: false, message: 'Society not found' });
+    return res.json({ ok: true, message: 'Society deactivated; worker memberships and booking history were retained.' });
   } catch (err) {
     return next(err);
   }
@@ -1576,6 +1692,9 @@ exports.updateUserRole = async (req, res, next) => {
     if (!validRoles.includes(role)) {
       return res.status(400).json({ ok: false, message: 'Invalid role' });
     }
+    if (role === 'society_admin' || role === 'federation_admin') {
+      return res.status(400).json({ ok: false, message: 'Cooperative authority accounts must be created from the society or federation administration flow so they receive a scoped jurisdiction.' });
+    }
 
     const { rows } = await db.query(
       `UPDATE users SET role = $2, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, phone, role`,
@@ -1592,6 +1711,17 @@ exports.assignUserAuthority = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { society_id, federation_id } = req.body;
+    if (federation_id) {
+      const fed = await db.query('SELECT id FROM federations WHERE id=$1 AND is_active=true', [federation_id]);
+      if (!fed.rows[0]) return res.status(400).json({ ok: false, message: 'Federation is inactive or does not exist' });
+    }
+    if (society_id) {
+      const soc = await db.query('SELECT id, federation_id FROM cooperative_societies WHERE id=$1 AND is_active=true', [society_id]);
+      if (!soc.rows[0]) return res.status(400).json({ ok: false, message: 'Society is inactive or does not exist' });
+      if (federation_id && String(soc.rows[0].federation_id) !== String(federation_id)) {
+        return res.status(400).json({ ok: false, message: 'Society must belong to the assigned federation' });
+      }
+    }
 
     const { rows } = await db.query(
       `UPDATE users SET society_id = $2, federation_id = $3, updated_at = NOW() WHERE id = $1 RETURNING id, name, email, phone, role, society_id, federation_id`,

@@ -9,7 +9,7 @@ import { isValidPhone, isValidEmail, isValidPassword, sanitize } from "../../uti
 import { OTP_RESEND_SECONDS } from "../../utils/constants";
 import toast from "react-hot-toast";
 import { FiMail, FiLock, FiArrowRight, FiChevronLeft, FiEye, FiEyeOff, FiShield, FiCheckCircle } from "react-icons/fi";
-import { ThekedaarLogo } from "../../components/common/ThekedaarLogo";
+import { SahKaarLogo } from "../../components/common/SahKaariLogo";
 import {
   auth as firebaseAuth,
   RecaptchaVerifier,
@@ -27,6 +27,14 @@ export default function LoginPage() {
   const nextParam = new URLSearchParams(window.location.search).get("next");
   const customerNext = nextParam && nextParam.startsWith("/") ? nextParam : "/";
 
+  const dashboardForRole = (role) => {
+    if (role === "admin") return "/admin/dashboard";
+    if (role === "federation_admin") return "/federation/dashboard";
+    if (role === "society_admin") return "/society/dashboard";
+    if (role === "contractor") return "/contractor/dashboard";
+    return customerNext;
+  };
+
   useEffect(() => {
     if (!user) return;
     if (user.role === "admin") navigate("/admin/dashboard");
@@ -36,27 +44,6 @@ export default function LoginPage() {
     else navigate(customerNext);
   }, [user, navigate, customerNext]);
 
-  async function handleQuickRoleLogin(emailToLogin, rolePassword) {
-    setLoading(true);
-    try {
-      const res = await authAPI.login({
-        email: emailToLogin,
-        password: rolePassword || "Password@123",
-      });
-      const data = res.data;
-      login(data.user, data.token);
-      toast.success(`Logged in as ${data.user.name} (${data.user.role.toUpperCase()})`);
-      if (data.user.role === "federation_admin") navigate("/federation/dashboard");
-      else if (data.user.role === "society_admin") navigate("/society/dashboard");
-      else if (data.user.role === "admin") navigate("/admin/dashboard");
-      else if (data.user.role === "contractor") navigate("/contractor/dashboard");
-      else navigate(customerNext);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to log in as demo account");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   // modes: "phone" = phone OTP, "emailOtp" = email OTP, "email" = email+password
   const [mode, setMode] = useState("phone");
@@ -102,7 +89,7 @@ export default function LoginPage() {
         } else {
           login(res.data.user, res.data.token);
           toast.success('Logged in!');
-          navigate(res.data.user.role === 'admin' ? '/admin/dashboard' : res.data.user.role === 'contractor' ? '/contractor/dashboard' : '/');
+        navigate(dashboardForRole(res.data.user.role));
         }
       } catch (err) {
         console.error('Email link sign-in error:', err);
@@ -195,7 +182,7 @@ export default function LoginPage() {
       } else {
         login(res.data.user, res.data.token);
         toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
-        navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+        navigate(dashboardForRole(res.data.user.role));
       }
     } catch (err) {
       console.error('OTP verify error:', err);
@@ -252,7 +239,7 @@ export default function LoginPage() {
       const res = await authAPI.login({ email: cleanEmail, password });
       login(res.data.user, res.data.token);
       toast.success("Logged in!");
-      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+      navigate(dashboardForRole(res.data.user.role));
     } catch (err) { toast.error(err.response?.data?.message || t("app.error")); }
     finally { setLoading(false); }
   }
@@ -264,7 +251,7 @@ export default function LoginPage() {
       const res = await authAPI.googleLogin({ credential: credentialResponse.credential });
       login(res.data.user, res.data.token);
       toast.success(lang === "hi" ? "लॉगिन सफल!" : "Logged in!");
-      navigate(res.data.user.role === "admin" ? "/admin/dashboard" : res.data.user.role === "contractor" ? "/contractor/dashboard" : customerNext);
+      navigate(dashboardForRole(res.data.user.role));
     } catch (err) {
       if (err.response?.data?.code === 'ACCOUNT_NOT_FOUND') {
         const googleData = err.response.data.googleData;
@@ -294,7 +281,7 @@ export default function LoginPage() {
         className="w-full max-w-5xl grid lg:grid-cols-[0.92fr_1.08fr] bg-white border border-slate-200 rounded-[28px] shadow-[0_30px_100px_rgba(30,41,59,0.16)] overflow-hidden relative z-10"
       >
         <div className="hidden lg:flex flex-col justify-between p-12 bg-[radial-gradient(circle_at_20%_10%,rgba(129,140,248,0.24),transparent_36%),linear-gradient(145deg,#eef2ff,#f8fafc)] border-r border-slate-200">
-          <Link to="/" className="inline-flex w-fit"><ThekedaarLogo className="h-16 w-16" showText textClassName="text-3xl" /></Link>
+          <Link to="/" className="inline-flex w-fit"><SahKaarLogo className="h-16 w-16" showText textClassName="text-3xl" /></Link>
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-indigo-300 font-bold mb-5">Trusted work. Shared prosperity.</p>
             <h1 className="text-5xl font-black leading-[1.05] text-slate-950 tracking-tight">Your trusted<br /><span className="text-indigo-600">home partner</span><br />is one step away.</h1>
@@ -309,7 +296,7 @@ export default function LoginPage() {
         <div className="p-6 sm:p-10 lg:p-12">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex lg:hidden items-center gap-2 mb-4"><ThekedaarLogo className="h-11 w-11" showText textClassName="text-2xl" /></Link>
+          <Link to="/" className="inline-flex lg:hidden items-center gap-2 mb-4"><SahKaarLogo className="h-11 w-11" showText textClassName="text-2xl" /></Link>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
             {step === 1 ? "Welcome back" : "Verify code"}
           </h1>
@@ -319,13 +306,6 @@ export default function LoginPage() {
               : `We sent a 6-digit OTP code to +91 ${phone}`}
           </p>
         </div>
-
-        {/* Admin indicator */}
-        {new URLSearchParams(window.location.search).get("admin") === "1" && step === 1 && (
-          <div className="mb-6 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-300 text-xs font-semibold text-center">
-            Admin login mode
-          </div>
-        )}
 
         {/* OAuth and Divider (Only shown in Step 1) */}
         {step === 1 && (
@@ -621,7 +601,9 @@ export default function LoginPage() {
                 </form>
               ) : (
                 <div className="space-y-4 text-center">
-                  <div className="text-4xl">📧</div>
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-xs">
+                    <FiMail className="w-7 h-7" />
+                  </div>
                   <div className="text-sm p-3.5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-950 rounded-xl text-[var(--color-heading)] font-semibold leading-relaxed">
                     Check your email: <br /><span className="text-[var(--color-primary)] font-bold">{emailForOtp}</span>
                   </div>

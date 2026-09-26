@@ -17,6 +17,7 @@ import {
   FiShield,
   FiStar,
   FiUsers,
+  FiCheck
 } from "react-icons/fi";
 import { contractorAPI } from "../../services/api";
 import { getAvatarUrl } from "../../utils/imageUtils";
@@ -247,7 +248,7 @@ export default function MeetingBookingPage() {
                       : "bg-[var(--color-border)]"
                   }`}
                 >
-                  {step > s.id ? "✓" : s.id}
+                  {step > s.id ? <FiCheck size={10} className="stroke-[3]" /> : s.id}
                 </span>
                 {s.label}
               </span>

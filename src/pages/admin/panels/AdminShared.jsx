@@ -1,6 +1,6 @@
-// Shared UI atoms and utilities used across all Admin panels
 import React from "react";
 import { motion } from "framer-motion";
+import { FiStar, FiCheckCircle, FiX } from "react-icons/fi";
 import { getImageUrl } from "../../../utils/imageUtils";
 
 /* ──────────── Buttons ──────────── */
@@ -155,12 +155,12 @@ export function DetailModal({ data, onClose }) {
               <p><strong className="text-heading font-medium">Business:</strong> {c.business_name || "—"}</p>
               <p><strong className="text-heading font-medium">Category:</strong> {c.category || "—"}</p>
               <p><strong className="text-heading font-medium">Location:</strong> {c.location_text || "—"}</p>
-              <p><strong className="text-heading font-medium">Rating:</strong> {c.rating ? `★ ${Number(c.rating).toFixed(1)}` : "N/A"}</p>
+              <p className="flex items-center gap-1.5"><strong className="text-heading font-medium">Rating:</strong> {c.rating ? <span className="inline-flex items-center gap-1 text-amber-500 font-bold"><FiStar className="w-3.5 h-3.5 fill-amber-400" /> {Number(c.rating).toFixed(1)}</span> : "N/A"}</p>
               <p><strong className="text-heading font-medium">Experience:</strong> {c.experience_years ? `${c.experience_years} yrs` : "—"}</p>
               <p><strong className="text-heading font-medium">Team Size:</strong> {c.team_size || 1}</p>
               <div className="flex gap-2 mt-2.5">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${c.is_verified ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"}`}>
-                  {c.is_verified ? "✓ Verified" : "Unverified"}
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold inline-flex items-center gap-1 ${c.is_verified ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"}`}>
+                  {c.is_verified ? <><FiCheckCircle className="w-3 h-3 text-emerald-600" /> Verified</> : "Unverified"}
                 </span>
                 {c.tier && c.tier !== "standard" && (
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 capitalize font-bold">{c.tier}</span>
@@ -277,7 +277,7 @@ export function EditContractorModal({ contractor, onClose, onSave, busy }) {
       >
         <div className="flex items-center justify-between p-5 border-b border-border bg-bg-elevated">
           <h3 className="text-base font-bold text-heading">Edit Contractor Profile #{contractor.id}</h3>
-          <button onClick={onClose} className="text-muted hover:text-heading font-bold text-sm">✕</button>
+          <button onClick={onClose} className="text-muted hover:text-heading p-1.5 rounded-lg hover:bg-surface transition-colors" aria-label="Close modal"><FiX size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
@@ -409,7 +409,7 @@ export function EditUserModal({ user, onClose, onSave, busy }) {
       >
         <div className="flex items-center justify-between p-5 border-b border-border bg-bg-elevated">
           <h3 className="text-base font-bold text-heading">Edit User #{user.id}</h3>
-          <button onClick={onClose} className="text-muted hover:text-heading font-bold text-sm">✕</button>
+          <button onClick={onClose} className="text-muted hover:text-heading p-1.5 rounded-lg hover:bg-surface transition-colors" aria-label="Close modal"><FiX size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">

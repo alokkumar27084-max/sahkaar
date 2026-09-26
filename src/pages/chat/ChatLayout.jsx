@@ -194,7 +194,7 @@ export default function ChatLayout() {
         switch (action) {
             case 'location':
                 toast.success("Location shared with pro!");
-                handleSendMessage(null, "📍 Shared Location: [Project Site]");
+                handleSendMessage(null, "Location Shared: [Project Site]");
                 break;
             case 'visit':
                 setShowVisitModal(true);
@@ -207,7 +207,7 @@ export default function ChatLayout() {
                 if (user?.role === 'contractor') setShowQuoteModal(true);
                 else {
                     toast.success("Quotation request sent!");
-                    handleSendMessage(null, "📋 Request: Please provide an itemized quotation for this project.");
+                    handleSendMessage(null, "Request: Please provide an itemized quotation for this project.");
                 }
                 break;
             default:
@@ -237,7 +237,7 @@ export default function ChatLayout() {
         if (!visitDate || !visitTime) return toast.error("Please select date and time.");
 
         toast.success("Visit request sent!");
-        handleSendMessage(null, `📅 Site Visit Requested: ${visitDate} at ${visitTime}`);
+        handleSendMessage(null, `Site Visit Requested: ${visitDate} at ${visitTime}`);
         setShowVisitModal(false);
     };
 

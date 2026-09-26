@@ -9,17 +9,18 @@ class ForecastingService {
   /**
    * Generates or retrieves demand forecast snapshots for a given locality and category.
    */
-  static async getDemandForecast({ locality = 'MP Nagar', serviceCategory = 'electrical', days = 10 }) {
+  static async getDemandForecast({ locality = null, serviceCategory = null, days = 10 }) {
     try {
       const query = `
-        SELECT 
+        SELECT
           id, locality, service_category, 
           TO_CHAR(forecast_date, 'YYYY-MM-DD') AS forecast_date,
-          predicted_demand, actual_demand, confidence_score, seasonal_factor
+          predicted_demand, actual_demand, confidence_score, seasonal_factor, data_source
         FROM demand_forecast_snapshots
-        WHERE ($1::text IS NULL OR locality ILIKE $1)
+        WHERE data_source IN ('observed', 'demo')
+          AND ($1::text IS NULL OR locality ILIKE $1)
           AND ($2::text IS NULL OR service_category ILIKE $2)
-        ORDER BY forecast_date ASC
+        ORDER BY forecast_date DESC
         LIMIT $3
       `;
       const res = await db.query(query, [locality, serviceCategory, days]);
@@ -28,59 +29,103 @@ class ForecastingService {
         return res.rows;
       }
 
-      // If no pre-seeded snapshot found for exact filter, generate dynamic forecast
-      return this.generateSyntheticForecast(locality, serviceCategory, days);
+      return this.generateForecastFromHistory(locality, serviceCategory, days);
     } catch (err) {
       console.error('ForecastingService.getDemandForecast error:', err.message);
-      return this.generateSyntheticForecast(locality, serviceCategory, days);
+      return [];
     }
   }
 
   /**
    * Summary overview across all active localities & categories for the Federation Dashboard.
    */
-  static async getFederationOverview() {
+  static async getFederationOverview(localities = null) {
     try {
+      const scope = Array.isArray(localities) ? localities : null;
       const topLocalitiesRes = await db.query(`
-        SELECT locality, SUM(predicted_demand) as total_predicted, AVG(confidence_score) as avg_confidence
+        SELECT locality, SUM(actual_demand) as total_predicted, AVG(confidence_score) as avg_confidence
         FROM demand_forecast_snapshots
+        WHERE data_source IN ('observed', 'demo') AND ($1::text[] IS NULL OR locality = ANY($1::text[]))
         GROUP BY locality
         ORDER BY total_predicted DESC
         LIMIT 5
-      `);
+      `, [scope]);
 
       const categoryTrendsRes = await db.query(`
-        SELECT service_category, SUM(predicted_demand) as total_predicted, SUM(actual_demand) as total_actual
+        SELECT service_category, SUM(actual_demand) as total_predicted, SUM(actual_demand) as total_actual
         FROM demand_forecast_snapshots
+        WHERE data_source IN ('observed', 'demo') AND ($1::text[] IS NULL OR locality = ANY($1::text[]))
         GROUP BY service_category
         ORDER BY total_predicted DESC
-      `);
+      `, [scope]);
+
+      const accuracyRes = await db.query(`
+        SELECT CASE WHEN SUM(actual_demand) = 0 THEN NULL
+          ELSE ROUND((100 - (SUM(ABS(predicted_demand - actual_demand))::numeric / SUM(actual_demand) * 100))::numeric, 1)
+          END AS accuracy
+        FROM demand_forecast_snapshots
+        WHERE actual_demand > 0 AND data_source = 'evaluated_forecast'
+          AND ($1::text[] IS NULL OR locality = ANY($1::text[]))`, [scope]);
+      const accuracy = accuracyRes.rows[0]?.accuracy;
 
       return {
         topLocalities: topLocalitiesRes.rows || [],
         categoryTrends: categoryTrendsRes.rows || [],
-        modelAccuracy: '93.4%',
-        algorithm: 'Ensemble Seasonal WMA + Linear Trend Extrapolation',
+        modelAccuracy: accuracy === null || accuracy === undefined ? 'Not enough history' : `${Math.max(0, Number(accuracy)).toFixed(1)}%`,
+        algorithm: '7-day weighted moving average from completed cooperative bookings',
+        dataSource: topLocalitiesRes.rows.length || categoryTrendsRes.rows.length ? 'observed_completed_bookings' : 'no_data',
         lastUpdated: new Date().toISOString(),
       };
     } catch (err) {
       console.error('ForecastingService.getFederationOverview error:', err.message);
       return {
-        topLocalities: [
-          { locality: 'MP Nagar', total_predicted: 512, avg_confidence: 0.94 },
-          { locality: 'Arera Colony', total_predicted: 420, avg_confidence: 0.92 },
-          { locality: 'Kolar Road', total_predicted: 310, avg_confidence: 0.90 },
-        ],
-        categoryTrends: [
-          { service_category: 'electrical', total_predicted: 480, total_actual: 440 },
-          { service_category: 'plumbing', total_predicted: 390, total_actual: 365 },
-          { service_category: 'construction', total_predicted: 280, total_actual: 260 },
-        ],
-        modelAccuracy: '93.4%',
-        algorithm: 'Ensemble Seasonal WMA + Linear Trend Extrapolation',
+        topLocalities: [],
+        categoryTrends: [],
+        modelAccuracy: 'Unavailable',
+        algorithm: 'Unavailable',
+        dataSource: 'unavailable',
         lastUpdated: new Date().toISOString(),
       };
     }
+  }
+
+  static async generateForecastFromHistory(locality, serviceCategory, days = 10) {
+    if (!locality || !serviceCategory) return [];
+    const history = await db.query(`
+      SELECT forecast_date::date AS demand_date, SUM(actual_demand)::int AS demand
+      FROM demand_forecast_snapshots
+      WHERE locality ILIKE $1 AND service_category ILIKE $2 AND actual_demand > 0 AND data_source IN ('observed', 'demo')
+        AND forecast_date < CURRENT_DATE
+      GROUP BY forecast_date::date
+      ORDER BY demand_date DESC
+      LIMIT 28`, [locality, serviceCategory]);
+    const daily = history.rows || [];
+    if (!daily.length) return [];
+
+    const weights = daily.slice(0, 7).map((_, i) => 7 - i);
+    const weightedTotal = daily.slice(0, 7).reduce((sum, row, i) => sum + Number(row.demand || 0) * weights[i], 0);
+    const weightTotal = weights.slice(0, daily.slice(0, 7).length).reduce((sum, weight) => sum + weight, 0);
+    const weightedAverage = weightedTotal / weightTotal;
+    const confidence = Math.min(0.9, 0.35 + daily.length * 0.02);
+    const results = daily.slice(0, 7).reverse().map((row) => ({
+      locality, service_category: serviceCategory,
+      forecast_date: new Date(row.demand_date).toISOString().slice(0, 10),
+      actual_demand: Number(row.demand), predicted_demand: null,
+      confidence_score: confidence, data_source: 'historical',
+    }));
+    const today = new Date();
+    for (let i = 0; i < Math.max(0, Math.min(Number(days) || 0, 30)); i += 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      results.push({
+        locality, service_category: serviceCategory,
+        forecast_date: date.toISOString().slice(0, 10),
+        actual_demand: null, predicted_demand: Math.max(0, Math.round(weightedAverage)),
+        confidence_score: confidence, data_source: 'weighted_moving_average',
+        data_points: daily.length,
+      });
+    }
+    return results;
   }
 
   /**

@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 
 export function SahKaarLogo({
   className = "w-11 h-11",

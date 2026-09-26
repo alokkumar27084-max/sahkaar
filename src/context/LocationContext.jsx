@@ -20,28 +20,59 @@ export const POPULAR_LOCALITIES = [
   { id: "civil_lines_jabalpur", name: "Civil Lines, Jabalpur", shortName: "Civil Lines", lat: 23.1645, lng: 79.9442, district: "Jabalpur" },
 ];
 
-const DEFAULT_LOCATION = {
-  name: "Bhopal, Madhya Pradesh",
-  shortName: "Bhopal",
-  lat: 23.2599,
-  lng: 77.4126,
+const LocationContext = createContext(null);
+const UNSELECTED_LOCATION = Object.freeze({
+  name: "",
+  shortName: "",
+  lat: null,
+  lng: null,
   radius_km: 15,
   isGPS: false,
-};
+});
 
-const LocationContext = createContext(null);
+function isValidLocation(value) {
+  return Boolean(
+    value &&
+      typeof value.name === "string" &&
+      value.name.trim() &&
+      Number.isFinite(Number(value.lat)) &&
+      Number.isFinite(Number(value.lng))
+  );
+}
+
+async function fetchIndiaPlacePredictions(query) {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=in&format=jsonv2&addressdetails=1&limit=6`,
+    { headers: { Accept: "application/json", "Accept-Language": "en,hi" } }
+  );
+  if (!response.ok) throw new Error("Location search is unavailable");
+  const places = await response.json();
+  return (places || []).map((place) => ({
+    place_id: `nominatim:${place.place_id}`,
+    description: place.display_name,
+    structured_formatting: {
+      main_text: place.name || place.display_name.split(",")[0],
+      secondary_text: place.display_name,
+    },
+    lat: Number(place.lat),
+    lng: Number(place.lon),
+    source: "nominatim",
+  }));
+}
 
 export function LocationProvider({ children }) {
   const [location, setLocationState] = useState(() => {
     try {
       const saved = localStorage.getItem(LOCATION_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_LOCATION;
+      const parsed = saved ? JSON.parse(saved) : null;
+      return isValidLocation(parsed) ? parsed : UNSELECTED_LOCATION;
     } catch {
-      return DEFAULT_LOCATION;
+      return UNSELECTED_LOCATION;
     }
   });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const hasSelectedLocation = isValidLocation(location);
+  const [isModalOpen, setIsModalOpen] = useState(() => !hasSelectedLocation);
   const [detectingGPS, setDetectingGPS] = useState(false);
   const [mapsLoaded, setMapsLoaded] = useState(false);
   const [placePredictions, setPlacePredictions] = useState([]);
@@ -49,6 +80,7 @@ export function LocationProvider({ children }) {
 
   const autocompleteServiceRef = useRef(null);
   const geocoderRef = useRef(null);
+  const searchTimerRef = useRef(null);
 
   // Initialize Google Maps SDK
   useEffect(() => {
@@ -66,6 +98,7 @@ export function LocationProvider({ children }) {
   }, []);
 
   const saveLocation = useCallback((newLoc) => {
+    if (!isValidLocation(newLoc)) return;
     setLocationState(newLoc);
     try {
       localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(newLoc));
@@ -88,40 +121,56 @@ export function LocationProvider({ children }) {
     toast.success(`Location set to ${next.shortName}`);
   }, [saveLocation]);
 
-  // Google Places Autocomplete Query
+  // Google Places when available, with India-wide OpenStreetMap search as a fallback.
   const searchGooglePlaces = useCallback((query) => {
+    window.clearTimeout(searchTimerRef.current);
     if (!query || query.trim().length < 2) {
       setPlacePredictions([]);
+      setSearchingPlaces(false);
       return;
     }
 
-    if (!autocompleteServiceRef.current) {
-      setPlacePredictions([]);
-      return;
-    }
-
-    setSearchingPlaces(true);
-    autocompleteServiceRef.current.getPlacePredictions(
-      {
-        input: query,
-        componentRestrictions: { country: "in" },
-      },
-      (predictions, status) => {
-        setSearchingPlaces(false);
-        if (status === window.google?.maps?.places?.PlacesServiceStatus?.OK && predictions) {
-          setPlacePredictions(predictions);
-        } else {
+    searchTimerRef.current = window.setTimeout(async () => {
+      setSearchingPlaces(true);
+      const searchFallback = async () => {
+        try {
+          setPlacePredictions(await fetchIndiaPlacePredictions(query.trim()));
+        } catch {
           setPlacePredictions([]);
+        } finally {
+          setSearchingPlaces(false);
         }
-      }
-    );
+      };
+
+      if (!autocompleteServiceRef.current) return searchFallback();
+      autocompleteServiceRef.current.getPlacePredictions(
+        { input: query, componentRestrictions: { country: "in" } },
+        (predictions, status) => {
+          if (status === window.google?.maps?.places?.PlacesServiceStatus?.OK && predictions?.length) {
+            setPlacePredictions(predictions);
+            setSearchingPlaces(false);
+          } else {
+            searchFallback();
+          }
+        }
+      );
+    }, 280);
   }, []);
 
   // Geocode Google Place Prediction
   const selectGooglePlace = useCallback((prediction) => {
+    if (prediction.source === "nominatim") {
+      selectLocality({
+        name: prediction.description,
+        shortName: prediction.structured_formatting?.main_text,
+        lat: prediction.lat,
+        lng: prediction.lng,
+      });
+      setPlacePredictions([]);
+      return;
+    }
     if (!geocoderRef.current) {
-      // Fallback
-      selectLocality({ name: prediction.description });
+      toast.error("Location details are still loading. Please choose a suggestion in a moment.");
       return;
     }
 
@@ -204,12 +253,15 @@ export function LocationProvider({ children }) {
   }, [saveLocation]);
 
   const openLocationModal = () => setIsModalOpen(true);
-  const closeLocationModal = () => setIsModalOpen(false);
+  const closeLocationModal = () => {
+    if (hasSelectedLocation) setIsModalOpen(false);
+  };
 
   return (
     <LocationContext.Provider
       value={{
         location,
+        requiresLocationSelection: !hasSelectedLocation,
         isModalOpen,
         openLocationModal,
         closeLocationModal,

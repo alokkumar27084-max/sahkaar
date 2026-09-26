@@ -35,8 +35,15 @@ export default function FederationsSocietiesPanel() {
     contact_email: "",
     contact_phone: "",
     office_address: "",
-    welfare_fund_balance: 5000000,
+    latitude: "",
+    longitude: "",
     jurisdiction_districts: "",
+    owner_name: "",
+    owner_phone: "",
+    owner_email: "",
+    owner_password: "",
+    razorpay_linked_account_id: "",
+    payout_onboarding_status: "not_configured",
   });
 
   const [socForm, setSocForm] = useState({
@@ -48,7 +55,7 @@ export default function FederationsSocietiesPanel() {
     contact_phone: "",
     contact_email: "",
     office_address: "",
-    welfare_pool_balance: 500000,
+    welfare_pool_balance: 0,
     jurisdiction_districts: "",
   });
 
@@ -76,6 +83,19 @@ export default function FederationsSocietiesPanel() {
   const handleCreateFederation = async (e) => {
     e.preventDefault();
     try {
+      if (editingItem && !editingItem.owner_name && fedForm.owner_name) {
+        await adminAPI.createFederationOwner(editingItem.id, {
+          name: fedForm.owner_name,
+          phone: fedForm.owner_phone,
+          email: fedForm.owner_email || undefined,
+          password: fedForm.owner_password,
+        });
+        toast.success("Federation owner account created. They can sign in with the provided phone and password.");
+        setShowFedModal(false);
+        setEditingItem(null);
+        loadData();
+        return;
+      }
       const payload = {
         ...fedForm,
         jurisdiction_districts: fedForm.jurisdiction_districts
@@ -177,7 +197,7 @@ export default function FederationsSocietiesPanel() {
                 contact_phone: "",
                 contact_email: "",
                 office_address: "",
-                welfare_pool_balance: 500000,
+                welfare_pool_balance: 0,
                 jurisdiction_districts: "",
               });
               setShowSocModal(true);
@@ -200,8 +220,15 @@ export default function FederationsSocietiesPanel() {
                 contact_email: "",
                 contact_phone: "",
                 office_address: "",
-                welfare_fund_balance: 5000000,
-                jurisdiction_districts: "",
+        latitude: "",
+        longitude: "",
+        jurisdiction_districts: "",
+        owner_name: "",
+        owner_phone: "",
+                owner_email: "",
+                owner_password: "",
+                razorpay_linked_account_id: "",
+                payout_onboarding_status: "not_configured",
               });
               setShowFedModal(true);
             }}
@@ -218,25 +245,27 @@ export default function FederationsSocietiesPanel() {
         <button
           type="button"
           onClick={() => setActiveTab("societies")}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
             activeTab === "societies"
               ? "bg-indigo-600 text-white shadow-xs"
               : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           }`}
         >
-          🏢 Primary Cooperative Societies ({societies.length})
+          <FiUsers className="w-3.5 h-3.5" />
+          <span>Primary Cooperative Societies ({societies.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("federations")}
-          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
             activeTab === "federations"
               ? "bg-indigo-600 text-white shadow-xs"
               : "text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
           }`}
         >
-          🏛️ State & Apex Federations ({federations.length})
+          <FiLayers className="w-3.5 h-3.5" />
+          <span>State & Apex Federations ({federations.length})</span>
         </button>
       </div>
 
@@ -289,7 +318,7 @@ export default function FederationsSocietiesPanel() {
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-3 text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-bold">TOTAL MASTERS</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">COOPERATIVE WORKERS</span>
                     <span className="font-black text-slate-800 dark:text-slate-200">{soc.total_contractors || 0}</span>
                   </div>
                   <div>
@@ -297,7 +326,7 @@ export default function FederationsSocietiesPanel() {
                     <span className="font-black text-emerald-600">{soc.verified_contractors || 0}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-bold">WELFARE POOL</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">RECORDED WELFARE</span>
                     <span className="font-black text-slate-800 dark:text-slate-200">₹{(Number(soc.welfare_pool_balance) || 0).toLocaleString("en-IN")}</span>
                   </div>
                 </div>
@@ -316,7 +345,7 @@ export default function FederationsSocietiesPanel() {
                         contact_phone: soc.contact_phone || "",
                         contact_email: soc.contact_email || "",
                         office_address: soc.office_address || "",
-                        welfare_pool_balance: soc.welfare_pool_balance || 500000,
+                        welfare_pool_balance: soc.welfare_pool_balance || 0,
                         jurisdiction_districts: Array.isArray(soc.jurisdiction_districts) ? soc.jurisdiction_districts.join(", ") : "",
                       });
                       setShowSocModal(true);
@@ -353,8 +382,9 @@ export default function FederationsSocietiesPanel() {
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-md">
-                      {fed.is_national ? "🏛️ National Apex Union" : `State Federation • ${fed.state}`}
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                      <FiLayers className="w-3 h-3 text-amber-600 shrink-0" />
+                      {fed.is_national ? "National Apex Union" : `State Federation • ${fed.state}`}
                     </span>
                     <h3 className="text-sm font-black text-slate-900 dark:text-white mt-1">
                       {fed.name}
@@ -372,8 +402,9 @@ export default function FederationsSocietiesPanel() {
                   </p>
                   <p className="flex items-center gap-1.5 font-medium">
                     <FiMail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{fed.contact_email || "contact@sahkaar.in"} • {fed.contact_phone || "+91 11 2334 5678"}</span>
+                    <span>{fed.contact_email || "No public email"} • {fed.contact_phone || "No public phone"}</span>
                   </p>
+                  <p className="flex items-center gap-1.5 font-medium"><FiShield className="w-3.5 h-3.5 text-indigo-500 shrink-0" /><span>Owner login: {fed.owner_name ? `${fed.owner_name} · ${fed.owner_phone}` : "Needs owner account"}</span></p>
                 </div>
               </div>
 
@@ -385,12 +416,12 @@ export default function FederationsSocietiesPanel() {
                     <span className="font-black text-indigo-600">{fed.total_societies || 0}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-bold">TOTAL ARTISANS</span>
-                    <span className="font-black text-slate-800 dark:text-slate-200">{fed.total_masters || 0}</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">COOPERATIVE WORKERS</span>
+                    <span className="font-black text-slate-800 dark:text-slate-200">{fed.total_workers || 0}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-400 block font-bold">STATE WELFARE FUND</span>
-                    <span className="font-black text-emerald-600">₹{(Number(fed.welfare_fund_balance) || 0).toLocaleString("en-IN")}</span>
+                    <span className="text-[10px] text-slate-400 block font-bold">FEDERATION OWNER</span>
+                    <span className="font-black text-emerald-600">{fed.owner_name || "Owner not assigned"}</span>
                   </div>
                 </div>
 
@@ -407,8 +438,15 @@ export default function FederationsSocietiesPanel() {
                         contact_email: fed.contact_email || "",
                         contact_phone: fed.contact_phone || "",
                         office_address: fed.office_address || "",
-                        welfare_fund_balance: fed.welfare_fund_balance || 5000000,
+                        latitude: fed.latitude || "",
+                        longitude: fed.longitude || "",
                         jurisdiction_districts: Array.isArray(fed.jurisdiction_districts) ? fed.jurisdiction_districts.join(", ") : "",
+                        owner_name: fed.owner_name || "",
+                        owner_phone: fed.owner_phone || "",
+                        owner_email: "",
+                        owner_password: "",
+                        razorpay_linked_account_id: fed.razorpay_linked_account_id || "",
+                        payout_onboarding_status: fed.payout_onboarding_status || "not_configured",
                       });
                       setShowFedModal(true);
                     }}
@@ -438,7 +476,7 @@ export default function FederationsSocietiesPanel() {
       {/* ═══════ SOCIETY MODAL ═══════ */}
       {showSocModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in-95">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800 space-y-5 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
                 {editingItem ? "Edit Primary Cooperative Society" : "Register New District Society"}
@@ -604,6 +642,22 @@ export default function FederationsSocietiesPanel() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <input value={fedForm.registration_no} onChange={(e) => setFedForm({ ...fedForm, registration_no: e.target.value })} placeholder="Cooperative registration number" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold" />
+                <input value={fedForm.jurisdiction_districts} onChange={(e) => setFedForm({ ...fedForm, jurisdiction_districts: e.target.value })} placeholder="Districts (comma separated)" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input type="email" value={fedForm.contact_email} onChange={(e) => setFedForm({ ...fedForm, contact_email: e.target.value })} placeholder="Public federation email" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold" />
+                <input type="tel" value={fedForm.contact_phone} onChange={(e) => setFedForm({ ...fedForm, contact_phone: e.target.value })} placeholder="Public federation phone" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold" />
+              </div>
+              {editingItem && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                <div><p className="font-black text-slate-800">Marketplace payouts (Razorpay Route)</p><p className="text-[10px] text-slate-600 mt-0.5">Enter the provider linked-account ID only after the federation completes provider KYC. SahKaar does not store bank credentials.</p></div>
+                <input value={fedForm.razorpay_linked_account_id || ""} onChange={(e) => setFedForm({ ...fedForm, razorpay_linked_account_id: e.target.value })} placeholder="Provider linked-account ID" className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-semibold" />
+                <select value={fedForm.payout_onboarding_status || "not_configured"} onChange={(e) => setFedForm({ ...fedForm, payout_onboarding_status: e.target.value })} className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-semibold">
+                  <option value="not_configured">Not configured</option><option value="pending_kyc">Provider KYC pending</option><option value="active">Active (provider verified)</option><option value="suspended">Suspended</option>
+                </select>
+              </div>}
+
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Office HQ Address</label>
                 <input
@@ -614,6 +668,27 @@ export default function FederationsSocietiesPanel() {
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold"
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Federation latitude {!editingItem && "*"}</label>
+                  <input type="number" step="any" required={!editingItem} value={fedForm.latitude} onChange={(e) => setFedForm({ ...fedForm, latitude: e.target.value })} placeholder="Enter real latitude" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold" />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Federation longitude {!editingItem && "*"}</label>
+                  <input type="number" step="any" required={!editingItem} value={fedForm.longitude} onChange={(e) => setFedForm({ ...fedForm, longitude: e.target.value })} placeholder="Enter real longitude" className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold" />
+                </div>
+              </div>
+
+              {(!editingItem || !editingItem.owner_name) && <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-4 space-y-3">
+                <div><p className="font-black text-slate-800">Federation owner login</p><p className="text-[10px] text-slate-500 mt-0.5">Creates a scoped federation administrator account. The owner signs in with this phone and password.</p></div>
+                <input required value={fedForm.owner_name} onChange={(e) => setFedForm({ ...fedForm, owner_name: e.target.value })} placeholder="Owner full name" className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-semibold" />
+                <div className="grid grid-cols-2 gap-3">
+                  <input required type="tel" value={fedForm.owner_phone} onChange={(e) => setFedForm({ ...fedForm, owner_phone: e.target.value })} placeholder="Login phone" className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-semibold" />
+                  <input type="email" value={fedForm.owner_email} onChange={(e) => setFedForm({ ...fedForm, owner_email: e.target.value })} placeholder="Owner email (optional)" className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-semibold" />
+                </div>
+                <input required minLength={10} type="password" value={fedForm.owner_password} onChange={(e) => setFedForm({ ...fedForm, owner_password: e.target.value })} placeholder="Initial password (10+ characters)" className="w-full p-2.5 rounded-xl border border-slate-200 bg-white font-semibold" />
+              </div>}
 
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
@@ -627,7 +702,7 @@ export default function FederationsSocietiesPanel() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700"
                 >
-                  Save Federation
+                  {editingItem && !editingItem.owner_name && fedForm.owner_name ? "Create Owner Login" : "Save Federation"}
                 </button>
               </div>
             </form>

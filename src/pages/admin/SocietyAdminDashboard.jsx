@@ -186,13 +186,13 @@ export default function SocietyAdminDashboard() {
 
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
             <div className="text-[11px] font-extrabold text-slate-500 uppercase">
-              {isHi ? "समिति कल्याण कोष" : "Welfare Pool Balance"}
+              {isHi ? "समिति कल्याण कोष" : "Recorded Welfare Balance"}
             </div>
             <div className="text-2xl font-extrabold text-[#138808] mt-1 font-mono">
-              ₹{Number(society?.welfare_pool_balance || 620000).toLocaleString("en-IN")}
+              ₹{Number(society?.welfare_pool_balance ?? 0).toLocaleString("en-IN")}
             </div>
             <div className="text-[11px] text-emerald-800 font-semibold mt-1">
-              + ₹25 per completed job
+              Based on recorded ledger contributions and reservations
             </div>
           </div>
 
@@ -201,10 +201,10 @@ export default function SocietyAdminDashboard() {
               {isHi ? "मासिक डिस्पैच" : "Monthly Dispatches"}
             </div>
             <div className="text-2xl font-extrabold text-[#0B3C5D] mt-1">
-              {recentBookings.length || 18}
+              {recentBookings.length}
             </div>
             <div className="text-[11px] text-blue-700 font-semibold mt-1">
-              100% Digital Escrow Settled
+              Booking activity recorded for this society
             </div>
           </div>
         </section>
@@ -270,7 +270,7 @@ export default function SocietyAdminDashboard() {
 
                   <div className="text-[10px] text-slate-500 font-mono flex items-center gap-3">
                     <span>Member ID: {w.member_registration_no || "MEM-BPL-2026-PENDING"}</span>
-                    <span>Welfare ID: {w.welfare_id || "WLF-2026-PENDING"}</span>
+                    <span>Welfare ID: {w.welfare_id || "Not assigned"}</span>
                     <span className="text-emerald-700 font-semibold flex items-center gap-0.5">
                       <FiShield size={10} /> PM Suraksha Bima (₹5L) Eligible
                     </span>

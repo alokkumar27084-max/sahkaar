@@ -6,16 +6,13 @@ import {
   FiMapPin,
   FiCheckCircle,
   FiZap,
-  FiClock,
   FiAward,
   FiCalendar,
-  FiPhone
+  FiLayers
 } from "react-icons/fi";
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import { useLocationContext } from "../../context/LocationContext";
 import { calculateHaversineDistanceKm, formatDistance } from "../../utils/googleMaps";
-import { contractorAPI } from "../../services/api";
-import { trackEvent } from "../../utils/analytics";
 import { getAvatarUrl } from "../../utils/imageUtils";
 
 export default function ContractorCard({
@@ -135,8 +132,9 @@ export default function ContractorCard({
               {resolvedName}
             </h3>
 
-            <p className="text-xs text-slate-500 truncate mt-0.5">
-              🏛️ {societyName}
+            <p className="text-xs text-slate-500 truncate mt-0.5 flex items-center gap-1">
+              <FiLayers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+              <span className="truncate">{societyName}</span>
             </p>
 
             {/* Rating & Distance Row */}

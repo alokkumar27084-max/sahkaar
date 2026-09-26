@@ -21,12 +21,21 @@ export function useGeolocation() {
     setLng(nextLng);
     setAccuracy(nextAccuracy);
 
-    const formattedAddress =
-      nextAddress ||
-      (await reverseGeocodeCoords(nextLat, nextLng)) ||
-      formatCoordinateFallback(nextLat, nextLng);
-    setAddress(formattedAddress);
-    return formattedAddress;
+    let resolvedAddress = typeof nextAddress === "string" ? nextAddress : nextAddress?.formatted_address || nextAddress?.short_name || null;
+    if (!resolvedAddress) {
+      const geo = await reverseGeocodeCoords(nextLat, nextLng);
+      if (typeof geo === "string") {
+        resolvedAddress = geo;
+      } else if (geo && typeof geo === "object") {
+        resolvedAddress = geo.formatted_address || geo.short_name || null;
+      }
+    }
+    if (!resolvedAddress) {
+      resolvedAddress = formatCoordinateFallback(nextLat, nextLng);
+    }
+
+    setAddress(resolvedAddress);
+    return resolvedAddress;
   }, []);
 
   const request = useCallback((options = {}) => {

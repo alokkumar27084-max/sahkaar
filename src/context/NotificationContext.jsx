@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { io } from "socket.io-client";
 import toast from "react-hot-toast";
+import { FiBell, FiMessageSquare, FiMapPin } from "react-icons/fi";
 import { useAuth } from "./AuthContext";
 import { notificationAPI } from "../services/api";
 import { playNotificationSound } from "../utils/audioChime";
@@ -62,13 +63,13 @@ export function NotificationProvider({ children }) {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("🟢 Real-time notification socket connected for user:", user.id);
+      console.log("[NotificationSocket] Connected for user:", user.id);
       socket.emit("join_own_room");
     });
 
     // Receive real-time push notification
     const handleIncomingNotification = (data) => {
-      console.log("🔔 Real-time notification received:", data);
+      console.log("[NotificationReceived]", data);
       
       // 1. Play pleasant audio chime
       playNotificationSound();
@@ -83,11 +84,11 @@ export function NotificationProvider({ children }) {
             } max-w-md w-full bg-slate-900 text-white shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 p-4 border border-slate-700/80`}
           >
             <div className="flex-1 w-0">
-              <div className="flex items-start">
-                <div className="shrink-0 pt-0.5 text-2xl">
-                  {isBooking ? "🔔" : "💬"}
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  {isBooking ? <FiBell className="w-5 h-5" /> : <FiMessageSquare className="w-5 h-5" />}
                 </div>
-                <div className="ml-3 flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-xs font-black text-amber-400 uppercase tracking-wider">
                     {isBooking ? "New Master Booking Alert" : "SahKaar Update"}
                   </p>
@@ -95,8 +96,9 @@ export function NotificationProvider({ children }) {
                     {data.message || data.notification?.message}
                   </p>
                   {data.data?.address && (
-                    <p className="mt-1 text-xs text-slate-300">
-                      📍 {data.data.address}
+                    <p className="mt-1 text-xs text-slate-300 flex items-center gap-1.5">
+                      <FiMapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <span>{data.data.address}</span>
                     </p>
                   )}
                 </div>

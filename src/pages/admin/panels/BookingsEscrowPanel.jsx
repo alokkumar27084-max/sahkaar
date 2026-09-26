@@ -12,7 +12,8 @@ import {
   FiShield,
   FiDollarSign,
   FiCalendar,
-  FiRefreshCw
+  FiRefreshCw,
+  FiTool
 } from "react-icons/fi";
 
 export default function BookingsEscrowPanel() {
@@ -139,8 +140,9 @@ export default function BookingsEscrowPanel() {
                       <FiPhone className="w-3 h-3 text-slate-400" />
                       <span>{b.customer_phone || "N/A"}</span>
                     </p>
-                    <span className="inline-block text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
-                      🛠️ {b.service_name || "Standard Inspection"}
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">
+                      <FiTool className="w-2.5 h-2.5" />
+                      <span>{b.service_name || "Standard Inspection"}</span>
                     </span>
                   </td>
 
@@ -149,9 +151,13 @@ export default function BookingsEscrowPanel() {
                     <span className="font-bold text-slate-800 dark:text-slate-200 block">
                       {b.contractor_name || "Artisan"}
                     </span>
-                    <p className="text-[11px] text-slate-500">📞 {b.contractor_phone || "N/A"}</p>
-                    <p className="text-[10px] text-slate-400 truncate max-w-[150px]">
-                      📍 {b.customer_address || "Service Address"}
+                    <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                      <FiPhone className="w-3 h-3 text-slate-400" />
+                      <span>{b.contractor_phone || "N/A"}</span>
+                    </p>
+                    <p className="text-[10px] text-slate-400 truncate max-w-[150px] flex items-center gap-1">
+                      <FiMapPin className="w-3 h-3 text-rose-500 shrink-0" />
+                      <span className="truncate">{b.customer_address || "Service Address"}</span>
                     </p>
                   </td>
 

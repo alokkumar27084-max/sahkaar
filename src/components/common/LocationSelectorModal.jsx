@@ -27,12 +27,13 @@ export default function LocationSelectorModal() {
     placePredictions,
     searchingPlaces,
     mapsLoaded,
+    requiresLocationSelection,
   } = useLocationContext();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showMapView, setShowMapView] = useState(false);
-  const [mapPinCoords, setMapPinCoords] = useState({ lat: location.lat, lng: location.lng });
-  const [mapPinAddress, setMapPinAddress] = useState(location.name);
+  const [mapPinCoords, setMapPinCoords] = useState({ lat: location?.lat ?? 22.5937, lng: location?.lng ?? 78.9629 });
+  const [mapPinAddress, setMapPinAddress] = useState(location?.name || "Move the pin to your location in India");
 
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -61,7 +62,7 @@ export default function LocationSelectorModal() {
     if (!showMapView || !isModalOpen || !mapContainerRef.current) return;
 
     loadGoogleMaps().then((google) => {
-      const center = { lat: Number(location.lat || 23.2599), lng: Number(location.lng || 77.4126) };
+      const center = { lat: Number(location?.lat ?? 22.5937), lng: Number(location?.lng ?? 78.9629) };
       
       const map = new google.maps.Map(mapContainerRef.current, {
         center,
@@ -129,7 +130,7 @@ export default function LocationSelectorModal() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={closeLocationModal}
+          onClick={requiresLocationSelection ? undefined : closeLocationModal}
           className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs"
         />
 
@@ -146,16 +147,16 @@ export default function LocationSelectorModal() {
             <div>
               <h3 className="text-lg font-black text-slate-950">Select Your Location</h3>
               <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                Google Maps verified location for hyper-local Master dispatch
+                Choose a location in India to see services from the right cooperative
               </p>
             </div>
-            <button
+            {!requiresLocationSelection && <button
               type="button"
               onClick={closeLocationModal}
               className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
             >
               <FiX className="w-5 h-5" />
-            </button>
+            </button>}
           </div>
 
           <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
@@ -231,7 +232,7 @@ export default function LocationSelectorModal() {
                   <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-2 space-y-1 shadow-sm">
                     <div className="text-[10px] font-black uppercase tracking-wider text-indigo-800 px-2 py-1 flex items-center gap-1">
                       <FiNavigation className="w-3 h-3 text-indigo-600" />
-                      <span>Google Maps Locations</span>
+                      <span>Location suggestions</span>
                     </div>
 
                     {placePredictions.map((pred) => (
@@ -286,7 +287,7 @@ export default function LocationSelectorModal() {
                     <FiMapPin className="text-emerald-600 w-4 h-4 shrink-0" />
                     <div className="min-w-0">
                       <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Currently Active</div>
-                      <div className="text-xs font-black text-slate-900 truncate">{location.name}</div>
+                      <div className="text-xs font-black text-slate-900 truncate">{location?.name || "Select a location"}</div>
                     </div>
                   </div>
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
@@ -302,6 +303,7 @@ export default function LocationSelectorModal() {
                   <div className="grid grid-cols-1 gap-1.5">
                     {filteredLocalities.map((loc) => {
                       const isSelected =
+                        Number.isFinite(Number(location?.lat)) &&
                         Math.abs(Number(location.lat) - Number(loc.lat)) < 0.001 &&
                         Math.abs(Number(location.lng) - Number(loc.lng)) < 0.001;
 

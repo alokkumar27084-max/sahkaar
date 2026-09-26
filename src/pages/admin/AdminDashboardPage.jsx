@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiUsers, FiUserCheck, FiTrendingUp, FiSettings, FiStar,
-  FiAlertTriangle, FiActivity, FiRefreshCw, FiBarChart2, FiMenu, FiLogOut,
+  FiAlertTriangle, FiRefreshCw, FiBarChart2, FiMenu, FiLogOut,
   FiLayers, FiShoppingBag, FiRadio
 } from "react-icons/fi";
 
@@ -38,7 +38,7 @@ const SIDEBAR = [
 ];
 
 export default function AdminDashboardPage() {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
@@ -426,7 +426,7 @@ export default function AdminDashboardPage() {
                 title="Nationwide Emergency Broadcast"
               >
                 <FiRadio className="w-4 h-4 animate-pulse" />
-                <span className="hidden sm:inline">📢 Broadcast Alert</span>
+                <span className="hidden sm:inline">Broadcast Alert</span>
               </button>
 
               <button 

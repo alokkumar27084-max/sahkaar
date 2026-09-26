@@ -16,16 +16,15 @@ async function attachUserFromToken(req) {
   const payload = jwt.verify(token, getJwtSecret());
   const user = {
     id: payload.sub || payload.id,
-    role: payload.role || null,
-    phone: payload.phone || null,
+    role: null,
+    phone: null,
+    society_id: null,
+    federation_id: null,
   };
 
-  if (user.id && !user.role) {
-    const userRes = await db.query('SELECT role, phone FROM users WHERE id = $1', [user.id]);
-    if (userRes.rows[0]) {
-      user.role = userRes.rows[0].role;
-      user.phone = userRes.rows[0].phone;
-    }
+  if (user.id) {
+    const userRes = await db.query('SELECT role, phone, society_id, federation_id FROM users WHERE id = $1', [user.id]);
+    if (userRes.rows[0]) Object.assign(user, userRes.rows[0]);
   }
 
   return user;

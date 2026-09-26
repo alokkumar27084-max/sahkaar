@@ -16,6 +16,9 @@ router.post("/verify", bookingController.verifyEscrow);
 // Customer fetching previous history
 router.get("/me", bookingController.getMyBookings);
 
+router.put("/:bookingId/status", bookingController.updateWorkflowStatus);
+router.get("/:bookingId/matching-workers", bookingController.getMatchingWorkers);
+
 // Mark Complete -> Release
 router.put("/:bookingId/complete", bookingController.releaseAndComplete);
 

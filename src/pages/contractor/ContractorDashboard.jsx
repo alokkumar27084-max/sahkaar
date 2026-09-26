@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useLanguage } from "../../context/LanguageContext";
+import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
   contractorAPI,
+  bookingAPI,
   quickBookingAPI,
-  subscriptionAPI,
-  notificationAPI,
   cooperativeAPI
 } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -16,49 +13,42 @@ import toast from "react-hot-toast";
 import {
   FiCheckCircle,
   FiShield,
-  FiZap,
-  FiCalendar,
   FiClock,
-  FiDollarSign,
-  FiPhone,
-  FiFileText,
   FiAlertTriangle,
-  FiAward,
-  FiArrowRight,
-  FiUser,
-  FiX,
-  FiMapPin
+  FiStar,
+  FiMapPin,
+  FiCalendar
 } from "react-icons/fi";
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import SEOHead from "../../components/common/SEOHead";
 
 export default function ContractorDashboard() {
   const { user } = useAuth();
-  const { lang } = useLanguage();
-  const navigate = useNavigate();
-  const isHi = lang === "hi";
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
-  const [subStatus, setSubStatus] = useState(null);
-  const [plans, setPlans] = useState([]);
-  const [showSubModal, setShowSubModal] = useState(false);
-  const [purchasingPlan, setPurchasingPlan] = useState(false);
-
-  const [activeTab, setActiveTab] = useState("bookings"); // 'bookings', 'subscriptions', 'welfare'
+  const [dispatchOffers, setDispatchOffers] = useState([]);
 
   useEffect(() => {
     loadDashboard();
 
-    // Listen for instant real-time booking push notifications
+    // Listen for real-time booking push notifications
     const handleRealtimeUpdate = (e) => {
-      console.log("Master Dashboard received real-time booking update:", e.detail);
-      quickBookingAPI
-        .getContractorBookings()
-        .then((res) => {
-          setBookings(res.data?.bookings || []);
-        })
+      console.log("Worker dashboard received real-time booking update:", e.detail);
+      Promise.all([quickBookingAPI.getContractorBookings(), bookingAPI.getMyBookings()])
+        .then(([quickRes, cooperativeRes]) => setBookings([
+          ...(quickRes.data?.bookings || []),
+          ...(cooperativeRes.data?.bookings || []).map((booking) => ({
+            ...booking,
+            service_name: booking.service_category,
+            service_price: booking.amount,
+            customer_address: booking.location_address,
+            scheduled_date: booking.scheduled_for,
+            status: ({ created: 'PENDING', accepted: 'ACCEPTED', en_route: 'EN_ROUTE', arrived: 'ARRIVED', in_progress: 'IN_PROGRESS' })[booking.workflow_status] || booking.workflow_status.toUpperCase(),
+            cooperative_booking: true,
+          })),
+        ]))
         .catch(() => {});
     };
 
@@ -73,54 +63,54 @@ export default function ContractorDashboard() {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const [profRes, bookRes, subRes, plansRes] = await Promise.all([
+      const [profRes, bookRes, offersRes] = await Promise.all([
         contractorAPI.getMyProfile().catch(() => ({ data: { contractor: null } })),
-        quickBookingAPI.getContractorBookings().catch(() => ({ data: { bookings: [] } })),
-        subscriptionAPI.getStatus().catch(() => ({ data: { subscription: null } })),
-        subscriptionAPI.getPlans().catch(() => ({ data: { plans: [] } })),
+        Promise.all([
+          quickBookingAPI.getContractorBookings().catch(() => ({ data: { bookings: [] } })),
+          bookingAPI.getMyBookings().catch(() => ({ data: { bookings: [] } })),
+        ]),
+        cooperativeAPI.getMyDispatchOffers().catch(() => ({ data: { data: [] } })),
       ]);
 
       if (profRes.data?.contractor) {
         setProfile(profRes.data.contractor);
       }
-      setBookings(bookRes.data?.bookings || []);
-      setSubStatus(subRes.data?.subscription || null);
-      setPlans(plansRes.data?.plans || []);
+      const [quickRes, cooperativeRes] = bookRes;
+      setBookings([
+        ...(quickRes.data?.bookings || []),
+        ...(cooperativeRes.data?.bookings || []).map((booking) => ({
+          ...booking,
+          service_name: booking.service_category,
+          service_price: booking.amount,
+          customer_address: booking.location_address,
+          scheduled_date: booking.scheduled_for,
+          status: ({ created: 'PENDING', accepted: 'ACCEPTED', en_route: 'EN_ROUTE', arrived: 'ARRIVED', in_progress: 'IN_PROGRESS' })[booking.workflow_status] || booking.workflow_status.toUpperCase(),
+          cooperative_booking: true,
+        })),
+      ]);
+      setDispatchOffers(offersRes.data?.data || []);
     } catch (err) {
       console.error("Dashboard error:", err);
-      toast.error("Failed to load Master dashboard");
+      toast.error("Failed to load worker dashboard");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBuyPlan = async (planType) => {
-    setPurchasingPlan(true);
-    try {
-      const res = await subscriptionAPI.purchase(planType);
-      if (res.data?.ok) {
-        // Automatically verify in dev/mock mode
-        await subscriptionAPI.verify({
-          plan_type: planType,
-          razorpay_order_id: res.data.razorpayOrderId,
-          razorpay_payment_id: `pay_${Date.now()}`,
-          razorpay_signature: "mock_signature",
-        });
-
-        toast.success(`Plan activated! Your Master profile is now upgraded.`);
-        setShowSubModal(false);
-        loadDashboard();
-      }
-    } catch (err) {
-      toast.error("Subscription purchase could not be completed.");
-    } finally {
-      setPurchasingPlan(false);
-    }
-  };
-
   const handleUpdateBookingStatus = async (bookingId, newStatus) => {
     try {
-      await quickBookingAPI.updateStatus(bookingId, newStatus);
+      const current = bookings.find((booking) => booking.id === bookingId);
+      if (current?.cooperative_booking) {
+      const workflowStatus = {
+          CONFIRMED: "accepted",
+          EN_ROUTE: "en_route",
+          ARRIVED: "arrived",
+          IN_PROGRESS: "in_progress",
+        }[newStatus] || newStatus.toLowerCase();
+        await bookingAPI.updateWorkflowStatus(bookingId, workflowStatus);
+      } else {
+        await quickBookingAPI.updateStatus(bookingId, newStatus);
+      }
       toast.success(`Booking marked as ${newStatus}`);
       setBookings((prev) =>
         prev.map((b) => (b.id === bookingId ? { ...b, status: newStatus } : b))
@@ -145,13 +135,13 @@ export default function ContractorDashboard() {
   return (
     <main className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6">
       <SEOHead
-        title="मास्टर डैशबोर्ड — SahKaar Master Partner Portal"
-        description="Manage your verified Master profile, incoming customer bookings, Federation verification status, and subscription rankings."
+        title="सहकार worker dashboard — SahKaar Cooperative Worker Portal"
+        description="Manage your verified worker profile, incoming customer bookings, federation verification status, dispatch offers, and welfare records."
       />
 
       <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* ═══════ MASTER PROFILE OVERVIEW CARD ═══════ */}
+        {/* ═══════ WORKER PROFILE OVERVIEW CARD ═══════ */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start sm:items-center gap-5">
             <div className="relative shrink-0">
@@ -170,7 +160,7 @@ export default function ContractorDashboard() {
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-lg">
-                  Master {profile?.category?.replace(/_/g, " ") || "Artisan"}
+                  Worker {profile?.category?.replace(/_/g, " ") || "Service"}
                 </span>
                 {isVerified ? (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg">
@@ -192,21 +182,20 @@ export default function ContractorDashboard() {
               </h1>
 
               <p className="text-xs text-slate-500">
-                🏛️ {profile?.society_name || "Bhopal Shramik & Karigar Sahakari Samiti"} • Reg: {profile?.member_registration_no || "SK-MST-82910"}
+                {profile?.society_name || "Society pending"} • Member Reg: {profile?.member_registration_no || "Pending"}
               </p>
             </div>
           </div>
 
           {/* Quick Action Buttons */}
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <button
-              type="button"
-              onClick={() => setShowSubModal(true)}
-              className="flex-1 md:flex-initial px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-extrabold shadow-md transition-all flex items-center justify-center gap-2"
+            <Link
+              to="/contractor/edit"
+              className="flex-1 md:flex-initial px-5 py-3 rounded-2xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-extrabold shadow-md transition-all flex items-center justify-center gap-2"
             >
-              <FiZap className="w-4 h-4 fill-white" />
-              <span>Upgrade Plan & Boost Leads</span>
-            </button>
+              <FiShield className="w-4 h-4" />
+              <span>Update Verification Details</span>
+            </Link>
           </div>
         </div>
 
@@ -218,10 +207,10 @@ export default function ContractorDashboard() {
             </div>
             <div>
               <h3 className="text-sm font-extrabold text-amber-900">
-                Documents Submitted — Under Federation Audit
+                Documents Submitted — Awaiting Cooperative Verification
               </h3>
               <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                Your Aadhaar card and Skill certification documents have been submitted to the Cooperative Federation verification queue. Once verified by federation admins, the official Verified Master Shield will appear on your profile.
+                Your identity and cooperative membership documents are awaiting review. Skill certificates are checked when provided and are required before your skills can be marked certified.
               </p>
             </div>
           </div>
@@ -243,6 +232,26 @@ export default function ContractorDashboard() {
           </div>
         )}
 
+        {dispatchOffers.length > 0 && (
+          <section className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <h2 className="text-sm font-extrabold text-indigo-950">Federation dispatch offers</h2>
+                <p className="text-xs text-indigo-700 mt-1">Verified cooperative capacity requests near your service area.</p>
+              </div>
+              <span className="px-2 py-1 rounded-full bg-indigo-600 text-white text-[10px] font-bold">{dispatchOffers.length} open</span>
+            </div>
+            <div className="space-y-2">
+              {dispatchOffers.map((offer) => (
+                <div key={offer.id} className="bg-white rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-indigo-100">
+                  <div><p className="text-xs font-extrabold text-slate-900">{offer.service_category} · {offer.locality}</p><p className="text-[10px] text-slate-500">{offer.priority === "emergency" ? "Emergency response · respond within 60 seconds" : "Federation capacity request · respond within 24 hours"} · {offer.notes || "Federation request"}</p></div>
+                  <div className="flex gap-2"><button onClick={async () => { try { await cooperativeAPI.respondToDispatchOffer(offer.id, "declined"); setDispatchOffers((prev) => prev.filter((item) => item.id !== offer.id)); } catch { toast.error("Offer expired or could not be declined."); loadDashboard(); } }} className="px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600">Decline</button><button onClick={async () => { try { await cooperativeAPI.respondToDispatchOffer(offer.id, "accepted"); setDispatchOffers((prev) => prev.filter((item) => item.id !== offer.id)); toast.success("Dispatch accepted. The booking is now assigned to you."); loadDashboard(); } catch { toast.error("Offer expired or could not be accepted."); loadDashboard(); } }} className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[10px] font-bold">Accept</button></div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* ═══════ STATS ROW ═══════ */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
@@ -253,26 +262,27 @@ export default function ContractorDashboard() {
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
             <div className="text-[11px] font-bold text-slate-400 uppercase">Current Rating</div>
-            <div className="text-2xl font-extrabold text-amber-500 flex items-center gap-1">
-              <span>★</span> {Number(profile?.rating || 4.9).toFixed(1)}
+            <div className="text-2xl font-extrabold text-amber-500 flex items-center gap-1.5">
+              <FiStar className="w-5 h-5 fill-amber-400 text-amber-400" />
+              <span>{Number(profile?.rating || 4.9).toFixed(1)}</span>
             </div>
             <span className="text-[10px] text-slate-400 font-medium">From verified reviews</span>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase">Search Promotion</div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase">Verification</div>
             <div className="text-sm font-extrabold text-slate-900 mt-1">
-              {subStatus?.has_priority_listing ? "Top Recommendation Active" : "Standard Placement"}
+              {isVerified ? "Society / Federation Verified" : isPending ? "Pending Review" : "Action Needed"}
             </div>
             <span className="text-[10px] text-indigo-600 font-bold">
-              {subStatus?.has_priority_listing ? "Rank #1 in Locality" : "Upgrade for 4x leads"}
+              Cooperative-first trust controls
             </span>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-            <div className="text-[11px] font-bold text-slate-400 uppercase">Welfare Insurance</div>
-            <div className="text-sm font-extrabold text-emerald-700 mt-1">₹5,00,000 Active</div>
-            <span className="text-[10px] text-slate-400 font-medium">PM Suraksha Bima Scheme</span>
+            <div className="text-[11px] font-bold text-slate-400 uppercase">Welfare</div>
+            <div className="text-sm font-extrabold text-emerald-700 mt-1">Society Ledger Linked</div>
+            <span className="text-[10px] text-slate-400 font-medium">Claims reviewed by federation admins</span>
           </div>
         </div>
 
@@ -288,7 +298,7 @@ export default function ContractorDashboard() {
               {bookings.map((booking) => {
                 const cleanPhone = (booking.customer_phone || "").replace(/\D/g, "");
                 const waText = encodeURIComponent(
-                  `Namaste ${booking.customer_name || ""}, I am Master ${profile?.business_name || user?.name} from SahKaar regarding your booking for ${booking.service_name || "service"}.`
+                  `Namaste ${booking.customer_name || ""}, I am ${profile?.business_name || user?.name} from SahKaar regarding your booking for ${booking.service_name || "service"}.`
                 );
 
                 return (
@@ -320,15 +330,24 @@ export default function ContractorDashboard() {
                       </div>
 
                       <p className="text-xs font-bold text-indigo-600">
-                        🛠️ {booking.service_name || profile?.category || "Standard Master Service"}
+                        {booking.service_name || profile?.category || "Standard Cooperative Service"}
                       </p>
 
-                      <p className="text-xs text-slate-600 font-medium">
-                        📍 <span className="font-semibold text-slate-800">{booking.customer_address || booking.address || "Bhopal, Madhya Pradesh"}</span>
+                      <p className="text-xs text-slate-600 font-medium flex items-center gap-1.5">
+                        <FiMapPin className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span className="font-semibold text-slate-800">{booking.customer_address || booking.address || "Bhopal, Madhya Pradesh"}</span>
                       </p>
 
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        📅 Scheduled: <span className="font-bold text-slate-700">{booking.scheduled_date || "Today"}</span> • ⏰ <span className="font-bold text-slate-700">{booking.scheduled_time_slot || booking.time_slot || "Immediate"}</span>
+                      <p className="text-[11px] text-slate-500 font-medium flex items-center gap-2 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <FiCalendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span>Scheduled: <strong className="text-slate-700">{booking.scheduled_date || "Today"}</strong></span>
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1">
+                          <FiClock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span>Slot: <strong className="text-slate-700">{booking.scheduled_time_slot || booking.time_slot || "Immediate"}</strong></span>
+                        </span>
                       </p>
                     </div>
 
@@ -358,7 +377,7 @@ export default function ContractorDashboard() {
                         </>
                       )}
 
-                      {booking.status === "PENDING" && (
+                      {booking.workflow_status === "created" && (
                         <button
                           type="button"
                           onClick={() => handleUpdateBookingStatus(booking.id, "CONFIRMED")}
@@ -368,7 +387,44 @@ export default function ContractorDashboard() {
                         </button>
                       )}
 
-                      {booking.status === "CONFIRMED" && (
+                      {booking.cooperative_booking && booking.workflow_status === "accepted" && (
+                        <button type="button" onClick={() => handleUpdateBookingStatus(booking.id, "EN_ROUTE")} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">Mark En Route</button>
+                      )}
+                      {booking.cooperative_booking && booking.workflow_status === "en_route" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateBookingStatus(booking.id, "EN_ROUTE")}
+                          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          Mark En Route
+                        </button>
+                      )}
+
+                      {booking.cooperative_booking && booking.workflow_status === "arrived" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateBookingStatus(booking.id, "ARRIVED")}
+                          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          Mark Arrived
+                        </button>
+                      )}
+
+                      {booking.cooperative_booking && booking.workflow_status === "in_progress" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateBookingStatus(booking.id, "IN_PROGRESS")}
+                          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          Start Work
+                        </button>
+                      )}
+
+                      {booking.cooperative_booking && booking.workflow_status === "in_progress" && (
+                        <span className="px-3 py-2 text-xs font-bold text-emerald-700">Awaiting customer completion confirmation</span>
+                      )}
+
+                      {!booking.cooperative_booking && booking.status === "CONFIRMED" && (
                         <button
                           type="button"
                           onClick={() => handleUpdateBookingStatus(booking.id, "COMPLETED")}
@@ -384,93 +440,12 @@ export default function ContractorDashboard() {
             </div>
           ) : (
             <div className="text-center py-12 text-slate-400 text-xs font-semibold">
-              No customer bookings received yet. Turn on Top Recommendation to get discovered faster!
+              No customer bookings received yet. Verified cooperative workers appear in customer matching after federation approval.
             </div>
           )}
         </div>
 
       </div>
-
-      {/* ═══════ UPGRADE SUBSCRIPTION MODAL ═══════ */}
-      <AnimatePresence>
-        {showSubModal && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Master Growth & Promotion Plans</h3>
-                  <p className="text-xs text-slate-500">Boost your credibility and rank #1 in customer search</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowSubModal(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
-                >
-                  <FiX className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {(plans.length > 0
-                  ? plans
-                  : [
-                      {
-                        id: "verified_badge",
-                        title: "Verified Badge Pro",
-                        price: 499,
-                        period: "year",
-                        description: "Golden Verified Shield on profile & search.",
-                      },
-                      {
-                        id: "priority_listing",
-                        title: "Top Recommendation",
-                        price: 399,
-                        period: "month",
-                        description: "Rank #1 in customer search for your trade.",
-                      },
-                      {
-                        id: "premium",
-                        title: "Super Master All-Access",
-                        price: 899,
-                        period: "month",
-                        description: "Verified Badge + Top Search Ranking + Unlimited leads.",
-                      },
-                    ]
-                ).map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="p-5 rounded-2xl border border-slate-200 hover:border-indigo-600 bg-slate-50 flex flex-col justify-between space-y-3"
-                  >
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
-                        {plan.title}
-                      </span>
-                      <div className="text-xl font-extrabold text-slate-900">
-                        ₹{plan.price} <span className="text-xs text-slate-400 font-normal">/{plan.period}</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{plan.description}</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={purchasingPlan}
-                      onClick={() => handleBuyPlan(plan.id)}
-                      className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold shadow-sm transition-all text-center"
-                    >
-                      {purchasingPlan ? "Activating..." : "Upgrade Now"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </main>
   );
 }

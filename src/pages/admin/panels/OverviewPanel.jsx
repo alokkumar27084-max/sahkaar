@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  FiUsers, FiUserCheck, FiCheckCircle, FiAlertTriangle, FiStar, FiAward,
+  FiUsers, FiUserCheck, FiCheckCircle, FiAlertTriangle, FiStar, FiAward, FiCheck, FiX,
 } from "react-icons/fi";
 import { StatCard } from "./AdminShared";
 import { BtnOutline, BtnDanger } from "./AdminShared";
@@ -42,18 +42,20 @@ export default function OverviewPanel({ stats, contractors, reports, busy, onVer
                   <button 
                     onClick={() => onVerify(c, "approved")} 
                     disabled={busy} 
-                    className="flex-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white py-1.5 text-xs rounded-lg font-bold transition disabled:opacity-40"
+                    className="flex-1 flex items-center justify-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white py-1.5 text-xs rounded-lg font-bold transition disabled:opacity-40"
                   >
-                    ✓ Approve
+                    <FiCheck size={13} /> Approve
                   </button>
-                  <BtnDanger onClick={() => onVerify(c, "rejected")} disabled={busy} className="flex-1 !py-1.5 rounded-lg">
-                    ✗ Reject
+                  <BtnDanger onClick={() => onVerify(c, "rejected")} disabled={busy} className="flex-1 !py-1.5 rounded-lg flex items-center justify-center gap-1">
+                    <FiX size={13} /> Reject
                   </BtnDanger>
                 </div>
               </div>
             ))}
             {!contractors.some((c) => c.verification_status === "pending") && (
-              <p className="text-sm text-muted py-8 text-center font-medium">No pending verifications ✓</p>
+              <p className="text-sm text-muted py-8 text-center font-medium flex items-center justify-center gap-1.5">
+                <FiCheckCircle className="text-emerald-500" size={16} /> No pending verifications
+              </p>
             )}
           </div>
         </div>
@@ -79,7 +81,9 @@ export default function OverviewPanel({ stats, contractors, reports, busy, onVer
               </div>
             ))}
             {!reports.some((r) => r.status === "pending") && (
-              <p className="text-sm text-muted py-8 text-center font-medium">No pending reports ✓</p>
+              <p className="text-sm text-muted py-8 text-center font-medium flex items-center justify-center gap-1.5">
+                <FiCheckCircle className="text-emerald-500" size={16} /> No pending reports
+              </p>
             )}
           </div>
         </div>

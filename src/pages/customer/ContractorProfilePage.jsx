@@ -2,20 +2,18 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
-  FiArrowLeft,
   FiCheckCircle,
   FiShield,
   FiStar,
   FiMapPin,
-  FiAward,
   FiCalendar,
   FiTool,
   FiFileText,
   FiLock,
   FiCheck,
   FiUser,
-  FiThumbsUp,
-  FiMessageSquare
+  FiSearch,
+  FiLayers
 } from "react-icons/fi";
 import { FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
@@ -182,7 +180,9 @@ export default function ContractorProfilePage() {
   if (!contractor) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-50">
-        <div className="text-4xl mb-3">🔍</div>
+        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+          <FiSearch className="w-6 h-6" />
+        </div>
         <h2 className="text-lg font-bold text-slate-900">Master Not Found</h2>
         <Link to="/search" className="btn-primary text-xs py-2 px-5 mt-3">
           Browse Other Masters
@@ -262,8 +262,9 @@ export default function ContractorProfilePage() {
                     Master {cleanName}
                   </h1>
 
-                  <p className="text-xs text-slate-500 truncate flex items-center gap-1 font-medium">
-                    <span>🏛️ {societyName}</span>
+                  <p className="text-xs text-slate-500 truncate flex items-center gap-1.5 font-medium">
+                    <FiLayers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>{societyName}</span>
                     <span className="hidden sm:inline">• {federationName}</span>
                   </p>
 
@@ -384,8 +385,9 @@ export default function ContractorProfilePage() {
                   <FiStar className="w-4 h-4 text-amber-500 fill-amber-500" />
                   <span>Customer Reviews & Feedback ({reviewCount})</span>
                 </h2>
-                <div className="text-xs font-black text-slate-900 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200">
-                  ★ {rating.toFixed(1)} / 5.0
+                <div className="text-xs font-black text-slate-900 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 flex items-center gap-1">
+                  <FiStar className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <span>{rating.toFixed(1)} / 5.0</span>
                 </div>
               </div>
 
@@ -472,8 +474,9 @@ export default function ContractorProfilePage() {
                         <span className="font-extrabold text-slate-900">
                           {rev.reviewer_name || rev.user_name || "Verified Customer"}
                         </span>
-                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
-                          ✓ Verified Hire
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded flex items-center gap-1">
+                          <FiCheckCircle className="w-3 h-3 text-emerald-600" />
+                          <span>Verified Hire</span>
                         </span>
                       </div>
 

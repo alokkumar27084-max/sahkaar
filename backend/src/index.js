@@ -6,6 +6,7 @@ const http = require('http');
 const { validateProductionEnv } = require('./config/validateEnv');
 const app = require('./app');
 const { initSocket } = require('./config/socket');
+const emergencyDispatchService = require('./services/emergencyDispatchService');
 
 validateProductionEnv();
 
@@ -71,4 +72,5 @@ initSocket(server);
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  emergencyDispatchService.startExpiryWorker();
 });

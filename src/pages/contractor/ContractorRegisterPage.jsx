@@ -1,43 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import {
   FiArrowLeft,
   FiArrowRight,
   FiCheck,
-  FiCheckCircle,
   FiFileText,
-  FiGrid,
   FiMail,
-  FiMapPin,
   FiPhone,
   FiShield,
   FiUpload,
   FiUser,
-  FiZap,
   FiAward,
   FiLock,
-  FiDollarSign,
   FiEye,
-  FiEyeOff
+  FiEyeOff,
+  FiCheckCircle
 } from "react-icons/fi";
-import { useAuth } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
-import { authAPI, cooperativeAPI, subscriptionAPI } from "../../services/api";
+import { useGeolocation } from "../../hooks/useGeolocation";
+import { authAPI, cooperativeAPI } from "../../services/api";
 import { CATEGORIES } from "../../utils/constants";
+import CategoryIcon from "../../components/common/CategoryIcon";
 import SEOHead from "../../components/common/SEOHead";
 
 const STEPS = [
   { id: 1, label: "Trade & Identity" },
   { id: 2, label: "Cooperative Affiliation" },
   { id: 3, label: "Document Uploads" },
-  { id: 4, label: "Membership Plan" },
+  { id: 4, label: "Review & Submit" },
 ];
 
 export default function ContractorRegisterPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { lang } = useLanguage();
   const isHi = lang === "hi";
 
@@ -45,6 +41,7 @@ export default function ContractorRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [societies, setSocieties] = useState([]);
+  const { lat: gpsLat, lng: gpsLng, address: gpsAddress, loading: locating, error: locationError, request: requestLocation } = useGeolocation();
 
   // Form State
   const [formData, setFormData] = useState({
@@ -55,20 +52,32 @@ export default function ContractorRegisterPage() {
     category: "electrical",
     daily_rate: 450,
     experience_years: 3,
-    location_text: "Bhopal, Madhya Pradesh",
+    location_text: "",
+    lat: null,
+    lng: null,
+    service_radius_km: 15,
     society_id: "",
     member_registration_no: "",
-    skill_certification_body: "NCCT & State Skill Development Mission",
+    skill_certification_body: "",
     id_document_type: "Aadhaar / National ID",
     id_proof_url: "",
     certificate_url: "",
     cooperative_card_url: "",
+    certificate_issued_at: "",
+    certificate_expires_at: "",
     photo_url: "",
-    selected_plan: "free", // 'free', 'verified_badge', 'priority_listing', 'premium'
   });
 
-  // Mock Upload Progress State
-  const [uploadingDoc, setUploadingDoc] = useState(null);
+  useEffect(() => {
+    if (gpsLat == null || gpsLng == null) return;
+    const resolvedAddress = typeof gpsAddress === "string" ? gpsAddress : gpsAddress?.formatted_address || gpsAddress?.short_name || "";
+    setFormData((prev) => ({
+      ...prev,
+      lat: gpsLat,
+      lng: gpsLng,
+      location_text: resolvedAddress || (typeof prev.location_text === "string" ? prev.location_text : ""),
+    }));
+  }, [gpsLat, gpsLng, gpsAddress]);
 
   useEffect(() => {
     cooperativeAPI
@@ -76,9 +85,6 @@ export default function ContractorRegisterPage() {
       .then((res) => {
         if (res.data?.ok) {
           setSocieties(res.data.data || []);
-          if (res.data.data?.[0]) {
-            setFormData((prev) => ({ ...prev, society_id: res.data.data[0].id }));
-          }
         }
       })
       .catch(() => {});
@@ -94,11 +100,9 @@ export default function ContractorRegisterPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploadingDoc(field);
     const reader = new FileReader();
     reader.onloadend = () => {
       setFormData((prev) => ({ ...prev, [field]: reader.result }));
-      setUploadingDoc(null);
       toast.success(`${field.replace(/_/g, " ")} uploaded successfully!`);
     };
     reader.readAsDataURL(file);
@@ -106,14 +110,22 @@ export default function ContractorRegisterPage() {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!formData.name.trim()) return toast.error("Please enter your full name");
-      if (!formData.phone.trim() || formData.phone.length < 10) return toast.error("Please enter a valid 10-digit phone number");
-      if (!formData.password || formData.password.length < 4) return toast.error("Password must be at least 4 characters");
+      const name = String(formData.name || "").trim();
+      const phone = String(formData.phone || "").trim();
+      const password = String(formData.password || "");
+      const locationText = String(formData.location_text || "").trim();
+
+      if (!name) return toast.error("Please enter your full name");
+      if (!phone || phone.length < 10) return toast.error("Please enter a valid 10-digit phone number");
+      if (!password || password.length < 4) return toast.error("Password must be at least 4 characters");
+      if (!locationText || formData.lat == null || formData.lng == null) return toast.error("Set your service area and share a location pin for distance matching");
     } else if (step === 2) {
-      if (!formData.member_registration_no.trim()) {
-        // Auto generate if worker doesn't remember their cooperative ID right away
-        setFormData((prev) => ({ ...prev, member_registration_no: `SK-MST-${Math.floor(100000 + Math.random() * 900000)}` }));
-      }
+      if (!formData.society_id) return toast.error("Please select your Primary Society");
+      if (!String(formData.member_registration_no || "").trim()) return toast.error("Enter your existing cooperative member registration number");
+    } else if (step === 3) {
+      if (!formData.id_proof_url) return toast.error("Upload a government identity document before continuing");
+      if (!formData.cooperative_card_url) return toast.error("Upload your cooperative membership card before continuing");
+      if (!formData.photo_url) return toast.error("Upload a worker profile photo before continuing");
     }
     setStep((prev) => Math.min(prev + 1, 4));
   };
@@ -123,6 +135,11 @@ export default function ContractorRegisterPage() {
   };
 
   const handleSubmit = async () => {
+    if (!formData.id_proof_url || !formData.cooperative_card_url || !formData.photo_url) {
+      toast.error("Government ID, cooperative membership card, and profile photo are required.");
+      setStep(3);
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
@@ -130,19 +147,22 @@ export default function ContractorRegisterPage() {
         phone: formData.phone.trim(),
         email: formData.email.trim() || undefined,
         password: formData.password,
-        role: "worker", // Normalized Master role
-        business_name: `Master ${formData.name.trim()} (${formData.category.replace(/_/g, " ")})`,
+        role: "worker",
+        business_name: `${formData.name.trim()} (${formData.category.replace(/_/g, " ")})`,
         category: formData.category,
         categories: [formData.category],
         daily_rate: Number(formData.daily_rate) || 450,
         experience_years: Number(formData.experience_years) || 3,
-        location_text: formData.location_text || "Bhopal, Madhya Pradesh",
-        lat: Number(formData.lat || 23.2599),
-        lng: Number(formData.lng || 77.4126),
-        latitude: Number(formData.lat || 23.2599),
-        longitude: Number(formData.lng || 77.4126),
+        location_text: formData.location_text,
+        lat: formData.lat ? Number(formData.lat) : null,
+        lng: formData.lng ? Number(formData.lng) : null,
+        latitude: formData.lat ? Number(formData.lat) : null,
+        longitude: formData.lng ? Number(formData.lng) : null,
         society_id: formData.society_id || undefined,
-        member_registration_no: formData.member_registration_no || `SK-MST-${Math.floor(100000 + Math.random() * 900000)}`,
+        member_registration_no: formData.member_registration_no.trim(),
+        service_radius_km: Number(formData.service_radius_km) || 15,
+        certificate_issued_at: formData.certificate_issued_at || null,
+        certificate_expires_at: formData.certificate_expires_at || null,
         skill_certification_body: formData.skill_certification_body,
         id_document_type: formData.id_document_type,
         id_proof_url: formData.id_proof_url || null,
@@ -156,16 +176,8 @@ export default function ContractorRegisterPage() {
 
       if (res.data?.ok) {
         toast.success(
-          "Master Registration Submitted! Federation Admins will review your documents."
+          "Worker registration submitted. Federation admins will review your documents."
         );
-        // If a paid subscription was selected, trigger instant subscription purchase
-        if (formData.selected_plan && formData.selected_plan !== "free") {
-          try {
-            await subscriptionAPI.purchase(formData.selected_plan);
-          } catch (e) {
-            /* non-blocking */
-          }
-        }
         navigate("/contractor/dashboard");
       }
     } catch (err) {
@@ -179,8 +191,8 @@ export default function ContractorRegisterPage() {
   return (
     <main className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6">
       <SEOHead
-        title="सहकार मास्टर रजिस्ट्रेशन — Join as a Verified Master | SahKaar"
-        description="Register as a Master Artisan with your Cooperative Federation. Submit documents for official verification, get recommended to customers, and keep 100% of your earnings."
+        title="सहकार worker registration — Join as a Verified Cooperative Worker | SahKaar"
+        description="Register as a skilled worker with your Cooperative Federation. Submit documents for official verification and fair-wage bookings."
       />
 
       <div className="max-w-3xl mx-auto space-y-6">
@@ -189,14 +201,14 @@ export default function ContractorRegisterPage() {
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-extrabold">
             <FiAward className="w-3.5 h-3.5" />
-            <span>{isHi ? "सहकार मास्टर कारीगर मंच" : "SahKaar Master Partner Portal"}</span>
+            <span>{isHi ? "सहकार श्रमिक सेवा मंच" : "SahKaar Worker Partner Portal"}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            {isHi ? "मास्टर कारीगर के रूप में रजिस्टर करें" : "Register as a SahKaar Master"}
+            {isHi ? "सहकारी श्रमिक के रूप में रजिस्टर करें" : "Register as a SahKaar Cooperative Worker"}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto">
             {isHi
-              ? "अपनी सहकारी समिति से जुड़ें, अपने दस्तावेज़ जमा करें और सत्यापित मास्टर बैज प्राप्त करें।"
+              ? "अपनी सहकारी समिति से जुड़ें, अपने दस्तावेज़ जमा करें और सत्यापित श्रमिक प्रोफाइल प्राप्त करें।"
               : "Affiliate with your Cooperative Society, upload credentials for Federation verification, and get direct booking leads."}
           </p>
         </div>
@@ -227,7 +239,7 @@ export default function ContractorRegisterPage() {
           {step === 1 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
               <h2 className="text-lg font-extrabold text-slate-900 pb-2 border-b border-slate-100">
-                1. Personal Details & Master Trade
+                1. Personal Details & Service Skill
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -270,7 +282,7 @@ export default function ContractorRegisterPage() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="rajesh.master@gmail.com"
+                      placeholder="worker@example.com"
                       className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
                     />
                   </div>
@@ -296,9 +308,9 @@ export default function ContractorRegisterPage() {
                 </div>
               </div>
 
-              {/* Master Category Selection */}
+              {/* Service Skill Selection */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">Select Your Master Trade *</label>
+                <label className="block text-xs font-bold text-slate-700 mb-2">Select Your Service Skill *</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {CATEGORIES.slice(0, 8).map((cat) => (
                     <button
@@ -311,11 +323,29 @@ export default function ContractorRegisterPage() {
                           : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold"
                       }`}
                     >
-                      <span className="text-2xl">{cat.emoji || "🔧"}</span>
+                      <CategoryIcon categoryId={cat.id} size={22} className="w-6 h-6" />
                       <span className="text-xs">{cat.name.split("/")[0]}</span>
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Rate & Experience */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                <label className="block text-xs font-bold text-slate-700">Service area / locality *</label>
+                <input name="location_text" value={formData.location_text} onChange={handleChange} placeholder="District or locality where you accept cooperative work" className="w-full h-11 px-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold" />
+                <div className="flex flex-wrap items-center gap-3">
+                  <button type="button" onClick={() => requestLocation()} disabled={locating} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold disabled:opacity-60">{locating ? "Getting location…" : formData.lat != null ? "Refresh location pin" : "Share device location for matching"}</button>
+                  <span className="text-[10px] text-slate-500">Exact coordinates are used for distance matching; the worker profile shows approximate distance.</span>
+                </div>
+                {locationError && <p className="text-xs text-rose-600">{locationError}</p>}
+                {formData.lat != null && formData.lng != null && (
+                  <p className="text-xs text-emerald-700 font-semibold">
+                    Location pin set{gpsAddress ? ` · ${typeof gpsAddress === "string" ? gpsAddress : gpsAddress?.formatted_address || gpsAddress?.short_name || ""}` : ""}
+                  </p>
+                )}
+                <label className="block text-xs font-bold text-slate-700">Service radius: {formData.service_radius_km} km</label>
+                <input type="range" min="1" max="100" step="1" name="service_radius_km" value={formData.service_radius_km} onChange={handleChange} className="w-full" />
               </div>
 
               {/* Rate & Experience */}
@@ -355,7 +385,7 @@ export default function ContractorRegisterPage() {
               <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-start gap-3">
                 <FiShield className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-indigo-900 leading-relaxed font-medium">
-                  SahKaar is 100% cooperative-owned. Affiliating with a registered Primary Labour Cooperative Society grants you the Official Verified Master Shield, legal protection, and ₹5,00,000 welfare insurance.
+                  SahKaar is designed as a cooperative-owned marketplace. Your society affiliation and documents go to federation admins for verification before you receive customer bookings. Welfare contributions and claims are shown only when recorded in the cooperative ledger; insurance is not currently provided through this platform.
                 </p>
               </div>
 
@@ -364,9 +394,11 @@ export default function ContractorRegisterPage() {
                 <select
                   name="society_id"
                   value={formData.society_id}
+                  required
                   onChange={handleChange}
                   className="w-full h-12 px-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600 bg-white"
                 >
+                  <option value="">Select your registered Primary Society</option>
                   {societies.map((soc) => (
                     <option key={soc.id} value={soc.id}>
                       {soc.name} ({soc.district} • Reg: {soc.registration_no || "State Federation"})
@@ -377,14 +409,14 @@ export default function ContractorRegisterPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Cooperative Member Registration No (If known)
+                  Cooperative Member Registration No *
                 </label>
                 <input
                   type="text"
                   name="member_registration_no"
                   value={formData.member_registration_no}
                   onChange={handleChange}
-                  placeholder="e.g. MEM-BPL-2026-0412 (Leave blank to auto-generate)"
+                  placeholder="Enter the number issued by your Primary Society"
                   className="w-full h-11 px-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
                 />
               </div>
@@ -398,7 +430,7 @@ export default function ContractorRegisterPage() {
                   name="skill_certification_body"
                   value={formData.skill_certification_body}
                   onChange={handleChange}
-                  placeholder="NCCT & State Skill Development Mission"
+                  placeholder="Enter the certificate's actual issuing organization"
                   className="w-full h-11 px-3 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
                 />
               </div>
@@ -410,10 +442,10 @@ export default function ContractorRegisterPage() {
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
               <div>
                 <h2 className="text-lg font-extrabold text-slate-900">
-                  3. Upload Documents for Federation Verification
+                  3. Upload Documents for Society / Federation Review
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Federation Admins will audit these documents to grant your Golden Cooperative Verified Shield.
+                  An authorized cooperative reviewer checks these documents before your profile can receive bookings.
                 </p>
               </div>
 
@@ -424,12 +456,12 @@ export default function ContractorRegisterPage() {
                     <FiFileText className="text-indigo-600" />
                     <span>Aadhaar Card / National ID Proof *</span>
                   </div>
-                  <p className="text-[11px] text-slate-500">Front and back copy of government issued identity</p>
+                  <p className="text-[11px] text-slate-500">Required for reviewer identity checks.</p>
                 </div>
 
                 <label className="cursor-pointer px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-800 shadow-sm flex items-center justify-center gap-1.5 shrink-0">
-                  <FiUpload className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{formData.id_proof_url ? "✓ Document Selected" : "Upload ID"}</span>
+                  {formData.id_proof_url ? <FiCheckCircle className="w-3.5 h-3.5 text-emerald-600" /> : <FiUpload className="w-3.5 h-3.5 text-indigo-600" />}
+                  <span>{formData.id_proof_url ? "Document Selected" : "Upload ID"}</span>
                   <input
                     type="file"
                     accept="image/*,.pdf"
@@ -450,8 +482,8 @@ export default function ContractorRegisterPage() {
                 </div>
 
                 <label className="cursor-pointer px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-800 shadow-sm flex items-center justify-center gap-1.5 shrink-0">
-                  <FiUpload className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{formData.certificate_url ? "✓ Certificate Selected" : "Upload Certificate"}</span>
+                  {formData.certificate_url ? <FiCheckCircle className="w-3.5 h-3.5 text-emerald-600" /> : <FiUpload className="w-3.5 h-3.5 text-indigo-600" />}
+                  <span>{formData.certificate_url ? "Certificate Selected" : "Upload Certificate"}</span>
                   <input
                     type="file"
                     accept="image/*,.pdf"
@@ -468,12 +500,12 @@ export default function ContractorRegisterPage() {
                     <FiShield className="text-indigo-600" />
                     <span>Cooperative Society Membership Card</span>
                   </div>
-                  <p className="text-[11px] text-slate-500">Primary society passbook or ID card (if issued)</p>
+                  <p className="text-[11px] text-slate-500">Required to verify current cooperative membership.</p>
                 </div>
 
                 <label className="cursor-pointer px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-800 shadow-sm flex items-center justify-center gap-1.5 shrink-0">
-                  <FiUpload className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{formData.cooperative_card_url ? "✓ Card Selected" : "Upload Card"}</span>
+                  {formData.cooperative_card_url ? <FiCheckCircle className="w-3.5 h-3.5 text-emerald-600" /> : <FiUpload className="w-3.5 h-3.5 text-indigo-600" />}
+                  <span>{formData.cooperative_card_url ? "Card Selected" : "Upload Card"}</span>
                   <input
                     type="file"
                     accept="image/*,.pdf"
@@ -488,14 +520,14 @@ export default function ContractorRegisterPage() {
                 <div className="space-y-0.5">
                   <div className="text-xs font-extrabold text-slate-900 flex items-center gap-1.5">
                     <FiUser className="text-indigo-600" />
-                    <span>Master Profile Photo *</span>
+                    <span>Worker Profile Photo *</span>
                   </div>
                   <p className="text-[11px] text-slate-500">Clear frontal photo shown to customers on search</p>
                 </div>
 
                 <label className="cursor-pointer px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-xs font-bold text-slate-800 shadow-sm flex items-center justify-center gap-1.5 shrink-0">
-                  <FiUpload className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>{formData.photo_url ? "✓ Photo Selected" : "Upload Photo"}</span>
+                  {formData.photo_url ? <FiCheckCircle className="w-3.5 h-3.5 text-emerald-600" /> : <FiUpload className="w-3.5 h-3.5 text-indigo-600" />}
+                  <span>{formData.photo_url ? "Photo Selected" : "Upload Photo"}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -507,104 +539,41 @@ export default function ContractorRegisterPage() {
             </motion.div>
           )}
 
-          {/* ═══════ STEP 4: MEMBERSHIP & GROWTH PLANS ═══════ */}
+          {/* ═══════ STEP 4: REVIEW & SUBMIT ═══════ */}
           {step === 4 && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
               <div>
                 <h2 className="text-lg font-extrabold text-slate-900">
-                  4. Choose Your Master Growth Tier
+                  4. Review Verification Request
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Accelerate your bookings with verified badge prominence or top customer search ranking.
+                  Federation admins verify identity, skill proof, and society membership before activating customer bookings.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                {/* Plan: Verified Badge Pro */}
-                <div
-                  onClick={() => setFormData((p) => ({ ...p, selected_plan: "verified_badge" }))}
-                  className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between ${
-                    formData.selected_plan === "verified_badge"
-                      ? "bg-indigo-50/70 border-indigo-600 ring-2 ring-indigo-600"
-                      : "bg-white border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        Trust Shield
-                      </span>
-                      <span className="text-lg font-extrabold text-slate-900">₹499 <span className="text-xs text-slate-400 font-normal">/yr</span></span>
-                    </div>
-                    <h3 className="text-sm font-extrabold text-slate-900">Verified Master Badge Pro</h3>
-                    <p className="text-xs text-slate-500">Expedited federation document verification + Golden Trust Badge on profile & search results.</p>
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Applicant</p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-900">{formData.name || "Worker name pending"}</p>
+                  <p className="text-xs text-slate-500">{formData.phone || "Phone required"}</p>
                 </div>
-
-                {/* Plan: Priority Recommendation */}
-                <div
-                  onClick={() => setFormData((p) => ({ ...p, selected_plan: "priority_listing" }))}
-                  className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between ${
-                    formData.selected_plan === "priority_listing"
-                      ? "bg-indigo-50/70 border-indigo-600 ring-2 ring-indigo-600"
-                      : "bg-white border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                        Highest Leads
-                      </span>
-                      <span className="text-lg font-extrabold text-slate-900">₹399 <span className="text-xs text-slate-400 font-normal">/mo</span></span>
-                    </div>
-                    <h3 className="text-sm font-extrabold text-slate-900">Top Recommendation Boost</h3>
-                    <p className="text-xs text-slate-500">Guaranteed top placement in customer search results for your trade & locality with Promoted ribbon.</p>
-                  </div>
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Service Skill</p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-900">{formData.category.replace(/_/g, " ")}</p>
+                  <p className="text-xs text-slate-500">Visit fee: ₹{formData.daily_rate || 0}</p>
                 </div>
-
-                {/* Plan: Super Master All-Access */}
-                <div
-                  onClick={() => setFormData((p) => ({ ...p, selected_plan: "premium" }))}
-                  className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between ${
-                    formData.selected_plan === "premium"
-                      ? "bg-indigo-50/70 border-indigo-600 ring-2 ring-indigo-600"
-                      : "bg-white border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
-                        Maximum Growth
-                      </span>
-                      <span className="text-lg font-extrabold text-slate-900">₹899 <span className="text-xs text-slate-400 font-normal">/mo</span></span>
-                    </div>
-                    <h3 className="text-sm font-extrabold text-slate-900">Super Master All-Access</h3>
-                    <p className="text-xs text-slate-500">Verified Golden Shield + Top Search Ranking + Unlimited customer booking requests & welfare support.</p>
-                  </div>
+                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Society</p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-900">
+                    {societies.find((soc) => soc.id === formData.society_id)?.name || "Society selection pending"}
+                  </p>
+                  <p className="text-xs text-slate-500">{formData.member_registration_no || "Membership is not confirmed"}</p>
                 </div>
-
-                {/* Plan: Standard Free */}
-                <div
-                  onClick={() => setFormData((p) => ({ ...p, selected_plan: "free" }))}
-                  className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between ${
-                    formData.selected_plan === "free"
-                      ? "bg-slate-100 border-slate-800 ring-2 ring-slate-800"
-                      : "bg-white border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
-                        Standard
-                      </span>
-                      <span className="text-lg font-extrabold text-slate-900">Free</span>
-                    </div>
-                    <h3 className="text-sm font-extrabold text-slate-900">Standard Cooperative Member</h3>
-                    <p className="text-xs text-slate-500">Submit documents for normal queue federation verification. Zero platform registration fees.</p>
-                  </div>
+                <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50">
+                  <p className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700">Submission Status</p>
+                  <p className="mt-1 text-sm font-extrabold text-emerald-950">Pending federation verification</p>
+                  <p className="text-xs text-emerald-800">No paid ranking tier is required for cooperative workers.</p>
                 </div>
-
               </div>
             </motion.div>
           )}
@@ -644,7 +613,7 @@ export default function ContractorRegisterPage() {
                   <span>Submitting Registration...</span>
                 ) : (
                   <>
-                    <span>Complete Master Registration</span>
+                    <span>Submit Worker Registration</span>
                     <FiCheck className="w-4 h-4" />
                   </>
                 )}

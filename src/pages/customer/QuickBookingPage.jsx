@@ -17,6 +17,10 @@ import {
   FiUser,
   FiStar,
   FiNavigation,
+  FiSunrise,
+  FiSun,
+  FiMoon,
+  FiXCircle,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
@@ -35,9 +39,9 @@ const STEPS = [
 ];
 
 const TIME_SLOTS = [
-  { id: "morning", label: "Morning", time: "8 AM – 12 PM", icon: "🌅" },
-  { id: "afternoon", label: "Afternoon", time: "12 PM – 5 PM", icon: "☀️" },
-  { id: "evening", label: "Evening", time: "5 PM – 9 PM", icon: "🌆" },
+  { id: "morning", label: "Morning", time: "8 AM – 12 PM", Icon: FiSunrise },
+  { id: "afternoon", label: "Afternoon", time: "12 PM – 5 PM", Icon: FiSun },
+  { id: "evening", label: "Evening", time: "5 PM – 9 PM", Icon: FiMoon },
 ];
 
 const CONFIRMATION_FEE = 30;
@@ -450,7 +454,9 @@ export default function QuickBookingPage() {
                           : "border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-hover)]"
                       }`}
                     >
-                      <span className="mb-1 block text-lg">{slot.icon}</span>
+                      <div className="mb-1.5 flex items-center justify-center">
+                        <slot.Icon className={`w-5 h-5 ${timeSlot === slot.id ? "text-indigo-600" : "text-slate-400"}`} />
+                      </div>
                       <span
                         className={`block text-xs font-bold ${
                           timeSlot === slot.id ? "text-[var(--color-heading)]" : "text-[var(--color-muted)]"
@@ -561,15 +567,15 @@ export default function QuickBookingPage() {
                     </span>
                     <ul className="space-y-2 text-[11px] font-semibold text-[var(--color-body)]">
                       <li className="flex items-start gap-1.5">
-                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <FiCheckCircle className="text-emerald-500 w-3.5 h-3.5 shrink-0 mt-0.5" />
                         <span>Background-checked contractor</span>
                       </li>
                       <li className="flex items-start gap-1.5">
-                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <FiCheckCircle className="text-emerald-500 w-3.5 h-3.5 shrink-0 mt-0.5" />
                         <span>Post-service standard area cleanup</span>
                       </li>
                       <li className="flex items-start gap-1.5">
-                        <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                        <FiCheckCircle className="text-emerald-500 w-3.5 h-3.5 shrink-0 mt-0.5" />
                         <span>Verified booking reservation lock</span>
                       </li>
                     </ul>
@@ -578,19 +584,19 @@ export default function QuickBookingPage() {
                   {/* Excluded Column */}
                   <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-3.5">
                     <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-rose-500 mb-2">
-                      <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-bold shrink-0">✕</span> Excluded
+                      <FiXCircle size={12} className="text-rose-500" /> Excluded
                     </span>
                     <ul className="space-y-2 text-[11px] font-semibold text-[var(--color-body)]">
                       <li className="flex items-start gap-1.5">
-                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <FiXCircle className="text-rose-400 w-3.5 h-3.5 shrink-0 mt-0.5" />
                         <span>Raw materials / parts replacement costs</span>
                       </li>
                       <li className="flex items-start gap-1.5">
-                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <FiXCircle className="text-rose-400 w-3.5 h-3.5 shrink-0 mt-0.5" />
                         <span>Heavy machine / scaffoldings rental</span>
                       </li>
                       <li className="flex items-start gap-1.5">
-                        <span className="text-rose-500 font-bold shrink-0">✕</span>
+                        <FiXCircle className="text-rose-400 w-3.5 h-3.5 shrink-0 mt-0.5" />
                         <span>Debris loading & transport offsite</span>
                       </li>
                     </ul>

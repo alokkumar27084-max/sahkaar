@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiPrinter, FiCheckCircle, FiShield, FiFileText, FiDownload } from "react-icons/fi";
+import { FiX, FiPrinter, FiCheckCircle, FiShield, FiFileText } from "react-icons/fi";
 import { cooperativeAPI } from "../../services/api";
 import { SahKaarLogo } from "./SahKaariLogo";
 import LoadingSpinner from "./LoadingSpinner";

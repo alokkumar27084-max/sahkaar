@@ -135,7 +135,7 @@ export default function ContractorMapPanel({
               <path d="M22 0C9.85 0 0 9.85 0 22C0 35.5 22 52 22 52C22 52 44 35.5 44 22C44 9.85 34.15 0 22 0Z" fill="#0f172a"/>
               <circle cx="22" cy="20" r="16" fill="#4f46e5"/>
               <circle cx="22" cy="20" r="13" fill="#ffffff"/>
-              <text x="22" y="25" font-family="sans-serif" font-size="14" font-weight="900" fill="#4f46e5" text-anchor="middle">★</text>
+              <polygon points="22,14 24.5,19 30,19.8 26,23.7 27,29 22,26.2 17,29 18,23.7 14,19.8 19.5,19" fill="#4f46e5" />
             </svg>
           `)}`,
           scaledSize: new google.maps.Size(36, 42),
@@ -153,7 +153,10 @@ export default function ContractorMapPanel({
           Master ${cCat}
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid #e2e8f0;font-size:11px;font-weight:800;">
-          <span style="color:#e11d48;">📍 ${distFormatted}</span>
+          <span style="color:#e11d48;display:inline-flex;align-items:center;gap:3px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ${distFormatted}
+          </span>
           <span style="color:#0f172a;">₹${c.daily_rate || 450} / visit</span>
         </div>
         <a href="/contractor/${c.id}" style="display:block;margin-top:8px;padding:6px;background:#0f172a;color:#ffffff;text-align:center;border-radius:8px;font-size:11px;font-weight:800;text-decoration:none;">

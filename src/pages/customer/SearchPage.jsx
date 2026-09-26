@@ -1,30 +1,21 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useSearchParams, useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiSearch,
-  FiSliders,
-  FiStar,
-  FiCheckCircle,
-  FiX,
-  FiGrid,
-  FiMap,
   FiMapPin,
   FiNavigation,
-  FiZap,
   FiShield,
-  FiAward,
-  FiFilter,
-  FiRefreshCw
+  FiFilter
 } from "react-icons/fi";
 import { useLanguage } from "../../context/LanguageContext";
-import { useAuth } from "../../context/AuthContext";
 import { useLocationContext } from "../../context/LocationContext";
 import { CATEGORIES, SORT_OPTIONS } from "../../utils/constants";
 import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
 import CompareDrawer from "../../components/common/CompareDrawer";
 import ContractorMapPanel from "../../components/common/ContractorMapPanel";
+import CategoryIcon from "../../components/common/CategoryIcon";
 import SEOHead from "../../components/common/SEOHead";
 import toast from "react-hot-toast";
 
@@ -32,7 +23,6 @@ const RADIUS_OPTIONS = [3, 5, 10, 15, 25, 50];
 
 export default function SearchPage() {
   const { lang } = useLanguage();
-  const { user } = useAuth();
   const {
     location: userLoc,
     openLocationModal,
@@ -83,7 +73,7 @@ export default function SearchPage() {
       }
     } catch (err) {
       console.error("Search error:", err);
-      setError("Could not load Masters. Please check your connection.");
+      setError("Could not load cooperative workers. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -117,7 +107,7 @@ export default function SearchPage() {
       const exists = prev.some((c) => c.id === contractor.id);
       if (exists) return prev.filter((c) => c.id !== contractor.id);
       if (prev.length >= 3) {
-        toast.error("You can compare up to 3 Masters at a time");
+        toast.error("You can compare up to 3 cooperative workers at a time");
         return prev;
       }
       return [...prev, contractor];
@@ -127,8 +117,8 @@ export default function SearchPage() {
   return (
     <main className="bg-slate-50 min-h-screen pb-16">
       <SEOHead
-        title="खोजें और बुक करें — Verified Cooperative Masters | SahKaar"
-        description="Search nearest verified Master Electricians, Plumbers, Carpenters and Painters. Filter by rating, distance, and official Cooperative verification."
+        title="Find Verified Cooperative Workers | SahKaar"
+        description="Find skilled cooperative members near you, with society affiliation, verification and service distance."
       />
 
       {/* ═══════ TOP SEARCH & FILTER BAR ═══════ */}
@@ -143,7 +133,7 @@ export default function SearchPage() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder={isHi ? "मास्टर का नाम, सेवा (जैसे प्लंबर, इलेक्ट्रीशियन) खोजें..." : "Search by trade, service name or master..."}
+                placeholder={isHi ? "कौशल या सेवा खोजें (जैसे प्लंबर, इलेक्ट्रीशियन)..." : "Search by skill or service..."}
                 className="w-full h-11 pl-10 pr-24 rounded-xl bg-slate-100 border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
               />
               <button
@@ -191,7 +181,7 @@ export default function SearchPage() {
                   : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
               }`}
             >
-              {isHi ? "सभी मास्टर" : "All Trades"}
+              {isHi ? "सभी सेवाएँ" : "All Services"}
             </button>
 
             {CATEGORIES.map((cat) => (
@@ -205,8 +195,8 @@ export default function SearchPage() {
                     : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
                 }`}
               >
-                <span>{cat.emoji || "🔧"}</span>
-                <span>Master {isHi ? cat.hindiName.split("/")[0] : cat.name.split("/")[0]}</span>
+                <CategoryIcon categoryId={cat.id} className="w-3.5 h-3.5 shrink-0" />
+                <span>{isHi ? cat.hindiName.split("/")[0] : cat.name.split("/")[0]}</span>
               </button>
             ))}
           </div>
@@ -267,7 +257,7 @@ export default function SearchPage() {
                   />
                   <span className="flex items-center gap-1 text-xs font-bold text-emerald-800">
                     <FiShield className="w-3.5 h-3.5 text-emerald-600" />
-                    {isHi ? "केवल सत्यापित मास्टर" : "Verified Masters Only"}
+                    {isHi ? "केवल सत्यापित सहकारी कर्मी" : "Verified Cooperative Workers Only"}
                   </span>
                 </label>
 
@@ -298,7 +288,7 @@ export default function SearchPage() {
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                {category ? `Master ${category.replace(/_/g, " ")} Artisans` : isHi ? "सभी सत्यापित मास्टर" : "Verified Cooperative Masters"}
+                {category ? `Verified ${category.replace(/_/g, " ")} Workers` : isHi ? "सभी सत्यापित सहकारी कर्मी" : "Verified Cooperative Workers"}
               </h1>
               <button
                 type="button"
@@ -312,7 +302,7 @@ export default function SearchPage() {
               </button>
             </div>
             <p className="text-xs text-slate-500">
-              {contractors.length} {contractors.length === 1 ? "Master" : "Masters"} found with real-time cooperative distance ranking
+              {contractors.length} {contractors.length === 1 ? "cooperative worker" : "cooperative workers"} found by skill, verification and distance
             </p>
           </div>
 
@@ -367,8 +357,8 @@ export default function SearchPage() {
           </div>
         ) : contractors.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 border border-slate-200 text-center space-y-3 max-w-md mx-auto my-12 shadow-sm">
-            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl mx-auto">
-              🔍
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
+              <FiSearch className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-slate-900">No Masters Found Nearby</h3>
             <p className="text-xs text-slate-500">

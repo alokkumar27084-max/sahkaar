@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { FiSearch, FiDownload, FiEye, FiTrash2, FiEdit2 } from "react-icons/fi";
+import { FiSearch, FiDownload, FiEye, FiTrash2, FiEdit2, FiStar, FiCheckCircle } from "react-icons/fi";
 import { BtnPrimary, BtnOutline, BtnDanger, AdminInput, AdminSelect, downloadCsv, Pagination } from "./AdminShared";
 import { getImageUrl } from "../../../utils/imageUtils";
 
@@ -110,8 +110,8 @@ export default function ContractorsPanel({
                   </div>
 
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${c.is_verified ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"}`}>
-                      {c.is_verified ? "✓ Verified" : "Unverified"}
+                    <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border inline-flex items-center gap-1 ${c.is_verified ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"}`}>
+                      {c.is_verified ? <><FiCheckCircle className="w-3 h-3 text-emerald-600" /> Verified</> : "Unverified"}
                     </span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${c.is_available !== false ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"}`}>
                       {c.is_available !== false ? "Available" : "Unavailable"}
@@ -200,8 +200,9 @@ export default function ContractorsPanel({
                   </BtnOutline>
                 )}
 
-                <BtnOutline disabled={busy} onClick={() => onToggleFlag(c, { is_featured: !c.is_featured })}>
-                  {c.is_featured ? "★ Unfeature" : "☆ Feature Pro"}
+                <BtnOutline disabled={busy} onClick={() => onToggleFlag(c, { is_featured: !c.is_featured })} className="inline-flex items-center gap-1">
+                  <FiStar className={`w-3.5 h-3.5 ${c.is_featured ? "fill-amber-400 text-amber-400" : "text-muted"}`} />
+                  <span>{c.is_featured ? "Unfeature" : "Feature Pro"}</span>
                 </BtnOutline>
 
                 <select

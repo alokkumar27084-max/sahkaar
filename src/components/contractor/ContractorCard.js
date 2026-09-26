@@ -56,9 +56,9 @@ export default function ContractorCard({ contractor, onCompare, showCompare }) {
             <FiStar size={10} /> {t('contractor.featured')}
           </span>
         )}
-        {contractor.is_verified && (
+        {(contractor.is_verified || contractor.verification_status === 'verified') && (
           <span className="badge badge-verified">
-            <FiCheckCircle size={10} /> {t('contractor.verified')}
+            <FiCheckCircle size={10} /> Society verified
           </span>
         )}
         {contractor.is_labour_group && (
@@ -103,6 +103,8 @@ export default function ContractorCard({ contractor, onCompare, showCompare }) {
         <div className="card-info">
           <h3 className="card-name">{contractor.name}</h3>
           <p className="card-category">{contractor.category}</p>
+          {contractor.society_name && <p className="mt-1 text-[11px] font-semibold text-slate-600">Member of {contractor.society_name}{contractor.society_registration_no ? ` · ${contractor.society_registration_no}` : ""}</p>}
+          {contractor.federation_name && <p className="text-[10px] font-medium text-slate-500">Federation: {contractor.federation_name}</p>}
 
           {/* Rating */}
           <div className="card-rating">

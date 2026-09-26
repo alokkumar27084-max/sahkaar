@@ -6,17 +6,14 @@ import { CATEGORIES } from "../../utils/constants";
 import { useLocationContext } from "../../context/LocationContext";
 import { contractorAPI } from "../../services/api";
 import ContractorCard from "../../components/common/ContractorCard";
+import CategoryIcon from "../../components/common/CategoryIcon";
 import { useAuth } from "../../context/AuthContext";
 import {
   FiSearch,
   FiArrowRight,
-  FiCheckCircle,
   FiShield,
-  FiStar,
   FiZap,
   FiMapPin,
-  FiLayers,
-  FiUsers,
   FiAward,
   FiTool,
   FiHeart
@@ -294,9 +291,12 @@ export default function HomePage() {
                 onClick={() => handleCategoryClick(cat.id)}
                 className="group cursor-pointer rounded-2xl p-4 bg-slate-50 hover:bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-lg transition-all flex flex-col items-center text-center relative overflow-hidden"
               >
-                <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform duration-300 mb-3">
-                  {cat.emoji || "🔧"}
-                </div>
+                <CategoryIcon
+                  categoryId={cat.id}
+                  showBackground
+                  containerClassName="w-14 h-14 rounded-2xl mb-3 shadow-xs group-hover:scale-105 transition-transform duration-200"
+                  className="w-7 h-7"
+                />
 
                 <h3 className="text-sm font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">
                   Master {isHi ? cat.hindiName.split("/")[0] : cat.name.split("/")[0]}

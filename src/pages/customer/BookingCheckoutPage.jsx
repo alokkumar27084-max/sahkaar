@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { FiBriefcase, FiCalendar, FiCheckCircle, FiChevronLeft, FiCreditCard, FiMapPin, FiShield } from "react-icons/fi";
+import { FiBriefcase, FiCalendar, FiCheckCircle, FiChevronLeft, FiCreditCard, FiMapPin, FiShield, FiCheck } from "react-icons/fi";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { bookingAPI, contractorAPI, quoteAPI } from "../../services/api";
@@ -36,6 +36,7 @@ export default function BookingCheckoutPage() {
   const [pricing, setPricing] = useState(null);
   const [pricingLoading, setPricingLoading] = useState(false);
   const [addressInput, setAddressInput] = useState(() => readSavedLocation()?.address || "");
+  const [serviceLocality, setServiceLocality] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(() => {
     const saved = readSavedLocation();
     return saved?.lat && saved?.lng ? saved : null;
@@ -107,7 +108,7 @@ export default function BookingCheckoutPage() {
 
     (async () => {
       const resolved =
-        (await reverseGeocodeCoords(saved.lat, saved.lng)) ||
+        ((await reverseGeocodeCoords(saved.lat, saved.lng))?.formatted_address || (await reverseGeocodeCoords(saved.lat, saved.lng))?.short_name || (await reverseGeocodeCoords(saved.lat, saved.lng))) ||
         `Near ${Number(saved.lat).toFixed(5)}, ${Number(saved.lng).toFixed(5)}`;
       if (cancelled) return;
       const snapshot = { address: resolved, lat: Number(saved.lat), lng: Number(saved.lng) };
@@ -178,6 +179,10 @@ export default function BookingCheckoutPage() {
       toast.error("Please pin your service location first.");
       return;
     }
+    if (!serviceLocality.trim()) {
+      toast.error("Please enter your district or locality so we can check cooperative service coverage.");
+      return;
+    }
     if (!pricing) {
       toast.error("Payment quote is still loading.");
       return;
@@ -196,6 +201,7 @@ export default function BookingCheckoutPage() {
         addressLabel: addressInput,
         locationLat: selectedLocation.lat,
         locationLng: selectedLocation.lng,
+        serviceLocality: serviceLocality.trim(),
         scheduledFor: scheduledFor || null,
         is_emergency: isEmergency,
       });
@@ -211,7 +217,7 @@ export default function BookingCheckoutPage() {
               razorpay_signature: "mock_signature",
               booking_id: orderData.booking.id,
             });
-            toast.success("Payment secured in escrow. Booking confirmed.", { id: "mock_pay" });
+            toast.success("Development payment simulated. Booking confirmed.", { id: "mock_pay" });
             navigate("/customer/dashboard");
           } catch {
             toast.error("Mock payment verification failed.", { id: "mock_pay" });
@@ -235,7 +241,7 @@ export default function BookingCheckoutPage() {
         amount: amountPaise,
         currency: "INR",
         name: "Thekedaar",
-        description: `Escrow booking - ${contractor.category || contractor.trade || "Service"}`,
+        description: `Cooperative service booking - ${contractor.category || contractor.trade || "Service"}`,
         order_id: orderData.razorpayOrderId,
         prefill: {
           name: user?.name || "",
@@ -252,7 +258,7 @@ export default function BookingCheckoutPage() {
               razorpay_signature: response.razorpay_signature,
               booking_id: orderData.booking.id,
             });
-            toast.success("Payment secured in escrow. Booking confirmed.");
+            toast.success("Payment secured. Your cooperative worker booking is confirmed.");
             navigate("/customer/dashboard");
           } catch {
             toast.error("Payment verification failed. Contact support with your order ID.");
@@ -286,7 +292,7 @@ export default function BookingCheckoutPage() {
 
   const payableNow = pricing?.amount || 0;
   const initial = contractor.business_name?.[0] || contractor.name?.[0] || "?";
-  const displayName = contractor.business_name || contractor.name || contractor.user_name || "Contractor";
+  const displayName = contractor.business_name || contractor.name || contractor.user_name || "Cooperative worker";
 
   return (
     <main className="min-h-screen bg-[var(--color-bg-elevated)] px-4 pb-20 pt-24 md:px-6">
@@ -303,10 +309,10 @@ export default function BookingCheckoutPage() {
 
         {/* Page Title Card */}
         <section className="mb-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 md:p-8 shadow-card">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary)]">Secure Escrow Checkout</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-primary)]">Cooperative Service Booking</span>
           <h1 className="text-3xl font-extrabold tracking-tight text-[var(--color-heading)] mt-2 md:text-4xl">Confirm and pay</h1>
           <p className="mt-2 text-sm font-semibold text-[var(--color-muted)] leading-relaxed max-w-2xl">
-            Your payment is held safely in escrow and only released to the contractor as they complete verified milestones.
+            Payment is collected at booking. If this federation has completed payment-provider onboarding, its transfer is held until service completion.
           </p>
           
           {/* Progress Indicator */}
@@ -324,7 +330,7 @@ export default function BookingCheckoutPage() {
                   }`}
                 >
                   <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${isCompleted ? "bg-emerald-500 text-white" : isActive ? "bg-[var(--color-primary)] text-white" : "bg-[var(--color-border)] text-[var(--color-muted)]"}`}>
-                    {isCompleted ? "✓" : step.id}
+                    {isCompleted ? <FiCheck size={10} className="stroke-[3]" /> : step.id}
                   </span>
                   {step.label}
                 </span>
@@ -378,6 +384,8 @@ export default function BookingCheckoutPage() {
             {/* Service Location Pinner */}
             <section className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-card">
               <span className="block text-xs font-bold uppercase tracking-wider text-[var(--color-muted)] mb-3">Service Address</span>
+              <label className="block text-xs font-bold text-[var(--color-muted)] mb-1">District / Locality for cooperative matching *</label>
+              <input className="mb-3 w-full px-4 py-2.5 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-heading)] font-semibold outline-none focus:border-[var(--color-primary)]" value={serviceLocality} onChange={(event) => setServiceLocality(event.target.value)} placeholder="e.g. Bhopal" />
               <LocationSearchInput
                 value={addressInput}
                 onChange={setAddressInput}
@@ -403,7 +411,7 @@ export default function BookingCheckoutPage() {
                   </div>
                 ) : (
                   <div className="text-center py-2">
-                    <p className="text-xs text-[var(--color-muted)] font-semibold mb-3">Add your service address to connect your contractor correctly.</p>
+                    <p className="text-xs text-[var(--color-muted)] font-semibold mb-3">Add your service address so we can coordinate with your cooperative worker.</p>
                     <button type="button" onClick={() => requestLocation()} disabled={geoLoading} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-4 py-2 text-xs font-bold text-[var(--color-heading)] bg-[var(--color-surface)] hover:bg-[var(--color-bg-elevated)] transition-all">
                       {geoLoading ? <LoadingSpinner size="sm" /> : <FiMapPin size={14} />}
                       Detect Location using GPS
@@ -450,14 +458,14 @@ export default function BookingCheckoutPage() {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-extrabold text-amber-950">
-                      Need it urgently within 45 mins? (तत्काल सेवा)
+                      Request urgent dispatch (तत्काल सेवा)
                     </span>
                     <span className="text-[10px] font-bold text-amber-800 bg-amber-200/70 px-1.5 py-0.5 rounded">
                       Priority
                     </span>
                   </div>
                   <p className="text-[11px] text-amber-800/90 mt-0.5">
-                    Alerts nearby verified cooperative workers for rapid emergency dispatch.
+                    The platform offers the booking to nearby verified, available workers in this federation. If no worker accepts within 60 seconds, it is escalated to the cooperative dispatcher; arrival time is not guaranteed.
                   </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -493,8 +501,8 @@ export default function BookingCheckoutPage() {
                   <span className="font-extrabold text-[var(--color-heading)]">{money(pricing?.estimatedProjectValue || projectValue)}</span>
                 </div>
                 <div className="flex justify-between gap-4 text-teal-800">
-                  <span>Cooperative Worker Welfare Fund</span>
-                  <span className="font-bold">₹25 (Included)</span>
+                  <span>Welfare contribution</span>
+                  <span className="font-bold">None configured for this booking</span>
                 </div>
                 {isEmergency && (
                   <div className="flex justify-between gap-4 text-amber-800 font-bold">
@@ -503,7 +511,7 @@ export default function BookingCheckoutPage() {
                   </div>
                 )}
                 {pricingLoading ? (
-                  <p className="text-[10px] text-[var(--color-muted)] italic">Computing escrow breakdown...</p>
+                  <p className="text-[10px] text-[var(--color-muted)] italic">Loading payment allocation...</p>
                 ) : pricing?.milestoneDetails?.length ? (
                   <div className="mt-3 space-y-2 border-t border-[var(--color-border)] pt-3">
                     {pricing.milestoneDetails.map((item) => (
@@ -522,16 +530,16 @@ export default function BookingCheckoutPage() {
                 <span className="text-2xl font-black text-[var(--color-heading)]">{money(payableNow)}</span>
               </div>
               <p className="mb-5 text-[10px] leading-relaxed text-[var(--color-muted)] font-semibold">
-                Your funds are held securely in a multi-stage escrow account. The contractor only gets paid upon your project milestone approval.
+                The cooperative ledger records worker and society shares when you confirm completion. Federation transfer status appears in booking details.
               </p>
 
-              {/* Escrow Lock Details */}
+              {/* Provider Transfer Details */}
               <div className="mb-5 space-y-2">
                 <div className="flex gap-2.5 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-3 text-xs leading-relaxed">
                   <FiShield className="shrink-0 text-emerald-600 mt-0.5" size={15} />
                   <p className="text-[var(--color-muted)] font-semibold text-[10px]">
-                    <strong className="text-[var(--color-heading)]">100% Secure Escrow.</strong>{" "}
-                    Funds are guarded securely and only released upon milestone completion via Razorpay. Zero hidden commissions.
+                    <strong className="text-[var(--color-heading)]">Provider payment protection.</strong>{" "}
+                    When the federation is onboarded for marketplace payouts, its transfer stays on hold until completion. Cooperative shares are recorded in the ledger; tax is shown only if configured.
                   </p>
                 </div>
               </div>

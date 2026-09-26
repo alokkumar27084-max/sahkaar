@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Link, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { AnimatePresence } from "framer-motion";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HelmetProvider } from "react-helmet-async";
 import { LanguageProvider } from "./context/LanguageContext";
@@ -60,6 +59,19 @@ function PageFallback() {
 
 function PageTracker() {
   usePageTracking();
+  return null;
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    if (window.__lenis) {
+      window.__lenis.scrollTo(0, { immediate: true });
+    }
+  }, [pathname]);
+
   return null;
 }
 
@@ -152,9 +164,8 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+    <Routes location={location}>
+      <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
         <Route path="/categories" element={<PageWrapper><AllCategoriesPage /></PageWrapper>} />
         <Route
           path="/select-service"
@@ -345,7 +356,6 @@ function AnimatedRoutes() {
           }
         />
       </Routes>
-    </AnimatePresence>
   );
 }
 
@@ -360,6 +370,7 @@ export default function App() {
     <HelmetProvider>
       <BrowserRouter>
         <PageTracker />
+        <ScrollToTop />
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <ThemeProvider>
             <LanguageProvider>

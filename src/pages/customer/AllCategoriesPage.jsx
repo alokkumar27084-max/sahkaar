@@ -9,8 +9,10 @@ import {
   FiMapPin,
   FiShield,
   FiCheckCircle,
-  FiArrowRight
+  FiArrowRight,
+  FiX
 } from "react-icons/fi";
+import CategoryIcon from "../../components/common/CategoryIcon";
 import SEOHead from "../../components/common/SEOHead";
 
 export default function AllCategoriesPage() {
@@ -71,9 +73,10 @@ export default function AllCategoriesPage() {
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 hover:text-slate-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1 rounded-lg"
+                aria-label="Clear search"
               >
-                ✕
+                <FiX className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -110,7 +113,6 @@ export default function AllCategoriesPage() {
                     : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                 }`}
               >
-                <span>{group.emoji}</span>
                 <span>{group.label}</span>
               </button>
             );
@@ -138,7 +140,9 @@ export default function AllCategoriesPage() {
 
         {filteredCategories.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 text-center max-w-sm mx-auto my-8 border border-slate-200 shadow-xs space-y-3">
-            <div className="text-4xl">🔍</div>
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+              <FiSearch className="w-6 h-6" />
+            </div>
             <h3 className="text-base font-bold text-slate-900">No Services Found</h3>
             <p className="text-xs text-slate-500">
               Try searching with another word or clear the filter.
@@ -174,9 +178,9 @@ export default function AllCategoriesPage() {
                     loading="lazy"
                   />
                   
-                  {/* Big Emoji Floating Icon */}
-                  <div className="absolute top-2.5 left-2.5 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/95 backdrop-blur-md shadow-md flex items-center justify-center text-xl sm:text-2xl border border-slate-100">
-                    {cat.emoji}
+                  {/* Category Vector Floating Icon */}
+                  <div className="absolute top-2.5 left-2.5 w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/95 backdrop-blur-md shadow-md flex items-center justify-center border border-slate-100">
+                    <CategoryIcon categoryId={cat.id} size={18} />
                   </div>
 
                   {/* Price Tag */}
@@ -219,8 +223,8 @@ export default function AllCategoriesPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12">
         <div className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shrink-0">
-              🛡️
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <FiShield className="w-6 h-6" />
             </div>
             <div>
               <h4 className="text-sm font-extrabold text-slate-900">100% Cooperative Verified Masters</h4>

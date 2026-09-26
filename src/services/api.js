@@ -109,6 +109,7 @@ export const adminAPI = {
   deleteContractor: (id) => api.delete(`/admin/contractors/${id}`),
   getFederations: () => api.get("/admin/federations"),
   createFederation: (data) => api.post("/admin/federations", data),
+  createFederationOwner: (id, data) => api.post(`/admin/federations/${id}/owner`, data),
   updateFederation: (id, data) => api.patch(`/admin/federations/${id}`, data),
   deleteFederation: (id) => api.delete(`/admin/federations/${id}`),
   getSocieties: () => api.get("/admin/societies"),
@@ -144,6 +145,8 @@ export const bookingAPI = {
   verify: (data) => api.post("/bookings/verify", data),
   getMyBookings: () => api.get("/bookings/me"),
   completeBooking: (bookingId) => api.put(`/bookings/${bookingId}/complete`),
+  updateWorkflowStatus: (bookingId, status) => api.put(`/bookings/${bookingId}/status`, { status }),
+  getMatchingWorkers: (bookingId) => api.get(`/bookings/${bookingId}/matching-workers`),
 };
 
 export const notificationAPI = {
@@ -265,5 +268,7 @@ export const cooperativeAPI = {
   getWelfareClaims: () => api.get("/cooperatives/welfare-claims"),
   approveClaim: (data) => api.post("/cooperatives/approve-claim", data),
   getInvoice: (bookingId) => api.get(`/cooperatives/invoice/${bookingId}`),
+  getMyDispatchOffers: () => api.get("/cooperatives/dispatch-offers/me"),
+  respondToDispatchOffer: (offerId, response) => api.post(`/cooperatives/dispatch-offers/${offerId}/respond`, { response }),
 };
 

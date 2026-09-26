@@ -9,8 +9,8 @@ export default function AnalyticsPanel({ analytics, activity }) {
       {analytics && (
         <>
           <div className="grid md:grid-cols-2 gap-5">
-            <MiniChart data={analytics.registration_trend || []} label="📈 User Registrations (30 days)" />
-            <MiniChart data={analytics.review_trend || []} label="⭐ Reviews (30 days)" />
+            <MiniChart data={analytics.registration_trend || []} label="User Registrations (30 days)" />
+            <MiniChart data={analytics.review_trend || []} label="Customer Reviews (30 days)" />
           </div>
 
           <div className="card p-5 border border-border bg-surface">

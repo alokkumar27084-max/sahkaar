@@ -10,7 +10,6 @@ export const CATEGORIES = [
   {
     id: "electrical",
     icon: "electrical",
-    emoji: "⚡",
     name: "Master Electrician",
     hindiName: "मास्टर इलेक्ट्रीशियन",
     key: "cat.electrical",
@@ -34,7 +33,6 @@ export const CATEGORIES = [
   {
     id: "plumbing",
     icon: "plumbing",
-    emoji: "🔧",
     name: "Master Plumber",
     hindiName: "मास्टर प्लंबर",
     key: "cat.plumbing",
@@ -58,7 +56,6 @@ export const CATEGORIES = [
   {
     id: "carpentry",
     icon: "carpentry",
-    emoji: "🪑",
     name: "Master Carpenter",
     hindiName: "मास्टर बढ़ई / कारपेंटर",
     key: "cat.interior_finishing",
@@ -82,7 +79,6 @@ export const CATEGORIES = [
   {
     id: "painting",
     icon: "painting",
-    emoji: "🎨",
     name: "Master Painter & Waterproofing",
     hindiName: "मास्टर पेंटर व वॉटरप्रूफिंग",
     key: "cat.painting",
@@ -106,7 +102,6 @@ export const CATEGORIES = [
   {
     id: "appliance_repair",
     icon: "ac",
-    emoji: "🔌",
     name: "AC & Home Appliance Technician",
     hindiName: "एसी व उपकरण तकनीशियन",
     key: "cat.appliance_repair",
@@ -130,7 +125,6 @@ export const CATEGORIES = [
   {
     id: "cleaning",
     icon: "shuttering",
-    emoji: "🧹",
     name: "Deep Cleaning & Housekeeping",
     hindiName: "डीप क्लीनिंग व हाउसकीपिंग",
     key: "cat.cleaning",
@@ -154,7 +148,6 @@ export const CATEGORIES = [
   {
     id: "masonry",
     icon: "construction",
-    emoji: "🧱",
     name: "Civil Masonry & Structural Repair",
     hindiName: "राजमिस्त्री व भवन मरम्मत",
     key: "cat.construction",
@@ -178,7 +171,6 @@ export const CATEGORIES = [
   {
     id: "pest_control",
     icon: "ac",
-    emoji: "🐛",
     name: "Pest Control & Disinfection",
     hindiName: "पेस्ट कंट्रोल व कीट नियंत्रण",
     key: "cat.pest_control",
@@ -202,7 +194,6 @@ export const CATEGORIES = [
   {
     id: "domestic_help",
     icon: "labour",
-    emoji: "🏠",
     name: "Domestic Helper & Housekeeper",
     hindiName: "घरेलू सहायिका व हाउसहेल्प",
     key: "cat.labour_group",
@@ -226,7 +217,6 @@ export const CATEGORIES = [
   {
     id: "gardening",
     icon: "farming",
-    emoji: "🌿",
     name: "Gardener & Balcony Landscaping",
     hindiName: "माली व बागवानी विशेषज्ञ",
     key: "cat.agriculture",
@@ -250,7 +240,6 @@ export const CATEGORIES = [
   {
     id: "driver",
     icon: "transport",
-    emoji: "🚗",
     name: "Professional Driver & Chauffeur",
     hindiName: "प्रशिक्षित चालक / ड्राइवर",
     key: "cat.transport",
@@ -274,7 +263,6 @@ export const CATEGORIES = [
   {
     id: "caregiving",
     icon: "guard",
-    emoji: "🩺",
     name: "Caregiver & Elderly Nursing Support",
     hindiName: "केयरगिवर व वरिष्ठ नागरिक देखभाल",
     key: "cat.healthcare",
@@ -298,7 +286,6 @@ export const CATEGORIES = [
   {
     id: "locksmith",
     icon: "ac",
-    emoji: "🔒",
     name: "Locksmith & Key Specialist",
     hindiName: "ताला चाबी कारीगर (लॉकस्मिथ)",
     key: "cat.locksmith",
@@ -322,7 +309,6 @@ export const CATEGORIES = [
   {
     id: "catering_cook",
     icon: "farming",
-    emoji: "🍳",
     name: "Catering, Cook & Halwai",
     hindiName: "हलवाई, कुक व कैटरिंग कारीगर",
     key: "cat.catering",
@@ -346,7 +332,6 @@ export const CATEGORIES = [
   {
     id: "cctv_security",
     icon: "guard",
-    emoji: "📹",
     name: "CCTV & Security System Tech",
     hindiName: "सीसीटीवी व सुरक्षा तकनीशियन",
     key: "cat.security",
@@ -371,12 +356,12 @@ export const CATEGORIES = [
 
 // Service Category Groups
 export const CATEGORY_GROUPS = [
-  { id: "all", label: "All Trades & Services", emoji: "✨" },
-  { id: "repairs_maintenance", label: "Repairs & Maintenance", emoji: "🔧" },
-  { id: "cleaning_hygiene", label: "Cleaning & Hygiene", emoji: "🧹" },
-  { id: "installation_assembly", label: "Installation & Assembly", emoji: "⚙️" },
-  { id: "construction_renovation", label: "Construction & Renovation", emoji: "🧱" },
-  { id: "personal_care", label: "Personal & Home Care", emoji: "💆" },
+  { id: "all", label: "All Trades & Services" },
+  { id: "repairs_maintenance", label: "Repairs & Maintenance" },
+  { id: "cleaning_hygiene", label: "Cleaning & Hygiene" },
+  { id: "installation_assembly", label: "Installation & Assembly" },
+  { id: "construction_renovation", label: "Construction & Renovation" },
+  { id: "personal_care", label: "Personal & Home Care" },
 ];
 
 // Sort options for search results

@@ -19,7 +19,8 @@ import {
   FiFileText,
   FiEye,
   FiAward,
-  FiUserCheck
+  FiUserCheck,
+  FiPhone
 } from "react-icons/fi";
 import { cooperativeAPI } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -30,13 +31,14 @@ import { getAvatarUrl } from "../../utils/imageUtils";
 import toast from "react-hot-toast";
 
 export default function FederationAdminDashboard() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { lang } = useLanguage();
   const navigate = useNavigate();
   const isHi = lang === "hi";
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
+  const [federation, setFederation] = useState(null);
   const [societies, setSocieties] = useState([]);
   const [activeTab, setActiveTab] = useState("verification"); // 'verification', 'forecasting', 'disputes', 'welfare', 'societies'
 
@@ -48,7 +50,7 @@ export default function FederationAdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
 
   // Forecasting Filter State
-  const [forecastLocality, setForecastLocality] = useState("MP Nagar");
+  const [forecastLocality, setForecastLocality] = useState("");
   const [forecastCategory, setForecastCategory] = useState("electrical");
   const [forecastSeries, setForecastSeries] = useState([]);
   const [forecastLoading, setForecastLoading] = useState(false);
@@ -64,7 +66,7 @@ export default function FederationAdminDashboard() {
   const [claims, setClaims] = useState([]);
   const [claimsLoading, setClaimsLoading] = useState(false);
 
-  const localitiesList = ["MP Nagar", "Arera Colony", "Kolar Road", "TT Nagar", "Hoshangabad Road"];
+  const localitiesList = [...new Set((stats?.forecastingOverview?.topLocalities || []).map((row) => row.locality).filter(Boolean))];
   const categoriesList = [
     { id: "electrical", label: "Electrician" },
     { id: "plumbing", label: "Plumber" },
@@ -98,6 +100,7 @@ export default function FederationAdminDashboard() {
       if (statsRes.data?.ok) {
         setStats(statsRes.data.data.summary);
         setSocieties(statsRes.data.data.societies || []);
+        setFederation(statsRes.data.data.federation || null);
       }
     } catch (err) {
       console.error("Federation data fetch error:", err);
@@ -156,21 +159,22 @@ export default function FederationAdminDashboard() {
     loadWelfareClaims();
   }, [loadFederationData, loadForecast, forecastLocality, forecastCategory, loadDisputes, loadWelfareClaims]);
 
-  const handleVerifyMaster = async (workerId) => {
+  const handleVerifyMaster = async (worker) => {
+    const workerId = worker.id;
     setVerifyingWorkerId(workerId);
     try {
       const res = await cooperativeAPI.verifyWorker({
         workerId,
-        skillsCertified: true,
-        badgeType: "Cooperative Verified Master",
+        skillsCertified: Boolean(worker.certificate_url && worker.skill_certification_body),
+        badgeType: "Cooperative Verified Worker",
       });
       if (res.data?.ok) {
-        toast.success("Master verified successfully with Golden Verified Shield!");
+        toast.success("Worker verified under the federation.");
         loadPendingWorkers();
         loadFederationData();
       }
     } catch (err) {
-      toast.error("Verification failed. Please try again.");
+      toast.error("Verification failed. Check identity proof, membership card, member number, and any claimed skill certificate.");
     } finally {
       setVerifyingWorkerId(null);
     }
@@ -184,7 +188,7 @@ export default function FederationAdminDashboard() {
         reason: rejectionReason || "Incomplete documentation submitted. Please re-upload verified documents.",
       });
       if (res.data?.ok) {
-        toast.success("Master applicant rejected with feedback note.");
+        toast.success("Worker applicant rejected with feedback note.");
         setRejectModalWorker(null);
         setRejectionReason("");
         loadPendingWorkers();
@@ -271,18 +275,16 @@ export default function FederationAdminDashboard() {
                   {isHi ? "शीर्ष राज्य महासंघ" : "Apex State Federation"}
                 </span>
                 <span className="text-xs font-mono font-bold text-slate-500">
-                  REG-MP-FED-2018-091
+                  {federation?.registration_no || "Registration pending"}
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#0B3C5D] mt-1">
-                {isHi
-                  ? "मध्य प्रदेश राज्य श्रम एवं निर्माण सहकारी महासंघ"
-                  : "Madhya Pradesh State Labour & Construction Cooperative Federation"}
+                {federation?.name || user?.federation_name || (isHi ? "आपका सहकारी महासंघ" : "Your Cooperative Federation")}
               </h1>
               <p className="text-xs text-slate-600 mt-0.5">
                 {isHi
-                  ? "सहकारिता मंत्रालय के अधीन पंजीकृत 34 प्राथमिक श्रम सहकारी समितियों का केंद्रीय प्रशासनिक व सत्यापन नियंत्रण केंद्र।"
-                  : "Apex governing federation coordinating 34 primary district labour cooperatives & verified artisan audit."}
+                  ? `${federation?.state || "आपके क्षेत्र"} में ${societies.length} प्राथमिक सहकारी समितियों का प्रशासन और कार्यबल पूर्वानुमान।`
+                  : `Administration and workforce forecasting for ${societies.length} Primary Societies in ${federation?.state || "your area"}.`}
               </p>
             </div>
           </div>
@@ -323,33 +325,33 @@ export default function FederationAdminDashboard() {
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-1">
             <div className="text-[11px] font-bold text-slate-500 uppercase">Verified Master Artisans</div>
             <div className="text-2xl font-extrabold text-[#138808]">
-              {stats?.verified_workers || 48}
+              {stats?.verified_workers ?? 0}
             </div>
-            <span className="text-[10px] text-emerald-600 font-bold">100% Document Verified</span>
+            <span className="text-[10px] text-emerald-600 font-bold">Approved cooperative workers</span>
           </div>
 
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-1">
             <div className="text-[11px] font-bold text-slate-500 uppercase">Primary Societies</div>
-            <div className="text-2xl font-extrabold text-[#0B3C5D]">{societies.length || 34}</div>
-            <span className="text-[10px] text-slate-400 font-semibold">Across 52 MP Districts</span>
+          <div className="text-2xl font-extrabold text-[#0B3C5D]">{societies.length}</div>
+            <span className="text-[10px] text-slate-400 font-semibold">Within your jurisdiction</span>
           </div>
 
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-1">
-            <div className="text-[11px] font-bold text-slate-500 uppercase">Welfare Corpus Fund</div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase">Federation Share Ledger</div>
             <div className="text-2xl font-extrabold text-[#D35400] font-mono">
-              {formatRupees(stats?.federation_welfare_corpus || 13750000)}
+              {formatRupees(stats?.federation_contributions ?? 0)}
             </div>
-            <span className="text-[10px] text-slate-400 font-semibold">Social Security Reserve</span>
+            <span className="text-[10px] text-slate-400 font-semibold">Recorded from completed bookings</span>
           </div>
         </div>
 
         {/* ── TABS NAVIGATION ── */}
         <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
           {[
-            { id: "verification", label: isHi ? "मास्टर दस्तावेज़ सत्यापन" : "Master Document Verification Queue", icon: FiShield, badge: pendingWorkers.length },
-            { id: "forecasting", label: isHi ? "एआई मांग पूर्वानुमान" : "AI Demand Intelligence & Allocation", icon: FiTrendingUp },
+            { id: "verification", label: isHi ? "श्रमिक दस्तावेज़ सत्यापन" : "Worker Document Verification", icon: FiShield, badge: pendingWorkers.length },
+            { id: "forecasting", label: isHi ? "मांग पूर्वानुमान" : "Observed Demand & Allocation", icon: FiTrendingUp },
             { id: "disputes", label: isHi ? "विवाद निवारण एवं मध्यस्थता" : "Dispute Arbitration Console", icon: FiAlertTriangle, badge: disputes.length },
-            { id: "welfare", label: isHi ? "कल्याण कोष व क्लेम स्वीकृति" : "Welfare Corpus & Claims", icon: FiHeart, badge: claims.filter(c => c.status === 'PENDING_APPROVAL').length },
+            { id: "welfare", label: isHi ? "कल्याण दावा" : "Welfare Claims", icon: FiHeart, badge: claims.filter(c => c.status === 'PENDING_APPROVAL').length },
             { id: "societies", label: isHi ? "प्राथमिक सहकारी समितियाँ" : "Primary Societies Registry", icon: FiLayers },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -384,10 +386,10 @@ export default function FederationAdminDashboard() {
                 <div>
                   <h2 className="text-base font-extrabold text-[#0B3C5D] flex items-center gap-2">
                     <FiShield className="text-[#0B3C5D] w-5 h-5" />
-                    <span>Master Document Verification & Credential Audit</span>
+                    <span>Worker Document Verification</span>
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Review submitted government ID cards, skill certificates, and society membership before issuing the official Verified Master Shield.
+                    Review submitted identity proof, cooperative membership, and existing member number. Mark skills certified only when supported by a valid certificate.
                   </p>
                 </div>
 
@@ -403,7 +405,7 @@ export default function FederationAdminDashboard() {
               {pendingWorkers.length === 0 ? (
                 <div className="text-center py-16 text-slate-400 text-xs font-semibold space-y-2">
                   <FiCheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
-                  <p className="text-sm font-bold text-slate-800">All Master applications are verified!</p>
+                  <p className="text-sm font-bold text-slate-800">No pending worker applications.</p>
                   <p className="text-xs text-slate-500">New self-registered workers will appear here for document verification.</p>
                 </div>
               ) : (
@@ -426,19 +428,23 @@ export default function FederationAdminDashboard() {
                               {worker.business_name || worker.user_name}
                             </span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
-                              Master {worker.category?.replace(/_/g, " ")}
+                              Worker · {worker.category?.replace(/_/g, " ")}
                             </span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800">
                               Pending Audit
                             </span>
                           </div>
 
-                          <p className="text-xs text-slate-600">
-                            📞 {worker.phone} • 🏛️ {worker.society_name || "Bhopal Society"} • Reg: {worker.member_registration_no || "SK-MST-NEW"}
+                          <p className="text-xs text-slate-600 flex items-center gap-2 flex-wrap">
+                            <span className="flex items-center gap-1"><FiPhone className="w-3 h-3 text-slate-400" /> {worker.phone}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1"><FiLayers className="w-3 h-3 text-indigo-500" /> {worker.society_name || "Society not assigned"}</span>
+                            <span>•</span>
+                            <span>Reg: {worker.member_registration_no || "Not provided"}</span>
                           </p>
 
                           <p className="text-[11px] text-slate-500">
-                            Cert Body: <span className="font-semibold text-slate-700">{worker.skill_certification_body || "NCCT / Skill Mission"}</span> • Exp: {worker.experience_years || 2} yrs
+                            Skill certificate issuer: <span className="font-semibold text-slate-700">{worker.skill_certification_body || "Not provided"}</span> • Experience: {worker.experience_years ?? "Not provided"} yrs
                           </p>
                         </div>
                       </div>
@@ -450,8 +456,8 @@ export default function FederationAdminDashboard() {
                           type="button"
                           onClick={() =>
                             setInspectingDoc({
-                              title: "Aadhaar / National ID Proof",
-                              url: worker.id_proof_url || "https://images.unsplash.com/photo-1633409381658-a0c3099d3e5e?auto=format&fit=crop&w=800&q=80",
+                              title: "Identity Document",
+                              url: worker.id_proof_url || "",
                               workerName: worker.business_name || worker.user_name,
                             })
                           }
@@ -467,21 +473,21 @@ export default function FederationAdminDashboard() {
                           onClick={() =>
                             setInspectingDoc({
                               title: "Trade Skill Certificate",
-                              url: worker.certificate_url || "https://images.unsplash.com/photo-1589330694653-ded6df03f754?auto=format&fit=crop&w=800&q=80",
+                              url: worker.certificate_url || "",
                               workerName: worker.business_name || worker.user_name,
                             })
                           }
                           className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center gap-1"
                         >
                           <FiAward className="w-3.5 h-3.5 text-amber-600" />
-                          <span>View Certificate</span>
+                          <span>{worker.certificate_url ? "View Skill Certificate" : "No Skill Certificate"}</span>
                         </button>
 
                         {/* Approve Button */}
                         <button
                           type="button"
                           disabled={verifyingWorkerId === worker.id}
-                          onClick={() => handleVerifyMaster(worker.id)}
+                          onClick={() => handleVerifyMaster(worker)}
                           className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
                         >
                           <FiCheck className="w-4 h-4" />
@@ -508,14 +514,19 @@ export default function FederationAdminDashboard() {
         {/* ── TAB 2: AI DEMAND FORECASTING & ALLOCATION ── */}
         {activeTab === "forecasting" && (
           <section className="space-y-6">
+            {forecastSeries.some((item) => item.data_source === "demo") && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900">
+                Demo forecast data is displayed for this preview. Replace it with completed cooperative bookings before production use.
+              </div>
+            )}
             <div className="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="text-base font-extrabold text-[#0B3C5D] flex items-center gap-2">
-                  <FiTrendingUp className="text-[#0B3C5D] w-5 h-5" />
-                  <span>{isHi ? "क्षेत्रीय मांग पूर्वानुमान मॉडल (एआई इंजन)" : "Localized Predictive Demand & Resource Allocation"}</span>
+                    <FiTrendingUp className="text-[#0B3C5D] w-5 h-5" />
+                  <span>{isHi ? "क्षेत्रीय मांग प्रवृत्ति और संसाधन आवंटन" : "Observed Demand & Resource Allocation"}</span>
                 </h2>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  Predicting high seasonal demand localities across Bhopal to mobilize reserved cooperative capacity.
+                  Recent observed completed bookings and a weighted moving-average estimate. Forecasts remain unavailable until enough real bookings are recorded.
                 </p>
               </div>
 
@@ -527,6 +538,7 @@ export default function FederationAdminDashboard() {
                     onChange={(e) => setForecastLocality(e.target.value)}
                     className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
                   >
+                    <option value="">All observed localities</option>
                     {localitiesList.map((loc) => (
                       <option key={loc} value={loc}>{loc}</option>
                     ))}
@@ -560,16 +572,16 @@ export default function FederationAdminDashboard() {
             <div className="p-6 rounded-2xl border border-slate-200 bg-white shadow-xs">
               <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                 <div className="text-xs font-bold text-slate-900">
-                  10-Day Horizon: <span className="text-[#0B3C5D] font-extrabold">{forecastLocality}</span> ({forecastCategory.toUpperCase()})
+                  Recent history + 10-day estimate: <span className="text-[#0B3C5D] font-extrabold">{forecastLocality || "all observed localities"}</span> ({forecastCategory.toUpperCase()})
                 </div>
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-1.5 font-bold text-[#0B3C5D]">
                     <span className="w-3 h-3 rounded bg-[#0B3C5D]"></span>
-                    <span>AI Predicted Demand</span>
+                    <span>Moving-average estimate</span>
                   </div>
                   <div className="flex items-center gap-1.5 font-bold text-[#138808]">
                     <span className="w-3 h-3 rounded bg-[#138808]"></span>
-                    <span>Reserved Co-op Capacity</span>
+                    <span>Observed completed bookings</span>
                   </div>
                 </div>
               </div>
@@ -579,11 +591,12 @@ export default function FederationAdminDashboard() {
                   <LoadingSpinner />
                 </div>
               ) : (
+                forecastSeries.length === 0 ? <div className="h-64 flex items-center justify-center text-center text-sm font-semibold text-slate-500">No verified demand history for this selection yet. Completed bookings will build the locality forecast.</div> :
                 <div className="h-64 flex items-end gap-3 pt-6 px-2">
                   {forecastSeries.map((item, idx) => {
-                    const maxVal = 50;
-                    const predH = Math.min(100, Math.round((item.predicted_demand / maxVal) * 100));
-                    const actualH = Math.min(100, Math.round(((item.actual_demand || Math.round(item.predicted_demand * 0.85)) / maxVal) * 100));
+                    const maxVal = Math.max(1, ...forecastSeries.map((point) => Number(point.predicted_demand || point.actual_demand || 0)));
+                    const predH = item.predicted_demand == null ? 0 : Math.max(2, Math.min(100, Math.round((item.predicted_demand / maxVal) * 100)));
+                    const actualH = item.actual_demand == null ? 0 : Math.max(2, Math.min(100, Math.round((item.actual_demand / maxVal) * 100)));
                     return (
                       <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
                         <div className="w-full flex items-end justify-center gap-1 h-full">
@@ -592,7 +605,7 @@ export default function FederationAdminDashboard() {
                             className="w-1/2 bg-[#0B3C5D] rounded-t hover:bg-[#0E4A73] transition-all relative"
                           >
                             <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
-                              {item.predicted_demand}
+                              {item.predicted_demand ?? "—"}
                             </span>
                           </div>
                           <div
@@ -600,12 +613,12 @@ export default function FederationAdminDashboard() {
                             className="w-1/2 bg-[#138808] rounded-t hover:bg-[#0E6806] transition-all relative"
                           >
                             <span className="opacity-0 group-hover:opacity-100 absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
-                              {item.actual_demand || Math.round(item.predicted_demand * 0.85)}
+                              {item.actual_demand ?? "—"}
                             </span>
                           </div>
                         </div>
                         <span className="text-[10px] font-bold text-slate-500 font-mono">
-                          {item.date?.slice(5)}
+                          {item.forecast_date?.slice(5)}
                         </span>
                       </div>
                     );
@@ -672,8 +685,9 @@ export default function FederationAdminDashboard() {
           <section className="space-y-4">
             <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4">
               <h2 className="text-base font-extrabold text-[#0B3C5D]">
-                Artisan Welfare Corpus & Medical Assistance Claims
+                Worker Welfare Fund Claims
               </h2>
+              <p className="text-xs text-slate-500">Available balances come from recorded booking contributions less claim reservations. Approval reserves ledger funds. After a real bank disbursement, record it through the cooperative finance process; this dashboard does not send bank payments.</p>
               <div className="divide-y divide-slate-200 border border-slate-200 rounded-xl overflow-hidden text-xs">
                 {claims.map((c) => (
                   <div key={c.id} className="p-4 bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -698,7 +712,7 @@ export default function FederationAdminDashboard() {
                           className="bg-[#138808] hover:bg-[#0E6806] text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs flex items-center gap-1.5"
                         >
                           <FiCheck size={14} />
-                          <span>Approve & Disburse</span>
+                          <span>Approve & Reserve</span>
                         </button>
                       )}
                     </div>

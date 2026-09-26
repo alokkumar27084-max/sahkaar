@@ -18,9 +18,7 @@ import {
   FiAward,
   FiGlobe,
   FiChevronDown,
-  FiPhone,
-  FiArrowRight,
-  FiCheckCircle
+  FiArrowRight
 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
