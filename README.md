@@ -1,252 +1,598 @@
-# SahKaar — Cooperative Service Marketplace
+# SahKaar
+## Cooperative Service Marketplace
+### Verified Local Professionals • Smarter Service Discovery • Cooperative Trust
 
-Verified local professionals. Cooperative-first service delivery.
+<p align="center">
+  <img src="docs/assets/sahkaar-hero.svg" alt="SahKaar cooperative service marketplace" width="1100" />
+</p>
 
-LIVE DEMO  •  PRODUCT OVERVIEW  •  FEATURE DOCS  •  SECURE BY DESIGN
+<p align="center">
+  <strong>PRODUCT OVERVIEW</strong> &nbsp;&nbsp; <strong>FEATURE DOCUMENTATION</strong> &nbsp;&nbsp; <strong>FULL-STACK APPLICATION</strong>
+</p>
 
 ---
 
-Project overview
-----------------
-SahKaar is a production-grade marketplace that connects households, institutions, and small businesses with verified local service professionals (electricians, plumbers, carpenters, painters, cleaners, appliance technicians, caregivers and more). Built around cooperative societies and federations, SahKaar emphasizes trust, fairness, and operational transparency — helping local artisans gain digital visibility while giving customers a reliable way to book services.
+## Project Overview
 
-This project combines a modern React frontend with a Node.js backend, location-aware discovery, real-time communications, identity verification workflows, secure payments, and admin tools for cooperative governance.
+SahKaar is a full-stack service marketplace that connects households and institutions with verified local professionals such as electricians, plumbers, carpenters, painters, cleaners, appliance technicians, caregivers, and other skilled service providers.
 
-Key features
-------------
-- Verified worker onboarding and cooperative affiliation
-- Multi-category service discovery and visual service catalogue
-- Geo-aware search with split-map & list views
-- Booking types: quick booking, scheduled bookings, and project bookings
-- Milestone-based payments and secure transaction handling
-- Ratings, reviews, and reputation systems
-- Real-time chat and notifications (Socket.io)
-- Admin dashboards for societies & federation-level governance
-- Worker welfare ledger and contribution tracking
-- AI & analytics hooks for demand forecasting and capacity planning
-- Multilingual UI and accessibility-first content
+The platform combines service discovery, location-aware matching, worker profiles, booking workflows, real-time communication, reviews, secure transaction flows, and cooperative administration into one product experience.
 
-System architecture (high level)
---------------------------------
-┌──────────────────────────────────────────────────────────────┐
-│                          SAHKAR ECOSYSTEM                    │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  Customer UI   ↔   Frontend SPA (React + Tailwind)           │
-│     ↑                Routing, Contexts, Maps, Auth           │
-│     │                                                       │
-│  Worker UI     ↔   Frontend (contractor pages, portfolio)    │
-│     ↑                Booking widgets, availability settings  │
-│     │                                                       │
-│  Admin UI      ↔   Frontend (dashboards, reports)           │
-│                                                              │
-├──────────────────────────────────────────────────────────────┤
-│                    Backend API & Services (Node.js)         │
-│  • Auth, RBAC, validation                                    │
-│  • Contractors, Bookings, Reviews, Payments                  │
-│  • Geo-dispatch & matching                                   │
-│  • Welfare accounting & reporting                            │
-│  • Socket.io real-time layer                                  │
-├──────────────────────────────────────────────────────────────┤
-│                       Data & Integrations                    │
-│  • PostgreSQL (profiles, bookings, reviews)                  │
-│  • Object storage (uploads)                                  │
-│  • Payment gateway (Razorpay or chosen provider)             │
-│  • Maps (Google Maps SDK / alternatives)                     │
-└──────────────────────────────────────────────────────────────┘
+SahKaar is designed for a marketplace where customers need reliable local help, workers need professional digital visibility, and cooperative or platform administrators need tools to manage trust and service quality.
 
-Core modules (deep dive)
-------------------------
-Below are the core functional modules and how they behave at the product level.
+## Key Features
 
-1) Worker onboarding & verification
-----------------------------------
-Purpose: Establish a trust boundary by verifying worker identity, cooperative membership, and trade skill certificates.
+- **Verified Worker Profiles** — Worker registration, profile management, portfolio information, availability, and verification status.
+- **Service Discovery** — Browse service categories and find professionals by skill, locality, rating, and distance.
+- **Location-Aware Matching** — Select a locality or use location-based discovery to find relevant nearby workers.
+- **Map and List Views** — Review results in list, split-map, or map-oriented experiences.
+- **Booking and Scheduling** — Request services through standard, quick-booking, meeting, and project-oriented flows.
+- **Secure Transaction Flows** — Support for digital payment and transaction processing within the booking experience.
+- **Ratings and Reviews** — Customers can provide feedback and build worker reputation through completed services.
+- **Real-Time Communication** — Socket-based updates and chat-oriented coordination between platform users.
+- **Admin Operations** — Worker review, verification queues, reports, statistics, and platform oversight.
+- **Society and Federation Views** — Dedicated role-based dashboards for cooperative-level operations.
+- **Worker Welfare Support** — Product structures for welfare, insurance, and contribution visibility.
+- **Multilingual Experience** — Language context and English/Hindi-ready product flows.
+- **Demand Planning Hooks** — Product direction for demand forecasting and workforce allocation by service and location.
+- **Responsive Product UI** — Premium interface designed for clear service discovery and accessible workflows.
 
-How it works (product flow):
-- Worker registers with phone/email and uploads identity and cooperative membership proof
-- Worker fills a trade profile (categories, skills, rates, portfolio images)
-- Submission goes into a pending verification queue for society / federation review
-- Admin approves or requests additional evidence; approved workers get “Verified” badges
+---
 
-Customer value: Clear trust signals, cooperative affiliation, higher conversion rates.
+## System Architecture
 
-Implementation pointers:
-- Frontend: contractor registration & edit pages
-- Backend: verification queue APIs, admin approve endpoints, uploads handling
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                         SAHKAAR ECOSYSTEM                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
+│  │   Customer   │  │   Worker     │  │  Cooperative │              │
+│  │   Experience  │  │   Workspace  │  │  Admin Views │              │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘              │
+│         │                 │                 │                      │
+├─────────┴─────────────────┴─────────────────┴──────────────────────┤
+│                       REACT FRONTEND                               │
+│  • Service discovery       • Worker profiles                       │
+│  • Booking and checkout    • Location and map views                │
+│  • Dashboards and chat     • Auth, language, theme, notifications  │
+├─────────────────────────────────────────────────────────────────────┤
+│                       EXPRESS BACKEND                              │
+│  • Authentication and RBAC • Worker and booking workflows          │
+│  • Reviews and reports     • Payment processing                    │
+│  • Admin operations        • Socket.io real-time events             │
+├─────────────────────────────────────────────────────────────────────┤
+│                         DATA & INTEGRATIONS                         │
+│  • PostgreSQL              • Map and location services              │
+│  • File uploads            • Payment provider integration            │
+│  • API contract            • Notification and real-time services    │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
-2) Service discovery & geo-matching
------------------------------------
-Purpose: Help customers find the nearest and most relevant verified professionals quickly.
+---
 
-Product behavior:
-- Location selector as a first step (manual search, autocomplete, or GPS)
-- Search by category, filters (ratings, price, distance), and urgency
-- List, Split‑map, and Map-only views with interactive markers and result cards
+# Core Modules
 
-Search & ranking:
-- Proximity + verification + rating + availability = score
-- Emergency or urgent flags can boost ranking for immediate dispatch
+## 1. Service Discovery and Marketplace Search
 
-Implementation pointers:
-- Frontend: SearchPage, AllCategoriesPage, Map components
-- Backend: contractor search API, DB indexes for geospatial queries
+SahKaar gives customers a direct way to find professionals for common household and community services.
 
-3) Booking, scheduling & lifecycle
----------------------------------
-Purpose: Convert discovery into scheduled work with transparent milestones.
+### Discovery flow
 
-Product flow:
-- Customer selects a worker and booking type (Quick / Scheduled / Project)
-- Booking contains service details, expected duration, and milestone break-down (if applicable)
-- Booking notifications sent to worker via Socket.io; worker accepts/declines
-- Status transitions: requested → accepted → in-progress → completed → reviewed
+```text
+Choose service → Select locality → Apply filters → Compare workers
+→ Open profile → Start booking
+```
 
-Payments:
-- Customer pays via digital gateway; platform supports staged escrow and milestone release (product-level support)
+### What customers can see
 
-Implementation pointers:
-- Frontend: BookingCheckoutPage, QuickBooking flow
-- Backend: bookings controller, payment integration, webhook handlers
+- Service category and skill
+- Worker name and profile information
+- Cooperative affiliation or verification information
+- Distance and locality
+- Ratings and experience
+- Visit fee or service pricing cues
+- Availability and booking actions
 
-4) Real-time coordination & chat
---------------------------------
-Purpose: Ensure customer and worker can communicate clearly and update service status in real-time.
+### Product benefits
 
-Product behavior:
-- In-app chat and notifications for booking updates
-- Push-like events via WebSockets for new requests, cancellations, and confirmations
+- Reduces time spent searching for reliable workers
+- Makes local professionals easier to discover
+- Gives customers meaningful comparison signals
+- Creates a consistent entry point for every service category
 
-Implementation pointers:
-- Socket.io server init on backend; client socket hook on frontend
+### Main implementation areas
 
-5) Admin dashboards & governance
---------------------------------
-Purpose: Provide societies and federations with tools to manage verification, welfare, reporting, and dispute resolution.
+- `src/pages/customer/HomePage.jsx`
+- `src/pages/customer/SearchPage.jsx`
+- `src/pages/customer/AllCategoriesPage.jsx`
+- `src/pages/customer/ContractorProfilePage.jsx`
+- `backend/src/`
 
-Product behavior:
-- Pending verification queues
-- Operational KPIs (bookings, revenue, worker signups)
-- Welfare ledger and contribution reports
-- Report handling: disputes, refunds, and escalations
+---
 
-Implementation pointers:
-- Frontend admin pages and protected routes
-- Backend admin APIs and role-based access control
+## 2. Worker Registration and Verification
 
-6) Worker welfare & insurance ledger
-------------------------------------
-Purpose: Track and surface welfare corpus contributions and insurance cover on worker profiles.
+Worker verification creates the trust layer of the marketplace. Workers can create professional profiles, provide service information, and become eligible for discovery after review.
 
-Product behavior:
-- A small configurable contribution per booking is tracked for the local welfare fund
-- Worker profile shows insurance/coverage badges if supplied
-- Admins can export welfare contribution reports for audits
+### Verification flow
 
-Implementation pointers:
-- Welfare accounting integrated with booking post-processing
-- Reports and export endpoints for admin users
+```text
+Worker registration → Profile completion → Admin review
+→ Verification decision → Public worker profile → Booking eligibility
+```
 
-7) Ratings & trust
-------------------
-Purpose: Create a feedback loop that rewards quality and highlights consistently good performers.
+### Worker profile capabilities
 
-Product behavior:
-- Ratings and short reviews after booking completion
-- Aggregated rating per category and worker profile
-- Admin moderation pipeline for abusive or fake reviews
+- Trade and service categories
+- Experience and service description
+- Profile image and portfolio
+- Availability status
+- Service location
+- Cooperative affiliation information
+- Ratings and customer feedback
 
-Implementation pointers:
-- Reviews endpoints and frontend UI components
+### Administrative controls
 
-8) AI & product analytics (demand forecasting)
-----------------------------------------------
-Purpose: Provide federations and societies with forecasting that helps staffing and training decisions.
+- View pending worker profiles
+- Review profile information
+- Approve or reject verification requests
+- Monitor worker status and marketplace participation
 
-Product hooks:
-- Aggregate historical bookings by category & location
-- Provide simple moving-average or seasonal forecasts in dashboards
-- ML/Batch pipelines are planned as extensions (product includes hooks & data exports)
+### Main implementation areas
 
-Implementation pointers:
-- Use booking and search logs as primary data source
-- Provide example scripts / notebooks in docs/analytics when required
+- `src/pages/contractor/ContractorRegisterPage.jsx`
+- `src/pages/contractor/ContractorEditPage.jsx`
+- `src/pages/contractor/ContractorDashboard.jsx`
+- `src/pages/admin/AdminDashboardPage.jsx`
+- `backend/src/controllers/`
 
-User roles
-----------
-- Customer: discover services, book, pay, track, review
-- Worker/Contractor: register, manage profile, receive bookings, update availability
-- Society Admin: verify workers, manage welfare funds, review reports
-- Federation Admin: higher-level operational reporting and policy parameters
-- Platform Admin: system-level configuration, monitors, and audits
+---
 
-Technology stack (suggested)
-----------------------------
-- Frontend: React 18 (Create React App), Tailwind CSS, @react-google-maps/api
-- Backend: Node.js + Express, Socket.io
-- Database: PostgreSQL (with geospatial indexes) or PostGIS where required
-- Storage: Object storage for uploads (S3 compatible)
-- Payments: Razorpay / chosen payment provider (use sandbox/test keys for dev)
-- Testing: Playwright e2e, Jest/mocha for unit tests
+## 3. Location-Aware Matching and Maps
 
-Getting started (local dev)
----------------------------
-> Note: This project intentionally omits production deployment secrets. Use local environment files and secure vaults for any sensitive configuration.
+Location is central to local services. Customers can select an area, use location-based discovery, and find professionals who serve the selected locality.
 
-1) Frontend
+### Location flow
+
+```text
+Search locality or detect location → Select service area
+→ Find nearby professionals → Compare distance and availability
+```
+
+### Supported product experiences
+
+- Locality search
+- Current-location selection
+- Popular area selection
+- Search radius and distance context
+- Worker list view
+- Split-map experience
+- Interactive map markers
+
+### Main implementation areas
+
+- `src/components/common/LocationSelectorModal.jsx`
+- `src/context/LocationContext.jsx`
+- `src/pages/customer/SearchPage.jsx`
+- `src/pages/customer/AllCategoriesPage.jsx`
+- `@react-google-maps/api` integration
+
+<p align="center">
+  <img src="docs/assets/screenshots/location-selector.svg" alt="SahKaar location selector" width="900" />
+</p>
+
+---
+
+## 4. Booking and Scheduling
+
+The booking module converts service discovery into an actionable request. Customers can choose a worker, provide service details, select a booking mode, and coordinate the next steps.
+
+### Booking flow
+
+```text
+Select worker → Choose booking type → Add service details
+→ Select schedule → Confirm request → Track status → Complete service
+```
+
+### Booking experiences
+
+- Standard service booking
+- Quick booking for urgent requirements
+- Meeting or consultation booking
+- Project-oriented service workflows
+- Customer dashboard for request visibility
+- Worker dashboard for incoming requests and status management
+
+### Booking lifecycle
+
+```text
+Requested → Accepted → In progress → Completed → Reviewed
+```
+
+### Main implementation areas
+
+- `src/pages/customer/BookingCheckoutPage.jsx`
+- `src/pages/customer/QuickBookingPage.jsx`
+- `src/pages/customer/MeetingBookingPage.jsx`
+- `src/pages/project/ProjectDashboard.jsx`
+- `src/pages/customer/CustomerDashboard.jsx`
+
+---
+
+## 5. Payments and Transaction Trust
+
+SahKaar includes secure transaction workflows for service bookings. The payment layer is designed to make pricing, payment status, and service completion easier to manage.
+
+### Transaction flow
+
+```text
+Booking confirmation → Payment initiation → Service progress
+→ Completion confirmation → Transaction status update
+```
+
+### Product goals
+
+- Clear pricing and booking information
+- Reliable payment status tracking
+- Better confidence for customers and workers
+- Support for milestone-oriented project work
+- A foundation for cooperative and worker settlement workflows
+
+The repository contains payment integration code and API documentation without exposing production credentials or private configuration.
+
+### Main implementation areas
+
+- `backend/src/`
+- `backend/openapi.yaml`
+- `src/pages/customer/BookingCheckoutPage.jsx`
+- Razorpay integration package in `backend/package.json`
+
+---
+
+## 6. Ratings, Reviews, and Reputation
+
+Reviews help customers choose professionals and give workers a way to build a trusted reputation over time.
+
+### Review flow
+
+```text
+Service completed → Customer submits rating and review
+→ Review associated with worker → Reputation shown on profile
+```
+
+### Trust signals
+
+- Average rating
+- Number of reviews
+- Service-specific feedback
+- Verification status
+- Experience and cooperative association
+
+### Main implementation areas
+
+- Contractor profile and booking completion flows
+- `GET /api/reviews/contractor/:id`
+- `POST /api/reviews/contractor/:id`
+- Backend review controllers and persistence layer
+
+---
+
+## 7. Real-Time Chat and Notifications
+
+Real-time communication helps customers and workers coordinate service details, booking updates, and completion information.
+
+### Communication flow
+
+```text
+Booking or conversation event → Real-time notification
+→ User opens chat → Details confirmed → Status updated
+```
+
+### Product use cases
+
+- New booking notifications
+- Booking acceptance or decline updates
+- Customer-worker coordination
+- Service status communication
+- Conversation history within the product experience
+
+### Main implementation areas
+
+- `src/pages/chat/ChatLayout.jsx`
+- Socket client services under `src/services/`
+- Backend Socket.io initialization under `backend/src/config/`
+
+---
+
+## 8. Admin, Society, and Federation Operations
+
+SahKaar supports role-based operational views so platform and cooperative administrators can manage the marketplace responsibly.
+
+### Admin responsibilities
+
+- Review worker onboarding
+- Manage verification status
+- Monitor service activity
+- Review reports and issues
+- Track marketplace statistics
+- Support cooperative governance workflows
+
+### Role structure
+
+```text
+Platform Admin
+    ├─ Society Admin
+    │    └─ Local worker and service operations
+    └─ Federation Admin
+         └─ Higher-level reporting and coordination
+```
+
+### Main implementation areas
+
+- `src/pages/admin/AdminDashboardPage.jsx`
+- `src/pages/admin/SocietyAdminDashboard.jsx`
+- `src/pages/admin/FederationAdminDashboard.jsx`
+- Protected routes in `src/App.jsx`
+- Admin APIs under `backend/src/`
+
+---
+
+## 9. Worker Welfare and Insurance Support
+
+The product includes structures for worker welfare, insurance visibility, and cooperative contribution tracking. These capabilities support a marketplace model that values worker protection alongside customer convenience.
+
+### Welfare product flow
+
+```text
+Service booking → Contribution or welfare record
+→ Worker coverage visibility → Cooperative reporting
+```
+
+### Product goals
+
+- Make welfare participation visible
+- Support worker safety and protection programs
+- Provide cooperative administrators with contribution context
+- Connect service activity with longer-term worker support
+
+Public documentation describes the product capability without revealing private financial, infrastructure, or operational configuration.
+
+---
+
+## 10. Demand Forecasting and Workforce Planning
+
+SahKaar is structured to support demand planning by service category and location. Historical booking data can help cooperatives understand demand patterns and prepare worker capacity.
+
+### Planning flow
+
+```text
+Booking history → Category and locality aggregation
+→ Demand trend analysis → Capacity planning → Worker allocation
+```
+
+### Potential uses
+
+- Identify seasonal service demand
+- Discover underserved localities
+- Plan worker availability
+- Improve training and resource allocation
+- Support federation-level operational decisions
+
+This capability is documented as a product and analytics direction; the repository does not expose private data or operational forecasting infrastructure.
+
+---
+
+# User Roles and Access
+
+## Customer
+
+- Browse services and categories
+- Select a location
+- Search and compare workers
+- Book services
+- Coordinate with providers
+- Track service activity
+- Submit ratings and reviews
+
+## Worker / Contractor
+
+- Register and manage profile
+- Add service skills and portfolio information
+- Set availability
+- Receive and manage booking requests
+- Coordinate with customers
+- Build a service reputation
+
+## Society Administrator
+
+- Review local worker onboarding
+- Manage verification decisions
+- Monitor service operations
+- Support worker welfare workflows
+
+## Federation Administrator
+
+- Review higher-level operations
+- Monitor cooperative performance
+- Support capacity planning and coordination
+
+## Platform Administrator
+
+- Manage platform-level operations
+- Review reports and statistics
+- Support marketplace trust and governance
+
+---
+
+# Technology Stack
+
+## Frontend
+
+- React 18
+- Create React App / `react-scripts`
+- React Router
+- Tailwind CSS
+- Framer Motion and GSAP
+- React Hot Toast
+- Google Maps React integration
+- Socket.io client
+- React Helmet Async
+
+## Backend
+
+- Node.js
+- Express
+- PostgreSQL client and migrations
+- Socket.io
+- JWT authentication
+- Cookie and bearer-token support
+- Helmet and rate limiting
+- Multer for local upload handling
+- OpenAPI documentation
+
+## Integrations
+
+- Maps and location services
+- Digital payment provider integration
+- Real-time WebSocket communication
+- Email and notification services
+- Optional OAuth and Firebase services
+
+## Testing
+
+- Node.js test runner and Supertest for backend tests
+- Playwright for end-to-end browser testing
+- Release and smoke-check scripts
+
+---
+
+# Repository Structure
+
+```text
+sahkaar/
+├── backend/
+│   ├── src/                    # Express application, routes, controllers, services
+│   ├── migrations/             # Database schema migrations
+│   ├── test/                   # Backend tests
+│   ├── openapi.yaml            # API contract
+│   └── package.json            # Backend scripts and dependencies
+├── src/
+│   ├── components/             # Shared interface components
+│   ├── pages/                  # Customer, worker, project, chat, and admin screens
+│   ├── context/                # Auth, language, theme, location, notifications
+│   ├── services/               # Frontend API and integration services
+│   ├── hooks/                  # Reusable React hooks
+│   ├── i18n/                   # Localization resources
+│   └── App.jsx                 # Application routes and providers
+├── docs/
+│   ├── features/               # Product feature documentation
+│   └── assets/                 # Hero and documentation visuals
+├── public/                     # Static frontend assets
+├── e2e/                        # Browser-level test flows
+├── scripts/                    # Local checks and utility scripts
+├── package.json                # Frontend scripts and dependencies
+└── playwright.config.js        # End-to-end test configuration
+```
+
+---
+
+# Getting Started
+
+## Prerequisites
+
+- Node.js 18 or newer
+- A local PostgreSQL installation for backend development
+- A local environment configuration for backend connectivity
+- Optional integration credentials for maps, payments, email, or OAuth features
+
+## Frontend setup
+
 ```bash
-# from repo root
 npm install
 npm start
 ```
 
-2) Backend
+## Backend setup
+
 ```bash
 cd backend
 npm install
-cp .env.example .env    # edit local values (DATABASE_URL, REACT_APP_API_URL, etc.)
-npm run migrate:all
 npm run dev
 ```
 
-3) Test (smoke / e2e)
+Use local environment configuration for any database or integration values. Never commit real credentials, tokens, private keys, or production environment files.
+
+## Testing
+
 ```bash
-# e2e (requires playwright installed)
-npm run test:e2e:install
-npm run test:e2e
-
 # backend tests
-cd backend && npm test
+cd backend
+npm test
+
+# from the repository root: install Playwright browsers once
+npm run test:e2e:install
+
+# run browser tests
+npm run test:e2e
 ```
-
-Operational strengths
----------------------
-- Trust-first marketplace model optimized for cooperative networks
-- Local-first discovery reduces travel time and improves conversions
-- Modular service flows so cooperatives can adopt features progressively
-- Real-time coordination for improved service reliability
-
-Security & privacy
-------------------
-- Never commit private `.env` files. Use `.env.example` templates only.
-- Production secrets and infrastructure configuration must be kept in secure stores (Vault, cloud KMS) and not in the public repo.
-- Audit trails for bookings, payments, and admin actions should be retained for compliance purposes.
-
-Contributing & release process
--------------------------------
-- Fork -> Feature branch (feature/xyz) -> Open a PR against `main` or `develop`
-- Include unit tests or e2e tests for critical flows
-- Update docs/features/* when changing product behaviour
-
-Acknowledgements
-----------------
-This project is built on many open-source building blocks. Special thanks to the communities around React, Node.js, OpenStreetMap/Google Maps, and the open computer-vision tooling used for related problems.
 
 ---
 
-If you want, I can now:
-1) Replace the root README on the `docs/sahkaar-brand-refresh` branch with this full product README.
-2) Expand any single feature page into a step-by-step product + implementation guide with screenshots and code pointers.
-3) Create a draft PR for you to review before merging to `main`.
+# Product Strengths
 
-Reply with which actions you'd like me to take next.
+## Customer experience
+
+- Fast path from service need to trusted professional
+- Locality-aware discovery
+- Clear worker profiles and trust indicators
+- Multiple booking modes for different service needs
+- Transparent communication throughout the service journey
+
+## Worker experience
+
+- Professional digital profile
+- Better visibility in local markets
+- Structured booking and availability management
+- Reputation building through customer feedback
+- Support for cooperative and welfare-oriented operations
+
+## Platform operations
+
+- Role-based access and protected workflows
+- Verification and reporting tools
+- Modular frontend and backend architecture
+- Real-time event support
+- Clear separation between product documentation and private operations
+
+---
+
+# Security and Privacy
+
+- Never commit `.env` files or real credentials.
+- Keep production secrets in private environment management systems.
+- Do not publish private infrastructure addresses, webhook secrets, database credentials, or administrative passwords.
+- Use test credentials and sandbox integrations during local development.
+- Review uploaded files and logs before publishing repository changes.
+
+This public README intentionally explains the product without exposing private deployment or operational information.
+
+---
+
+# Documentation
+
+- [Feature documentation index](docs/features/README.md)
+- [Backend service overview](backend/README.md)
+- [Critical paths](docs/CRITICAL_PATH.md)
+- [User acceptance checklist](docs/UAT_CHECKLIST.md)
+- [API contract](backend/openapi.yaml)
+
+---
+
+# Acknowledgments
+
+SahKaar is built with the open-source communities behind React, Node.js, Express, PostgreSQL, Socket.io, Playwright, Tailwind CSS, mapping tools, and the wider JavaScript ecosystem.
+
+---
+
+SahKaar helps make local services easier to discover, safer to book, and more accountable to the people who provide and use them.
