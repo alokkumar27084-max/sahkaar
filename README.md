@@ -1,95 +1,96 @@
-# SahKaar (सहकार)
-**Bharat's Cooperative-Owned Digital Marketplace for Verified Labour Cooperative Societies & Skilled Tradesmen**
+# SahKaar — Cooperative Service Marketplace
 
----
+<p align="center">
+  <img src="docs/assets/sahkaar-hero.svg" alt="SahKaar hero" width="1100" />
+</p>
 
-## 🏛️ Vision & Mission
+SahKaar is a digital marketplace for discovering, booking, and managing trusted local home and community services. The platform brings together customers, verified workers, and cooperative administrators in a single workflow designed to improve trust, speed, and service quality.
 
-**SahKaar** bridges India's informal skilled trade economy with structured cooperative governance. By linking **State Labour Cooperative Federations**, **Primary Cooperative Societies**, and verified artisans, SahKaar eliminates exploitative middlemen, guarantees social security (PM Suraksha Bima + Welfare Fund Pool), and provides households and institutions with 100% verified, reliable services.
+This repository contains the product frontend, backend services, tests, and project documentation for the platform.
 
----
+## What this product includes
 
-## 🏗️ 3-Tier Cooperative Architecture
+- Verified worker profiles and service discovery
+- Search by locality and service category
+- Booking and scheduling flows
+- Ratings and trust signals
+- Admin oversight for worker and service operations
+- Real-time communication and local coordination
+- Secure payment integration and transaction workflows
 
+## Product architecture
+
+```text
+Frontend web app
+  ├─ Search and service discovery
+  ├─ Worker profiles and booking flows
+  ├─ Admin and governance dashboards
+  └─ Real-time interactions and notifications
+
+Backend services
+  ├─ Authentication and role-based access
+  ├─ Worker, booking, and review workflows
+  ├─ Admin operational APIs
+  └─ Secure payment and processing layers
+
+Data layer
+  ├─ User and profile records
+  ├─ Service bookings and reviews
+  └─ Operational reporting and coordination data
 ```
-┌─────────────────────────────────────────────────────────┐
-│     State Labour Cooperative Federation (Apex Body)     │
-│   • Macro Demand Forecasting & Skilling Resource Pool   │
-│   • State-level Social Security & Welfare Corpus        │
-└────────────────────────────┬────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────┐
-│          Primary Cooperative Society (District)         │
-│   • Onboarding & Physical Identity / Skill Verification │
-│   • Local Worker Allocation & Dispute Arbitration       │
-└────────────────────────────┬────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────┐
-│              Verified Cooperative Worker                │
-│   • 100% Fair Payouts + Welfare Allocation              │
-│   • Pradhan Mantri Suraksha Bima Accident Cover         │
-│   • Real-Time Geo Dispatch & Digital Escrow             │
-└─────────────────────────────────────────────────────────┘
-```
 
----
+## Why this repo is organized this way
 
-## 🚀 Key Features
+This repository is structured to communicate the product clearly to reviewers and engineers without exposing sensitive operational details. The public-facing documentation focuses on product value, user experience, and implementation structure rather than deployment secrets or private infrastructure configuration.
 
-1. **Cooperative Governance & Verification**:
-   - Primary Society verification stamp on worker profiles.
-   - NCCT-certified skills accreditation.
-   - Dual-tier administrative portals (`Federation Admin` & `Society Admin`).
+## Quick start
 
-2. **Worker Welfare & Social Security**:
-   - Automated ₹25 contribution per booking into the District Society Welfare Corpus.
-   - Integrated ₹5,00,000 Group Accident / PM Suraksha Bima policy tracking on every worker profile.
+### Frontend
 
-3. **AI-Driven Demand Forecasting Engine**:
-   - Statistical moving-average demand forecasting by trade category and locality.
-   - Predictive capacity planning for societies to mobilize artisans ahead of seasonal peaks.
-
-4. **Emergency / Urgent On-Demand Dispatch**:
-   - Instant 45-minute priority dispatch toggle for emergency plumbing, electrical breakdown, and civil repairs.
-
-5. **Milestone Escrow Payment Protection**:
-   - Razorpay multi-stage escrow releasing funds only upon verified milestone completion.
-
-6. **Bilingual Accessibility**:
-   - First-class English and Hindi (हिंदी) localization designed for ground-level artisans and citizens.
-
----
-
-## 🛠️ Technology Stack
-
-- **Frontend**: React 18, Tailwind CSS, Framer Motion, Lucide & Feather Icons, Google Maps SDK
-- **Backend**: Node.js, Express REST API, Socket.io Real-Time Layer
-- **Database**: PostgreSQL with Geospatial indexing & Foreign Key hierarchy
-- **Payments**: Razorpay Escrow Integration
-- **Auth**: Multi-factor OTP authentication & Role-Based Access Control (`customer`, `contractor`, `society_admin`, `federation_admin`, `admin`)
-
----
-
-## 💻 Quick Start
-
-### 1. Backend Setup
 ```bash
-cd backend
-npm install
-# Configure your PostgreSQL database in backend/.env
-npm run migrate
-npm run dev
-```
-
-### 2. Frontend Setup
-```bash
-# In the root project directory
 npm install
 npm start
 ```
 
+### Backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+## Local development notes
+
+- Use your own local environment configuration for database and API connectivity.
+- Keep secrets and private configuration out of the public repository.
+- Production deployment details are intentionally not included in this public repo for security reasons.
+
+## Feature areas
+
+- Worker onboarding and verification
+- Local service discovery
+- Booking and scheduling
+- Messaging and coordination
+- Reviews and trust
+- Admin reporting and oversight
+- Service quality and operations
+
+## Documentation
+
+- [docs/features/README.md](docs/features/README.md)
+- [backend/README.md](backend/README.md)
+- [docs/CRITICAL_PATH.md](docs/CRITICAL_PATH.md)
+- [docs/UAT_CHECKLIST.md](docs/UAT_CHECKLIST.md)
+
+## Security note
+
+This project contains product and implementation details, but it intentionally omits production system secrets, private infrastructure configuration, and deployment information from the public repository.
+
+## Design direction
+
+The product is designed with a premium, trustworthy, service-marketplace aesthetic: clean white surfaces, deep navy navigation, high-contrast trust states, and warm accent colors used to highlight verified professionals and service categories.
+
 ---
 
-*© SahKaar Cooperative Marketplace. Built for Bharat.*
+Built for a modern cooperative service marketplace experience.
