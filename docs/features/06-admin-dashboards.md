@@ -1,29 +1,31 @@
-# Admin Dashboards — full product page
+# Admin dashboards and governance
 
-Purpose
--------
-Admin dashboards give cooperative societies and federation administrators the operational tools to manage workers, monitor reports, and oversee welfare funds.
+## Purpose
 
-What it contains
-----------------
-- Pending verification queue
-- Operational stats and exported reports
-- Worker dispute and report handling
+Administrative dashboards help cooperative and platform teams manage worker verification, service quality, and operational oversight without exposing sensitive infrastructure details in the public repository.
 
-Frontend pointers
------------------
-- Admin pages: `src/pages/admin/*`, `src/pages/admin/AdminDashboardPage.jsx`, `src/pages/admin/FederationAdminDashboard.jsx`
+## What the product enables
 
-Backend pointers
-----------------
-- Admin endpoints: `GET /api/admin/stats`, `GET /api/admin/reports`, `PATCH /api/admin/reports/:id`
-- Admin role checks in backend middleware (see `backend/src/config`)
+- Review worker profiles and onboarding status
+- Monitor platform health and operational activity
+- Manage service quality and trust-related issues
+- Support higher-level governance and operational visibility
 
-Design & images
----------------
-- Include screenshots of admin dashboard widgets (graphs, pending lists, KPI cards).
+## Product value
 
-How to test
------------
-- Use an admin account (set ADMIN_EMAIL/ADMIN_PASSWORD), access `/admin/dashboard`, and verify approve/deny flows for contractor verification.
+Modern service platforms require structured oversight. Admin tools allow cooperative or platform teams to keep the marketplace trustworthy, operationally stable, and aligned with local service quality standards.
 
+## Typical workflow
+
+1. Platform or cooperative admin reviews pending profiles and actions
+2. Trust indicators and quality signals are assessed
+3. Reports and operational summaries support decision-making
+4. Repeat reviews reinforce service reliability over time
+
+## Public-facing guidance
+
+Public documentation should explain the governance capability at a product level without exposing sensitive environment, access, or deployment configuration details.
+
+---
+
+Back to [docs/features/README.md](README.md).

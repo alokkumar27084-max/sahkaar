@@ -1,26 +1,37 @@
-# Payments & Escrow — full product page
+# Payments and escrow flow
 
-Purpose
--------
-Payments are handled via Razorpay with support for milestone/escrow-style releases to protect both the customer and worker.
+## Purpose
 
-What it contains
-----------------
-- Razorpay integration for payments and order creation
-- Webhook handling for payment events
-- Escrow release logic tied to booking milestones (documented in backend services)
+This feature supports secure payment workflows for service bookings while preserving trust between the customer and the service provider.
 
-Backend pointers
-----------------
-- Razorpay keys configured via env vars: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`.
-- Payment-related endpoints and examples are in `backend/openapi.yaml`.
-- Look for payment service: `backend/src/services/paymentService.js` (or similar).
+## What the product enables
 
-Design & images
----------------
-- Screenshot of checkout with payment button and escrow messaging.
+- Booking confirmation with transparent pricing
+- Secure payment handling for service requests
+- Transaction protection for both parties
+- Clear status tracking through the booking lifecycle
+- Improved confidence in service delivery and completion
 
-How to test
------------
-- Use Razorpay test keys in a staging environment; simulate webhook events and verify the booking's payment status updates.
+## Product value
 
+A reliable payment flow is essential in any service marketplace. Customers want confidence that they are paying for a legitimate service, while workers need assurance that payment and completion workflows are handled transparently and consistently.
+
+## Typical flow
+
+1. Customer selects a service and worker
+2. Price and arrangement are confirmed before checkout
+3. The platform handles the payment action through a secure gateway
+4. Service status updates as the work progresses
+5. Completion and review flows close the transaction with trust signals
+
+## Product guidance
+
+This flow should be presented in public-facing material as a trust and convenience feature. It should not expose production credentials, payment gateway configuration details, or internal operational endpoints in the public repo.
+
+## Implementation notes
+
+The backend and frontend contain the payment and transaction layers needed to support this feature. Public documentation focuses on the customer-facing value and the platform behaviour rather than internal system secrets.
+
+---
+
+Back to [docs/features/README.md](README.md).
